@@ -213,7 +213,26 @@
       return piecesById[ids[row*width+col]] ?? null;
     }
 
-    return {canvas, render, pick, exposed:piece => visible[piece.id] >= 32};
+    // The same visible pixels that accept a tap anchor the tutorial hand.
+    function focus(piece) {
+      if (!visible[piece.id]) return null;
+      const x = piece.x-left, y = piece.y-top;
+      const reach = piece.size*.55;
+      let x0 = width, x1 = 0, y0 = height, y1 = 0;
+      let point, closest = Infinity;
+      for (let row = Math.max(0,Math.floor(y-reach)); row < Math.min(height,Math.ceil(y+reach)); row++) {
+        for (let col = Math.max(0,Math.floor(x-reach)); col < Math.min(width,Math.ceil(x+reach)); col++) {
+          if (ids[row*width+col] !== piece.id) continue;
+          x0 = Math.min(x0,col); x1 = Math.max(x1,col);
+          y0 = Math.min(y0,row); y1 = Math.max(y1,row);
+          const distance = (col+.5-x)**2+(row+.5-y)**2;
+          if (distance < closest) { closest = distance; point = {x:col+left+.5,y:row+top+.5}; }
+        }
+      }
+      return point && {x:x0+left,y:y0+top,w:x1-x0+1,h:y1-y0+1,point,area:visible[piece.id]};
+    }
+
+    return {canvas, render, pick, focus, exposed:piece => visible[piece.id] >= 32};
   }
 
   function surface(r,g,b,light,gloss) {

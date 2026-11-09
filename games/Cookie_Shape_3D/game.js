@@ -2,6 +2,7 @@
   "use strict";
 
   const art = window.ShapeArt;
+  const tutorial = window.BakeryTutorial;
   const { create:createTrayPhysics, pieceSize } = window.ShapeTray;
   const $ = (id) => document.getElementById(id);
   const stage = $("stage");
@@ -25,7 +26,7 @@
     hammer: { impact:.35, fade:.45, end:1.06 },
     oven: { impact:.68, fade:1.07, end:1.72 }
   };
-  const praise = ["Chuẩn rồi!","Đẹp lắm!","Đủ một hàng!","Ngon lành!"];
+  const praise = ["Perfect fit!","Nicely done!","Row complete!","Sweet!"];
   const confettiColors = ["#ffdb68","#fff3c7","#ef7295","#a93f5e","#ff9961"];
   let game = null;
   let animation = 0;
@@ -36,12 +37,13 @@
   let celebration = [];
   let pressed = null;
   let homeDirty = true;
-  const initial = { level:1, coins:100, lives:MAX_LIVES, refillAt:0, sound:true, haptics:true, best:{} };
+  const initial = { level:1, coins:100, lives:MAX_LIVES, refillAt:0, sound:true, haptics:true, best:{}, tutorials:{} };
+  const params = new URLSearchParams(location.search);
   let save = { ...initial };
   try {
     const stored = JSON.parse(localStorage.getItem(SAVE));
     if (stored && levels[stored.level]) {
-      save = { ...initial, ...stored, best:{ ...stored.best } };
+      save = { ...initial, ...stored, best:{ ...stored.best }, tutorials:{ ...stored.tutorials } };
     } else {
       const legacy = JSON.parse(localStorage.getItem("perfect-shape-html5-v1"));
       for (const key of ["sound","haptics"]) {
@@ -66,11 +68,11 @@
       save.refillAt = save.lives < MAX_LIVES ? save.refillAt+REFILL : 0;
       persist();
     }
-    $("life-clock").textContent = save.lives >= MAX_LIVES ? "Đầy" : clock((save.refillAt-Date.now())/1000);
+    $("life-clock").textContent = save.lives >= MAX_LIVES ? "Full" : clock((save.refillAt-Date.now())/1000);
     $("lives").textContent = save.lives;
     $("coins").textContent = save.coins;
-    $("play").textContent = "Màn "+save.level;
-    $("home-progress").textContent = Object.keys(save.best).length+" / "+LAST_LEVEL+" màn";
+    $("play").textContent = "Level "+save.level;
+    $("home-progress").textContent = Object.keys(save.best).length+" / "+LAST_LEVEL+" levels";
   }
 
   function fit() {
@@ -212,13 +214,14 @@
 
   function announceRow() {
     const missing = game.rows[game.row].filter((_,i) => !game.filled[game.row][i] && !game.hidden[game.row][i]);
-    if (missing.length) speak("Hàng "+(game.row+1)+" / "+game.rows.length+". Cần "+missing.map(kind => names[kind]).join(", ")+".");
+    if (missing.length) speak(`Row ${game.row+1} of ${game.rows.length}. Needed shapes are ${missing.map(kind => names[kind].toLowerCase()).join(", ")}.`);
   }
 
-  function startGame(number) {
+  function startGame(number, replayTutorial = false) {
     refreshLives();
     if (save.lives <= 0) { showShop(true); return; }
     closeModal(false);
+    tutorial.clear();
     synth("click");
     game = makeGame(number);
     hits.replaceChildren();
@@ -229,19 +232,33 @@
     pressed = null;
     $("world").style.cursor = "";
     lastTime = performance.now();
-    $("level-label").textContent = "Màn "+number;
+    $("level-label").textContent = "Level "+number;
     const [chapter,,tip] = chapters[levels[number].chapter];
     $("chapter-label").textContent = chapter;
     $("chapter-tip").textContent = tip;
-    $("row-count").textContent = "Hàng 1 / "+game.rows.length;
+    $("row-count").textContent = "Row 1 / "+game.rows.length;
+    $("timer").classList.toggle("untimed",game.time === null);
+    $("timer").setAttribute("aria-label",game.time === null ? "No time limit" : "Time remaining");
     showTime();
-    syncHits();
     announceRow();
-    $("game-settings").focus({ preventScroll:true });
+    game.tutorial = tutorial.start(game,save.tutorials,replayTutorial,(lesson,version) => {
+      save.tutorials[lesson] = version;
+      persist();
+      game.tutorial = null;
+      setTutorialControls(false);
+      syncHits();
+      announceRow();
+      if (document.activeElement === document.body) $("game-settings").focus({ preventScroll:true });
+    },speak);
+    setTutorialControls(Boolean(game.tutorial));
+    syncHits();
+    (game.tutorial ? $("tutorial-skip") : $("game-settings")).focus({ preventScroll:true });
   }
 
   function goHome() {
     closeModal(false);
+    tutorial.clear();
+    setTutorialControls(false);
     game = null;
     pressed = null;
     $("world").style.cursor = "";
@@ -254,9 +271,10 @@
   }
 
   function showTime() {
-    $("time").textContent = clock(game.seconds);
-    $("timer-fill").style.transform = `scaleX(${Math.max(0,game.seconds/game.time)})`;
-    $("timer").classList.toggle("danger",game.seconds <= 10);
+    const timed = game.time !== null;
+    $("time").textContent = timed ? clock(game.seconds) : "∞";
+    $("timer-fill").style.transform = `scaleX(${timed ? Math.max(0,game.seconds/game.time) : 1})`;
+    $("timer").classList.toggle("danger",timed && game.seconds <= 10);
   }
 
   function position(e) {
@@ -270,6 +288,20 @@
 
   function exposed(piece) {
     return art.exposed(game,piece);
+  }
+
+  function setTutorialControls(active) {
+    stage.classList.toggle("guiding",active);
+    $("game-settings").tabIndex = $("guide").tabIndex = active ? -1 : 0;
+  }
+
+  function syncTutorialHits() {
+    if (!game.tutorial) return;
+    const buttons = new Map(Array.from(hits.children,button => [Number(button.dataset.pieceId),button]));
+    for (const piece of game.tray) {
+      const button = buttons.get(piece.id);
+      if (button) button.tabIndex = game.tutorial.allows(piece) ? 0 : -1;
+    }
   }
 
   function syncHits() {
@@ -290,8 +322,9 @@
         hits.append(button);
       }
       existing.delete(piece.id);
+      button.tabIndex = !game.tutorial || game.tutorial.allows(piece) ? 0 : -1;
       button.dataset.kind = piece.kind;
-      button.setAttribute("aria-label",names[piece.kind]+(piece.coatedUntil ? ", đang phủ siro" : ""));
+      button.setAttribute("aria-label",names[piece.kind]+(piece.coatedUntil ? ", coated in syrup" : ""));
       button.setAttribute("aria-disabled",String(Boolean(piece.coatedUntil)));
       const size = Math.max(46,piece.size*.67);
       Object.assign(button.style,{
@@ -300,7 +333,8 @@
     }
     for (const button of existing.values()) button.remove();
     if (active?.dataset.pieceId && !active.isConnected && !modal.open) {
-      (hits.querySelector("button") ?? $("game-settings")).focus({ preventScroll:true });
+      const fallback = game.tutorial ? $("tutorial-skip") : $("game-settings");
+      (hits.querySelector('button[tabindex="0"]') ?? fallback).focus({ preventScroll:true });
     }
   }
 
@@ -358,7 +392,7 @@
           oven.kind = "ovenOpen";
           animateMechanic("oven",oven);
           game.trayDirty = game.geometryDirty = game.hitsDirty = true;
-          speak("Cửa lò đang mở.");
+          speak("The oven door is opening.");
         }
       }
       if (revealed) {
@@ -396,7 +430,7 @@
     });
     flash(container.x,container.y,oven ? "#ffb267" : "#ffd5a4",oven ? 12 : 22);
     synth(oven ? "unlock" : "crack");
-    speak(oven ? "Bánh đã ra lò." : "Hộp đã vỡ. Bánh rơi ra khay.");
+    speak(oven ? "The cookie is out of the oven." : "The box broke and the cookie dropped into the tray.");
     game.trayDirty = game.geometryDirty = game.hitsDirty = true;
   }
 
@@ -405,7 +439,7 @@
       .map(piece => ({piece,distance:Math.hypot(piece.x-candy.x,piece.y-candy.y)}))
       .sort((a,b) => a.distance-b.distance || a.piece.id-b.piece.id);
     if (!nearby.length) {
-      speak("Cần có bánh lộ ra trong khay để siro bám vào.");
+      speak("The syrup needs an exposed cookie in the tray.");
       return;
     }
     remove(candy);
@@ -415,7 +449,7 @@
       piece.syrupSpread ??= 0;
       piece.coatedUntil = game.elapsed+effect.impact+SYRUP_SECONDS;
     }
-    speak("Kẹo đang tan. Bánh dính siro sẽ được chọn lại sau 10 giây.");
+    speak("The candy is melting. You can pick coated cookies again in 10 seconds.");
   }
 
   function revealNeeded() {
@@ -485,7 +519,7 @@
     const joined = time => {
       flash(whole.x,whole.y,"#ffd998",13);
       synth("fit");
-      speak(names[first.whole]+" đã ráp xong.");
+      speak(names[first.whole]+" reassembled.");
       if (still) route(time);
       else launch(whole,center,time,route,100);
     };
@@ -510,9 +544,10 @@
 
   function choose(piece) {
     if (!game || game.pausedAt !== null || game.ended || game.finishing || game.spin || !game.tray.includes(piece)) return;
+    if (game.tutorial && !game.tutorial.allows(piece)) return;
     const now = performance.now();
     if (piece.coatedUntil) {
-      speak(piece.syrupSpread ? "Bánh dính siro, chưa thể chọn." : "Siro đang chảy tới bánh.");
+      speak(piece.syrupSpread ? "This cookie is locked by syrup." : "Syrup is flowing toward this cookie.");
       synth("miss");
       return;
     }
@@ -523,7 +558,8 @@
       remove(piece);
       launch(piece,{x:box.x+29,y:box.y-8,size:117,arc:32},now,() => animateMechanic("hammer",box));
     } else if (piece.kind === "pastryBox" || piece.kind === "oven" || piece.kind === "ovenOpen") {
-      speak(piece.kind === "pastryBox" ? "Nhặt búa để đập hộp." : "Lò còn "+piece.remaining+" lượt ghép.");
+      speak(piece.kind === "pastryBox" ? "Pick up the hammer to break open the box." :
+        `Match ${piece.remaining} more ${piece.remaining === 1 ? "cookie" : "cookies"} to open the oven.`);
       synth("miss");
       return;
     } else {
@@ -542,6 +578,7 @@
         }
       }
     }
+    if (!game.tray.includes(piece)) game.tutorial?.accept();
     game.nextAssist = now+165;
     syncHits();
   }
@@ -591,21 +628,30 @@
 
   function startBonus() {
     const steps = 26;
-    // Leave the first visible tiles in place until the new strip rolls into view.
-    const reels = Array.from({length:game.columns},() => Array.from({length:steps+3},(_,i) =>
-      i < 3 ? null : cookieKinds[Math.floor(Math.random()*cookieKinds.length)]));
-    const counts = new Map();
-    for (const reel of reels) {
-      const kind = reel[steps];
-      counts.set(kind,(counts.get(kind) ?? 0)+1);
+    // Early levels have an 80% chance of any bonus, including the 50% jackpot.
+    const [bonusChance,jackpotChance] = game.number <= 5 ? [.80,.50] : [.35,.05];
+    const roll = Math.random();
+    const multiplier = roll < jackpotChance ? 5 : roll < bonusChance ? 3 : 1;
+    const matches = multiplier === 5 ? game.columns : multiplier === 3 ? 3 : 0;
+    const pick = kinds => kinds[Math.floor(Math.random()*kinds.length)];
+    const winner = matches ? pick(cookieKinds) : null;
+    const stops = Array(matches).fill(winner);
+    // At most two of each other kind can land, so only the chosen bonus can match.
+    const fillers = cookieKinds.filter(kind => kind !== winner).flatMap(kind => [kind,kind]);
+    while (stops.length < game.columns) {
+      const index = Math.floor(Math.random()*fillers.length);
+      stops.push(fillers.splice(index,1)[0]);
     }
-    const [winner,matches] = [...counts].find(([,count]) => count >= 3) ?? [null,0];
-    const multiplier = matches === game.columns ? 5 : winner ? 3 : 1;
+    shuffle(stops,Math.random);
+
+    // Leave the first visible tiles in place until the new strip rolls into view.
+    const reels = stops.map(stop => Array.from({length:steps+3},(_,i) =>
+      i < 3 ? null : i === steps ? stop : pick(cookieKinds)));
     const coins = BASE_WIN_COINS*multiplier;
     game.bonus = { steps, reels, winner, matches, multiplier, coins };
 
     const best = save.best[game.number] ?? 0;
-    save.best[game.number] = Math.max(best,Math.ceil(game.seconds));
+    save.best[game.number] = game.time === null ? true : Math.max(best,Math.ceil(game.seconds));
     save.coins += coins;
     if (game.number === save.level && game.number < LAST_LEVEL) save.level++;
     persist();
@@ -620,7 +666,7 @@
     const roll = still ? 0 : game.finishing ? 970 : 245;
     const stagger = still ? 0 : game.finishing ? 105 : 38;
     game.spin = { started:now, delay, roll, stagger, duration:delay+roll+stagger*(game.columns-1) };
-    game.praise = { text:game.finishing ? "Hoàn tất!" : praise[game.row%praise.length], time:now };
+    game.praise = { text:game.finishing ? "All done!" : praise[game.row%praise.length], time:now };
     synth("row");
     vibrate(29);
   }
@@ -629,7 +675,7 @@
     game.spin = null;
     if (game.finishing) {
       const { steps, reels, winner, multiplier } = game.bonus;
-      game.praise = { text:`Thưởng ×${multiplier}`, time:now };
+      game.praise = { text:`Bonus ×${multiplier}`, time:now };
       if (winner) {
         synth("unlock");
         reels.forEach((reel,col) => {
@@ -642,7 +688,7 @@
       return;
     }
     game.row++;
-    $("row-count").textContent = "Hàng "+(game.row+1)+" / "+game.rows.length;
+    $("row-count").textContent = "Row "+(game.row+1)+" / "+game.rows.length;
     drainWaiting(now);
     revealNeeded();
     game.nextAssist = now+420;
@@ -666,6 +712,7 @@
     }
     modalKind = kind;
     if (game) game.pausedAt ??= performance.now();
+    if (game?.tutorial) $("tutorial").hidden = true;
     home.inert = hud.inert = hits.inert = true;
     panel.classList.toggle("won",kind === "win");
     $("modal-title").textContent = title;
@@ -693,6 +740,7 @@
       game.pausedAt = null;
       lastTime = now;
     }
+    if (game?.tutorial) $("tutorial").hidden = false;
     if (restore && priorFocus?.isConnected) priorFocus.focus({ preventScroll:true });
   }
 
@@ -704,12 +752,12 @@
     const { matches, multiplier, coins } = game.bonus;
     synth("win");
     vibrate([24,43,34]);
-    speak(`Đã hoàn thành màn ${game.number}. Thưởng nhân ${multiplier}, nhận ${coins} xu.`);
+    speak(`Level ${game.number} complete. ${multiplier} times the reward. You earned ${coins} coins.`);
     const next = game.number < LAST_LEVEL;
-    const subtitle = matches ? `${matches} ô giống nhau · Thưởng ×${multiplier}` :
-      next ? "Đơn bánh hoàn tất" : "Hoàn tất đơn bánh cuối";
-    showModal("win",`Màn ${game.number}`,subtitle,
-      `<div class="panel-copy reward">${art.rewardCoins()}<b>+${coins}</b></div><div class="actions">${next ? action("continue","Màn tiếp") : ""}${action("win-home","Tiệm bánh",next)}</div>`);
+    const subtitle = matches ? `${matches} matches · Bonus ×${multiplier}` :
+      next ? "Order Complete" : "Final Order Complete";
+    showModal("win",`Level ${game.number}`,subtitle,
+      `<div class="panel-copy reward">${art.rewardCoins()}<b>+${coins}</b></div><div class="actions">${next ? action("continue","Next Level") : ""}${action("win-home","Bakery",next)}</div>`);
     $("continue")?.addEventListener("click",() => startGame(game.number+1));
     $("win-home").addEventListener("click",goHome);
     if (!reduceMotion.matches) {
@@ -730,8 +778,8 @@
     persist();
     synth("lose");
     const number = game.number;
-    showModal("lose",title,`Màn ${number}`,
-      `<div class="panel-copy">${message}</div><div class="actions">${action("retry","Thử lại")}${action("back","Tiệm bánh",true)}</div>`);
+    showModal("lose",title,`Level ${number}`,
+      `<div class="panel-copy">${message}</div><div class="actions">${action("retry","Try Again")}${action("back","Bakery",true)}</div>`);
     $("retry").addEventListener("click",() => startGame(number));
     $("back").addEventListener("click",goHome);
   }
@@ -739,15 +787,15 @@
   function settings() {
     synth("click");
     const toggle = (id,key,label) =>
-      `<div class="setting-row"><span>${label}</span><button class="toggle" id="${id}" aria-label="${label}" aria-pressed="${save[key]}">${save[key]?"Bật":"Tắt"}</button></div>`;
-    showModal("settings","Cài đặt",game ? "Đang tạm dừng" : "",
-      `<div class="panel-copy">${toggle("sound-toggle","sound","Âm thanh")}${toggle("haptic-toggle","haptics","Rung")}</div>
-        <div class="actions">${action("resume",game?"Tiếp tục":"Xong")}${game?action("quit","Tiệm bánh",true):""}</div>`);
+      `<div class="setting-row"><span>${label}</span><button class="toggle" id="${id}" aria-label="${label}" aria-pressed="${save[key]}">${save[key]?"On":"Off"}</button></div>`;
+    showModal("settings","Settings",game ? "Paused" : "",
+      `<div class="panel-copy">${toggle("sound-toggle","sound","Sound")}${toggle("haptic-toggle","haptics","Vibration")}</div>
+        <div class="actions">${action("resume",game?"Resume":"Done")}${game?action("quit","Bakery",true):""}</div>`);
     for (const [id,key] of [["sound-toggle","sound"],["haptic-toggle","haptics"]]) {
       const button = $(id);
       button.addEventListener("click",() => {
         save[key] = !save[key];
-        button.textContent = save[key] ? "Bật" : "Tắt";
+        button.textContent = save[key] ? "On" : "Off";
         button.setAttribute("aria-pressed",save[key]);
         persist();
         if (key === "sound") synth("click");
@@ -762,9 +810,9 @@
     synth("click");
     refreshLives();
     const canRefill = save.lives < MAX_LIVES && save.coins >= 100;
-    showModal("shop",lives ? "Mạng" : "Cửa hàng","",
-      `<div class="panel-copy"><p><span class="coin"></span> ${save.coins} xu</p><p>${save.lives} / ${MAX_LIVES} mạng</p></div>
-        <div class="actions">${canRefill ? action("refill","Nạp · 100 xu") : ""}${action("close-shop","Xong",canRefill)}</div>`);
+    showModal("shop",lives ? "Lives" : "Shop","",
+      `<div class="panel-copy"><p><span class="coin"></span> ${save.coins} ${save.coins === 1 ? "coin" : "coins"}</p><p>${save.lives} / ${MAX_LIVES} lives</p></div>
+        <div class="actions">${canRefill ? action("refill","Refill · 100 coins") : ""}${action("close-shop","Done",canRefill)}</div>`);
     $("refill")?.addEventListener("click",() => {
       save.coins -= 100;
       save.lives = MAX_LIVES;
@@ -782,18 +830,19 @@
       const buttons = Array.from({length:5},(_,i) => {
         const number = chapter*5+i+1;
         const best = save.best[number];
-        const label = best ? `Màn ${number}, kỷ lục ${clock(best)}` : `Màn ${number}`;
+        const label = !best ? `Level ${number}` : levels[number].time === null ? `Level ${number}, completed` :
+          `Level ${number}, best time ${clock(best)}`;
         return `<button type="button" data-level="${number}" aria-label="${label}">${number}${best ? "<span>✓</span>" : ""}</button>`;
       }).join("");
       return `<section><h3>${title}</h3><div class="level-choices">${buttons}</div></section>`;
     }).join("");
-    showModal("progress","Chọn màn","30 đơn bánh",`<div class="level-list">${summary}</div>`);
+    showModal("progress","Select Level",`${LAST_LEVEL} orders`,`<div class="level-list">${summary}</div>`);
     $("modal-body").querySelectorAll("[data-level]").forEach(button =>
       button.addEventListener("click",() => startGame(Number(button.dataset.level))));
   }
 
   function info(title,message) {
-    showModal("info",title,"",`<div class="panel-copy guide-copy">${message}</div><div class="actions">${action("info-ok","Đã hiểu")}</div>`);
+    showModal("info",title,"",`<div class="panel-copy guide-copy">${message}</div><div class="actions">${action("info-ok","Got It")}</div>`);
     $("info-ok").addEventListener("click",() => closeModal());
   }
 
@@ -871,9 +920,10 @@
     lastTime = now;
     if (game) {
       if (game.pausedAt === null && !game.ended) {
-        const before = Math.ceil(game.seconds);
+        const timed = game.time !== null;
+        const before = timed ? Math.ceil(game.seconds) : 0;
         if (!document.hidden) {
-          if (!game.finishing) game.seconds = Math.max(0,game.seconds-delta);
+          if (timed && !game.finishing && !game.tutorial) game.seconds = Math.max(0,game.seconds-delta);
           game.elapsed += delta;
           updateTrayStates(now);
         }
@@ -884,24 +934,27 @@
           game.nextHitSync = now+90;
           syncHits();
         }
-        if (!game.finishing && !game.spin && !game.flights.length && now >= game.nextAssist) {
+        if (!game.tutorial && !game.finishing && !game.spin && !game.flights.length && now >= game.nextAssist) {
           revealNeeded();
           game.nextAssist = now+420;
         }
-        if (before !== Math.ceil(game.seconds) && game.seconds < 10) synth("tick");
+        if (timed && before !== Math.ceil(game.seconds) && game.seconds < 10) synth("tick");
         const done = game.flights.filter(flight => now >= flight.start+flight.duration);
         game.flights = game.flights.filter(flight => !done.includes(flight));
         for (const flight of done) flight.done?.(now);
         if (game.spin && now >= game.spin.started+game.spin.duration) advance(now);
         if (game.finishAt && game.elapsed >= game.finishAt) win();
-        if (game.seconds <= 0 && !game.finishing) lose("Hết giờ","Đơn bánh chưa hoàn tất. Hãy thử lại màn này.");
+        if (timed && game.seconds <= 0 && !game.finishing) lose("Time’s Up","The order is unfinished. Try this level again.");
         if (!game.finishing && !game.spin && !game.flights.length && game.waiting.every(Boolean) &&
             !game.ended && !canJoinWaitingHalf() && !game.mechanicFX.some(effect => effect.kind !== "syrup" && !effect.fired)) {
-          lose("Đầy ô chờ","Cả 5 ô chờ đã đầy.");
+          lose("Slots Full","All 5 waiting slots are full.");
         }
         showTime();
       }
       art.drawPlay(game,game.pausedAt ?? now);
+      const target = game.tutorial?.target;
+      game.tutorial?.draw(now,modal.open);
+      if (game.tutorial?.target !== target) syncTutorialHits();
     } else if (homeDirty) {
       art.drawHome();
       homeDirty = false;
@@ -914,19 +967,25 @@
     if (!game || modal.open || !e.isPrimary || e.button !== 0) return;
     const {x,y} = position(e);
     pressed = pickAt(x,y);
-    if (pressed) $("world").setPointerCapture(e.pointerId);
+    if (game.tutorial && !game.tutorial.allows(pressed)) pressed = null;
+    if (pressed) {
+      if (game.tutorial) tutorial.pressed(true);
+      $("world").setPointerCapture(e.pointerId);
+    }
   });
   $("world").addEventListener("pointermove",e => {
     if (!game || modal.open || e.pointerType !== "mouse") return;
     const {x,y} = position(e);
     const current = pickAt(x,y);
-    e.currentTarget.style.cursor = current?.coatedUntil ? "not-allowed" : current ? "pointer" : "";
+    const allowed = !game.tutorial || game.tutorial.allows(current);
+    e.currentTarget.style.cursor = !allowed ? "" : current?.coatedUntil ? "not-allowed" : current ? "pointer" : "";
   });
   $("world").addEventListener("pointerup",() => {
+    tutorial.pressed(false);
     if (pressed) choose(pressed);
     pressed = null;
   });
-  $("world").addEventListener("pointercancel",() => { pressed = null; });
+  $("world").addEventListener("pointercancel",() => { pressed = null; tutorial.pressed(false); });
   $("close-modal").addEventListener("click",() => closeModal());
   $("play").addEventListener("click",() => startGame(save.level));
   $("game-settings").addEventListener("click",settings);
@@ -937,11 +996,11 @@
   $("life-shop").addEventListener("click",() => showShop(true));
   $("home-tab").addEventListener("click",() => synth("click"));
   $("profile").addEventListener("click",progress);
-  $("guide").setAttribute("aria-label","Cách chơi");
+  $("guide").setAttribute("aria-label","How to Play");
   $("guide").addEventListener("click",() => {
     const config = levels[game.number];
     const active = ["foil","syrup","box","halves","oven"].flatMap((key,i) => config[key] ? [chapters[i+1]] : []);
-    info("Cách chơi",(active.length ? active : [chapters[0]]).map(([title,hint]) =>
+    info("How to Play",(active.length ? active : [chapters[0]]).map(([title,hint]) =>
       `<p><strong>${title}</strong><br>${hint}</p>`).join(""));
   });
   document.addEventListener("keydown",e => {
@@ -969,7 +1028,7 @@
     homeDirty = true;
     if (game) game.trayDirty = true;
   }).catch(() => {
-    speak("Không tải được một số hình ảnh.");
+    speak("Some images could not load.");
   });
   animation = requestAnimationFrame(frame);
   addEventListener("pagehide",() => cancelAnimationFrame(animation));
@@ -979,6 +1038,6 @@
       animation = requestAnimationFrame(frame);
     }
   });
-  const direct = Number(new URLSearchParams(location.search).get("level"));
-  if (levels[direct]) startGame(direct);
+  const direct = Number(params.get("level"));
+  if (levels[direct]) startGame(direct,params.get("tutorial") === "1");
 })();

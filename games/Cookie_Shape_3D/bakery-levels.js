@@ -9,33 +9,33 @@
     p: "cookieBiscuit"
   };
   const names = {
-    cookieHeart: "Bánh tim",
-    cookieStar: "Bánh sao",
-    cookieBear: "Bánh gấu",
-    cookieJam: "Bánh hoa mứt",
-    cookieBiscuit: "Bánh quy viền",
-    cookieHeartLeft: "Nửa bánh tim",
-    cookieHeartRight: "Nửa bánh tim",
-    cookieStarLeft: "Nửa bánh sao",
-    cookieStarRight: "Nửa bánh sao",
-    syrupCandy: "Kẹo siro đường",
-    pastryBox: "Hộp bánh đập",
-    hammer: "Búa đập hộp",
-    oven: "Lò mini",
-    ovenOpen: "Lò đang mở"
+    cookieHeart: "Heart cookie",
+    cookieStar: "Star cookie",
+    cookieBear: "Bear cookie",
+    cookieJam: "Jam flower cookie",
+    cookieBiscuit: "Scalloped biscuit",
+    cookieHeartLeft: "Heart cookie half",
+    cookieHeartRight: "Heart cookie half",
+    cookieStarLeft: "Star cookie half",
+    cookieStarRight: "Star cookie half",
+    syrupCandy: "Syrup candy",
+    pastryBox: "Cookie box",
+    hammer: "Hammer",
+    oven: "Mini oven",
+    ovenOpen: "Open oven"
   };
   const chapters = [
-    ["Mẻ bánh đầu tiên", "Chọn bánh khớp hình ở hàng viền vàng. Bánh dành cho hàng sau sẽ nằm ở một trong 5 ô chờ. Lấp đủ hàng để xoay trụ.", "Ghép đúng hình ở hàng viền vàng."],
-    ["Ô bọc giấy bạc", "Ghép một chiếc bánh vào ô ngay bên trái hoặc bên phải lớp giấy bạc để lộ hình cần ghép bên dưới.", "Ghép ô kế bên để bóc giấy bạc."],
-    ["Kẹo siro đường", "Chạm viên kẹo nâu để kẹo tan ra và bám vào những chiếc bánh lộ ra gần nhất. Bánh dính siro không thể chọn trong 10 giây.", "Bánh dính siro không thể chọn trong 10 giây."],
-    ["Hộp bánh đập", "Nhặt búa trong khay. Búa sẽ đập vỡ hộp bánh có biểu tượng búa và làm rơi bánh bên trong ra khay.", "Nhặt búa để đập hộp bánh."],
-    ["Bánh hai nửa", "Nhặt hai nửa trái và phải của cùng một hình theo bất kỳ thứ tự nào. Nửa đầu nằm ở ô chờ. Khi nhặt nửa còn lại, cả hai bay vào giữa để ráp lại. Bánh ráp xong sẽ bay vào khuôn nếu hàng hiện tại cần nó.", "Nhặt hai nửa cùng hình để ráp bánh."],
-    ["Lò mini", "Lò bắt đầu ở số 3. Mỗi chiếc bánh ghép đúng làm lò giảm 1. Khi về 0, cửa mở và bánh trong lò rơi xuống khay.", "Ghép đúng 3 chiếc bánh để mở lò."]
+    ["First Batch", "Pick cookies that match the shapes in the gold row. Cookies for later rows go into one of five waiting slots. Fill the row to rotate the drum.", "Match the shapes in the gold row."],
+    ["Foil-Wrapped Slots", "Match a cookie in the slot directly to the left or right of the foil to reveal the shape underneath.", "Match an adjacent slot to peel off the foil."],
+    ["Syrup Candy", "Avoid tapping the brown candy. It coats the nearest exposed cookies and locks them for 10 seconds.", "Avoid the syrup candy. It locks cookies for 10 seconds."],
+    ["Cookie Boxes", "Pick up the hammer in the tray to break open the box marked with a hammer and release the cookie inside.", "Pick up the hammer to break open the box."],
+    ["Cookie Halves", "Pick the left and right halves of the same shape in either order. The first half goes into a waiting slot. When you pick the other half, they fly together. The whole cookie fits into the mold if the current row needs it.", "Pick two matching halves to make a whole cookie."],
+    ["Mini Oven", "The oven starts at 3 and counts down each time you match a cookie. At 0, the door opens and drops the cookie into the tray.", "Match 3 cookies to open the oven."]
   ];
 
   // Cell references use two digits: one-based row, then one-based column.
   const layouts = [
-    { rows: "hsbh sbhs bhsh hbsb", time: 125 },
+    { rows: "hsbh sbhs bhsh hbsb", time: null },
     { rows: "hjsh shbj bjhs jshb hbjs", time: 125 },
     { rows: "sjbh bhjs jhsb hhjb sbbj", time: 115 },
     { rows: "hsbjp pshjb bphsj shjpb jhbps", time: 120 },

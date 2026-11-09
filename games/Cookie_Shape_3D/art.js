@@ -424,6 +424,7 @@
     };
   }
 
+  const trayFrame = {x:42,y:694,w:452,h:354,radius:34};
   const trayLayerY = 610;
   const trayLayer = document.createElement("canvas");
   trayLayer.width = W;
@@ -459,6 +460,21 @@
     return trayMeshes.exposed(item);
   }
 
+  function pieceFocus(level,piece) {
+    prepareTray(level);
+    return trayMeshes.focus(piece);
+  }
+
+  function rowFocus(level,col) {
+    const d = dimensions(level);
+    const [x,y,w,h] = d.band;
+    if (col == null) return {x,y,w,h};
+    const {top,bottom,corners} = cell(d,0,level.columns,col);
+    const left = Math.min(corners[0][0],corners[3][0]);
+    const right = Math.max(corners[1][0],corners[2][0]);
+    return {x:left,y:top,w:right-left,h:bottom-top};
+  }
+
   function faceImage(kind) {
     if (!faceArtwork.has(kind)) {
       const sprite = window.ShapeMeshes.create({width:faceSize,height:faceSize});
@@ -483,7 +499,8 @@
       }
     }
     box(ctx,41,697,454,353,33,"#361a1c");
-    box(ctx,42,694,452,354,34,
+    const {x,y,w,h,radius} = trayFrame;
+    box(ctx,x,y,w,h,radius,
       gradient(ctx,52,695,465,1046,[[0,"#fff16a"],[.13,"#ffcd12"],[.53,"#ffb90b"],[.89,"#ffda1b"],[1,"#fff171"]]),"#f7cc23",1.5);
     const felt = ctx.createRadialGradient(256,836,25,260,875,255);
     felt.addColorStop(0,"#35434c");
@@ -813,5 +830,5 @@
     }<ellipse cx="37" cy="112" rx="18" ry="23" transform="rotate(29 37 112)" fill="#ffb515" stroke="#d77407" stroke-width="3"/><ellipse cx="37" cy="112" rx="13" ry="17" transform="rotate(29 37 112)" fill="#ffc522" stroke="#ffdc3d" stroke-width="2"/></svg>`;
   }
 
-  window.ShapeArt = { ready, W, H, drawHome, drawPlay, flightPose, pieceAt, exposed, slotCenter, target, drumCount, icons, rewardCoins };
+  window.ShapeArt = { ready, W, H, drawHome, drawPlay, flightPose, pieceAt, exposed, pieceFocus, rowFocus, trayFrame, slotCenter, target, drumCount, icons, rewardCoins };
 })();
