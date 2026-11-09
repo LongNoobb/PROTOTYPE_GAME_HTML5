@@ -13,7 +13,7 @@ const games = readdirSync(gamesPath, { withFileTypes: true })
   .sort((a, b) => a.name.localeCompare(b.name, 'en'));
 for (const game of games) {
   const { name } = game;
-  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(name) || !game.isDirectory()
+  if (!/^[A-Za-z0-9]+(?:[-_][A-Za-z0-9]+)*$/.test(name) || !game.isDirectory()
       || !lstatSync(join(gamesPath, name, 'index.html'), { throwIfNoEntry: false })?.isFile()) {
     throw new Error(`Expected games/<slug>/index.html, found games/${name}`);
   }
@@ -31,7 +31,7 @@ for (const { name } of games) {
       return !/(?:^|[\\/])(?:\.git|\.DS_Store|Thumbs\.db)$/.test(source);
     },
   });
-  const title = name.split('-').map(word => word[0].toUpperCase() + word.slice(1)).join(' ');
+  const title = name.split(/[-_]/).map(word => word[0].toUpperCase() + word.slice(1)).join(' ');
   links.push(`<li><a class="game" href="./${name}"><span>${title}</span><span>Play <span aria-hidden="true">↗</span></span></a></li>`);
 }
 
