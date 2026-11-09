@@ -1,0 +1,80 @@
+:root {
+  color-scheme: dark;
+  font-family: system-ui, sans-serif;
+  color: #f5f6f8;
+  background: #10131a;
+  --muted: #aeb7c8;
+  --accent: #a9ef92;
+  --line: #343c4c;
+}
+
+* { box-sizing: border-box; }
+
+body { margin: 0; }
+
+.catalog {
+  width: min(100% - 2.5rem, 52rem);
+  margin: 0 auto;
+  padding: 2.5rem 0 5rem;
+}
+
+.home {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.home:hover { color: var(--accent); }
+
+.intro { margin: clamp(3rem, 10vw, 6rem) 0 2.5rem; }
+
+.label {
+  margin: 0 0 .75rem;
+  color: var(--accent);
+  font: 600 .8rem ui-monospace, monospace;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(2.25rem, 7.5vw, 4.5rem);
+  letter-spacing: -.055em;
+  line-height: 1.05;
+}
+
+.description {
+  margin: 1rem 0 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.library { border-top: 1px solid var(--line); }
+
+.empty {
+  margin: 0;
+  padding: 1.25rem 0;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line);
+}
+
+.games { margin: 0; padding: 0; list-style: none; }
+
+.game {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  min-height: 3.75rem;
+  padding: .75rem 0;
+  color: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 1px solid var(--line);
+}
+
+.game > span:last-child { color: var(--accent); white-space: nowrap; }
+.game:hover { color: var(--accent); }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
