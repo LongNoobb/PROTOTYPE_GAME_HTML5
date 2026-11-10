@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#164e50">
+  <title>Letter Press · Perfect Shape 3D</title>
+  <link rel="stylesheet" href="game.css">
+  <script defer src="assets/models.js"></script>
+  <script defer src="letter-colors.js"></script>
+  <script defer src="assets/cannon-es.min.js"></script>
+  <script defer src="tray-physics.js"></script>
+  <script defer src="mesh-renderer.js"></script>
+  <script defer src="word-levels.js"></script>
+  <script defer src="art.js"></script>
+  <script defer src="word-tutorial.js"></script>
+  <script defer src="assets/sfx-bank.js"></script>
+  <script defer src="sfx.js"></script>
+  <script defer src="game.js"></script>
+</head>
+<body>
+  <main id="viewport" aria-label="Letter Press">
+    <div id="stage">
+      <canvas id="world" width="540" height="1172" aria-label="Puzzle drum and letter tray"></canvas>
+      <section id="home" aria-label="Home">
+        <div class="home-hud">
+          <button class="profile glossy" id="profile" aria-label="Select Level"></button>
+          <div class="hud-pill"><span class="heart-token" id="heart-token"></span><span class="lives-number" id="lives">5</span><span id="life-clock">Full</span><button class="plus glossy" id="life-shop" aria-label="Lives">+</button></div>
+          <div class="hud-pill"><span class="coin"></span><span id="coins">100</span><button class="plus glossy" id="coin-shop" aria-label="Coins">+</button></div>
+          <button class="gear glossy" id="home-settings" aria-label="Settings"></button>
+        </div>
+        <div class="press-title"><p>PERFECT SHAPE 3D</p><h1>Letter Press</h1></div>
+        <button class="play glossy" id="play">Level 1</button>
+        <p id="home-progress">0 / 30 levels</p>
+        <nav class="tabs" aria-label="Navigation">
+          <button id="shop-tab" aria-label="Shop"></button>
+          <button class="selected" id="home-tab" aria-current="page">Letter Press</button>
+          <button id="trophy-tab" aria-label="Select Level"></button>
+        </nav>
+      </section>
+      <section id="hud" aria-label="Game controls" hidden>
+        <div class="level-chip" id="level-label">Level 1</div>
+        <div class="timer" id="timer" role="timer" aria-label="Time remaining">
+          <div class="timer-fill" id="timer-fill"></div>
+          <span class="timer-clock" aria-hidden="true"></span>
+          <span class="timer-text" id="time">02:05</span>
+        </div>
+        <button class="gear glossy" id="game-settings" aria-label="Pause and open settings"></button>
+        <div class="clue-plate"><span>CLUE</span><strong id="word-clue"></strong></div>
+        <div class="order-rail">
+          <div class="order-copy">
+            <div class="order-heading"><strong id="chapter-label"></strong><span id="row-count"></span></div>
+            <p id="chapter-tip">Tap letters to solve the clue. Skip × cells.</p>
+          </div>
+          <button class="glossy" id="guide" type="button">?</button>
+        </div>
+      </section>
+      <section id="tutorial" aria-label="Interactive tutorial" hidden>
+        <canvas id="tutorial-shade" width="540" height="1172" aria-hidden="true"></canvas>
+        <div id="tutorial-card">
+          <div class="tutorial-heading">
+            <span id="tutorial-progress"></span>
+            <button id="tutorial-skip" type="button" aria-label="Skip tutorial">Skip</button>
+          </div>
+          <h2 id="tutorial-title"></h2>
+          <p id="tutorial-copy"></p>
+          <button id="tutorial-next" type="button" hidden></button>
+        </div>
+        <div id="tutorial-hand" aria-hidden="true" hidden>
+          <img class="hand-idle" src="assets/hand_idle.png" alt="" draggable="false">
+          <img class="hand-click" src="assets/hand_click.png" alt="" draggable="false">
+        </div>
+      </section>
+      <div id="pieces" aria-label="Letters in the tray"></div>
+      <p id="status" class="sr-only" role="status"></p>
+      <dialog id="modal" aria-labelledby="modal-title">
+        <article class="panel">
+          <header class="panel-heading">
+            <h1 id="modal-title"></h1>
+            <p id="modal-subtitle"></p>
+          </header>
+          <button class="close glossy" id="close-modal" aria-label="Close">×</button>
+          <div class="panel-body" id="modal-body"></div>
+        </article>
+      </dialog>
+      <canvas id="effects" width="540" height="1172" aria-hidden="true"></canvas>
+    </div>
+  </main>
+</body>
+</html>
