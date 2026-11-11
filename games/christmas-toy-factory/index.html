@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#164e50">
+  <title>Christmas Toy Factory · Prototype</title>
+  <link rel="stylesheet" href="letter-press-ui.css">
+  <link rel="stylesheet" href="game.css">
+  <script defer src="letter-press-ui.js"></script>
+  <script defer src="assets/toy-meshes.js"></script>
+  <script defer src="toy-models.js"></script>
+  <script defer src="assets/gift-models.js"></script>
+  <script defer src="missions.js"></script>
+  <script defer src="assets/cannon-es.min.js"></script>
+  <script defer src="tray-physics.js"></script>
+  <script defer src="mesh-renderer.js"></script>
+  <script defer src="assets/sfx-bank.js"></script>
+  <script defer src="sfx.js"></script>
+  <script defer src="factory-art.js"></script>
+  <script defer src="game.js"></script>
+</head>
+<body>
+  <main id="viewport" aria-label="Xưởng đồ chơi Giáng sinh">
+    <div id="stage">
+      <canvas id="world" width="540" height="1172" aria-label="Đồ chơi trên băng chuyền và hộp linh kiện"></canvas>
+      <header class="hud"><div class="brand press-title"><small>PERFECT SHAPE 3D</small><strong>Toy Factory</strong></div><div class="gift-counter hud-pill"><span class="reward-token" id="gift-icon" aria-hidden="true"></span><b id="total-gifts">0</b><small>QUÀ</small></div><button id="sound" class="gear glossy" aria-label="Tắt âm thanh">♫</button><button id="settings" class="gear glossy" aria-label="Cài đặt"></button></header>
+      <section id="machine" aria-label="Máy quay đồ chơi">
+        <svg class="slot-cabinet" viewBox="0 0 454 238" preserveAspectRatio="none" aria-hidden="true">
+          <defs>
+            <linearGradient id="slot-shell" x2=".8" y2="1"><stop stop-color="#78d2bb"/><stop offset=".48" stop-color="#359f91"/><stop offset="1" stop-color="#14635e"/></linearGradient>
+            <linearGradient id="slot-gold" x2="0" y2="1"><stop stop-color="#fff86d"/><stop offset=".45" stop-color="#ffd329"/><stop offset="1" stop-color="#efad13"/></linearGradient>
+            <linearGradient id="slot-crown" x2="0" y2="1"><stop stop-color="#ffe4a0"/><stop offset="1" stop-color="#d89951"/></linearGradient>
+            <path id="slot-star" d="m0-9 2.8 5.7 6.3.9-4.6 4.5 1.1 6.3L0 5.4-5.6 8.4l1.1-6.3-4.6-4.5 6.3-.9Z"/>
+          </defs>
+          <path d="M43 30H117C153 30 167 2 227 2s74 28 110 28h74q27 0 27 27v143q0 34-34 34H50q-34 0-34-34V57q0-27 27-27Z" fill="#235e55"/>
+          <path d="M43 25H117C153 25 167 0 227 0s74 25 110 25h74q27 0 27 27v143q0 34-34 34H50q-34 0-34-34V52q0-27 27-27Z" fill="url(#slot-shell)" stroke="#438d7d" stroke-width="3"/>
+          <path d="M125 43Q171 12 227 12t102 31Z" fill="url(#slot-crown)" stroke="#c18c4b" stroke-width="1.5"/>
+          <g fill="#ffe94b"><use href="#slot-star" transform="translate(227 25) scale(1.1)"/><use href="#slot-star" transform="translate(195 28) scale(.75)"/><use href="#slot-star" transform="translate(259 28) scale(.75)"/></g>
+          <g fill="#b97932"><circle cx="175" cy="32" r="3.5"/><circle cx="279" cy="32" r="3.5"/></g><g fill="#ffecae"><circle cx="174" cy="31" r="1.6"/><circle cx="278" cy="31" r="1.6"/></g>
+          <rect x="38" y="42" width="378" height="162" rx="18" fill="#545662" stroke="#c58e17" stroke-width="8"/>
+          <rect x="38" y="42" width="378" height="162" rx="18" fill="none" stroke="url(#slot-gold)" stroke-width="5"/>
+          <path d="M54 215q7 7 14 0 7 7 14 0 7 7 14 0 7 7 14 0 7 7 14 0 7 7 14 0 7 7 14 0 7 7 14 0 7 7 14 0 7 7 14 0 7 7 14 0 7 7 14 0 7 7 14 0 7 7 14 0 7 7 14 0 7 7 14 0 7 7 14 0 7 7 14 0 7 7 14 0 7 7 14 0 7 7 14 0 7 7 14 0 7 7 14 0 7 7 14 0 7 7 14 0" fill="none" stroke="#ffeac4" stroke-width="2"/>
+        </svg>
+        <div class="machine-title"><b id="mission-title">MISSION · LEVEL 01</b></div>
+        <div class="reels" aria-label="Kết quả quay đồ chơi"></div>
+        <svg class="slot-payline" viewBox="0 0 454 238" preserveAspectRatio="none" aria-hidden="true">
+          <rect x="12" y="86" width="430" height="77" rx="10" fill="none" stroke="#a97519" stroke-width="11"/>
+          <rect x="12" y="86" width="430" height="77" rx="10" fill="none" stroke="url(#slot-gold)" stroke-width="7"/>
+          <path d="M19 89H435" stroke="#fff5a1" stroke-width="2"/>
+          <path d="M12 113Q7 110 7 117v17q0 7 6 4l15-9q5-4 0-7Z" fill="#81d2ba" stroke="#c58b1d" stroke-width="5" stroke-linejoin="round"/>
+          <path d="M12 113Q7 110 7 117v17q0 7 6 4l15-9q5-4 0-7Z" fill="none" stroke="#ffdc44" stroke-width="2"/>
+          <path d="M442 113q5-3 5 4v17q0 7-6 4l-15-9q-5-4 0-7Z" fill="#81d2ba" stroke="#c58b1d" stroke-width="5" stroke-linejoin="round"/>
+          <path d="M442 113q5-3 5 4v17q0 7-6 4l-15-9q-5-4 0-7Z" fill="none" stroke="#ffdc44" stroke-width="2"/>
+        </svg>
+        <div id="lever" aria-hidden="true"><div class="lever-mount"></div><div class="lever-arm"></div><div class="lever-base"></div><i class="lever-ball"></i></div>
+        <div class="machine-foot"><p id="machine-caption">Đang chuẩn bị quay đồ chơi…</p></div>
+        <button id="spin" class="play glossy" disabled>ĐANG QUAY ĐỒ CHƠI…</button>
+      </section>
+      <div class="conveyor-heading"><button id="batch-label" class="level-chip" aria-label="Chọn level">LEVEL 01</button><button id="boost" class="boost glossy" disabled aria-label="Giữ để tăng tốc băng chuyền"><span>»</span> GIỮ TĂNG TỐC</button><span id="batch-count">0 / 3 <i>QUÀ ĐÃ GÓI</i></span></div>
+      <div id="stations" aria-label="Các đồ chơi cần lắp"></div>
+      <div class="clue-plate instruction-plate"><span>LẮP RÁP</span><strong id="instruction" role="status">Khởi động băng chuyền để lắp đồ chơi!</strong></div>
+      <div class="tray-heading"><span>HỘP LINH KIỆN</span><span id="parts-count">TÌM MẢNH CÒN THIẾU</span></div>
+      <div id="piece-buttons" aria-label="Mảnh trong hộp"></div>
+      <footer class="tools order-rail"><button id="hint" class="glossy"><span>✧</span> Gợi ý</button><button id="shuffle" class="glossy"><span>⤨</span> Xóc hộp</button><button id="restart" class="glossy" aria-label="Chơi lại chuyến quà"><span>↻</span></button><button id="help" class="glossy" aria-label="Hướng dẫn">?</button></footer>
+      <div id="toast" role="status" hidden></div>
+      <dialog id="modal" aria-labelledby="modal-title"><article class="panel"><header class="panel-heading"><h1 id="modal-title"></h1><p id="modal-subtitle"></p></header><button id="close" class="close glossy" aria-label="Đóng">×</button><div class="panel-body" id="modal-content"></div></article></dialog>
+    </div>
+  </main>
+</body>
+</html>
