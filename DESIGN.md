@@ -23,6 +23,14 @@ Theme values live in `site/catalog.css`:
 
 Use navy text on yellow/orange, cobalt text on paper/white, and white text on cobalt. Small secondary text uses `--muted`; orange is decorative, not a small text color on paper.
 
+## Dark mode
+
+The header's Dark mode toggle switches between light and dark. Without a saved choice, follow the system color scheme, including changes while the page is open. Save explicit choices in the homepage-specific `prototype-theme` localStorage key and synchronize them across tabs. If storage is blocked, keep the toggle working for the current page. Apply the choice in `site/theme.js` before loading CSS to avoid a light flash. Update the browser theme-color and the toggle's pressed state together.
+
+Dark colors override the same semantic tokens through `:root[data-theme="dark"]`: background `#111522`, surface `#1b2233`, text `#f1f2f8`, muted text `#b1b8c8`, text/focus accent `#9aafff`, outlines `#64728b`, and shadows `#080b13`. Separate `--button-bg`, `--screen-bg`, `--label-ink`, `--outline`, `--shadow`, and `--headline-mark` from text colors. Keep the blue arcade screen, cream controller, yellow labels, and orange sticker recognizable in both modes. Use navy text on colored labels in both modes.
+
+The theme toggle has a 44px target, an accessible Dark mode name, visible keyboard focus, and aria-pressed reflecting the active mode. On narrow screens, keep only its icon visible. Hide the control when JavaScript is unavailable. Game pages and their own themes are independent.
+
 ## Typography and layout
 
 Local font stacks: Segoe UI/system sans for body, Arial Black/Segoe UI for the hero, Cascadia Mono/Consolas for small labels. No remote font dependency. Keep fallbacks that support Vietnamese.
