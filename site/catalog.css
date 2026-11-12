@@ -57,7 +57,7 @@ a:focus-visible, button:focus-visible, .library:focus-visible { outline: 3px sol
 .navigation { display: flex; align-items: center; gap: 18px; font-size: 13px; font-weight: 650; }
 .navigation a { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; }
 .navigation .current { color: var(--accent); }
-.theme-toggle { display: inline-flex; justify-content: center; align-items: center; gap: 8px; min-width: 44px; min-height: 44px; padding: 0 12px; border: 1px solid var(--outline); border-radius: 6px; background: var(--surface); color: var(--ink); cursor: pointer; font-size: 12px; font-weight: 650; }
+.theme-toggle { display: inline-flex; justify-content: center; align-items: center; width: 44px; height: 44px; padding: 0; border: 1px solid var(--outline); border-radius: 6px; background: var(--surface); color: var(--ink); cursor: pointer; }
 .theme-toggle[hidden] { display: none; }
 .theme-toggle:hover { color: var(--accent); border-color: var(--accent); }
 .theme-toggle[aria-pressed="true"] { border-color: var(--accent); }
@@ -189,8 +189,6 @@ h2 { display: flex; align-items: center; gap: 12px; margin: 0; font-size: 29px; 
   .brand { font-size: 14px; gap: 9px; }
   .brand-mark { width: 30px; height: 30px; }
   .navigation { gap: 10px; font-size: 12px; }
-  .theme-toggle { padding: 0; }
-  .theme-toggle > span { display: none; }
   .nav-count { display: none; }
   .intro { gap: 35px; padding: 35px 0 39px; }
   .intro .eyebrow { gap: 10px; margin-bottom: 21px; font-size: 8px; letter-spacing: .8px; }

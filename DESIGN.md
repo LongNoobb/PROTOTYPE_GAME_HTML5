@@ -29,7 +29,7 @@ The header's Dark mode toggle switches between light and dark. Without a saved c
 
 Dark colors override the same semantic tokens through `:root[data-theme="dark"]`: background `#111522`, surface `#1b2233`, text `#f1f2f8`, muted text `#b1b8c8`, text/focus accent `#9aafff`, outlines `#64728b`, and shadows `#080b13`. Separate `--button-bg`, `--screen-bg`, `--label-ink`, `--outline`, `--shadow`, and `--headline-mark` from text colors. Keep the blue arcade screen, cream controller, yellow labels, and orange sticker recognizable in both modes. Use navy text on colored labels in both modes.
 
-The theme toggle has a 44px target, an accessible Dark mode name, visible keyboard focus, and aria-pressed reflecting the active mode. On narrow screens, keep only its icon visible. Hide the control when JavaScript is unavailable. Game pages and their own themes are independent.
+The theme toggle shows only its sun/moon icon at every screen size. Keep a 44px target, an accessible Dark mode name, visible keyboard focus, and aria-pressed reflecting the active mode. Hide the control when JavaScript is unavailable. Game pages and their own themes are independent.
 
 ## Typography and layout
 
