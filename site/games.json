@@ -3,18 +3,21 @@
     "title": "Christmas Toy Factory",
     "category": "Sorting · Assembly",
     "description": "A workshop full of tiny toys. Sort the parts, build a little joy, and wrap it up.",
-    "art": "toy-factory.svg"
+    "art": "toy-factory.svg",
+    "demo": "toy-factory.webm"
   },
   "Cookie_Shape_3D": {
     "title": "Cookie Shape 3D",
     "category": "Shape · Puzzle",
     "description": "Freshly baked brain teasers. Match the cookie pieces and find that perfect fit.",
-    "art": "cookie-shape.svg"
+    "art": "cookie-shape.svg",
+    "demo": "cookie-shape.webm"
   },
   "Letter_Press": {
     "title": "Letter Press",
     "category": "Word · Puzzle",
     "description": "A playful twist on word puzzles. Pick your letters and press them into place.",
-    "art": "letter-press.svg"
+    "art": "letter-press.svg",
+    "demo": "letter-press.webm"
   }
 }

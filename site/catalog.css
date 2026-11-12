@@ -77,8 +77,18 @@ h2 { display: flex; align-items: center; gap: 12px; margin: 0; font-size: 29px; 
 .game:active { transform: translateY(-1px); }
 .game:focus-visible { outline-offset: 5px; border-radius: var(--radius); }
 .game-art { position: relative; overflow: hidden; aspect-ratio: 1.6; background: #25382e; }
-.game-art img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform .3s; }
+.game-art img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform .3s, filter .2s, opacity .2s; }
 .game:hover .game-art img { transform: scale(1.035); }
+.game-demo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; opacity: 0; pointer-events: none; transition: opacity .2s; }
+.game.is-previewing .game-demo { opacity: 1; }
+.game.is-previewing .game-art img { filter: blur(7px); opacity: .28; transform: scale(1.08); }
+.preview-hint { position: absolute; bottom: 12px; left: 12px; display: none; align-items: center; gap: 5px; padding: 7px 9px; border: 1px solid #ffffff29; border-radius: 6px; background: #102319e6; color: #f5f7ef; font-size: 10px; pointer-events: none; }
+.preview-hint svg { width: 12px; height: 12px; }
+.preview-label-playing { display: none; }
+.is-previewing .preview-label-idle { display: none; }
+.is-previewing .preview-label-playing { display: inline; }
+.preview-enabled:focus-visible .preview-hint { display: inline-flex; }
+@media (hover: hover) and (pointer: fine) { .preview-enabled .preview-hint { display: inline-flex; } }
 .game-number { position: absolute; top: 15px; left: 16px; color: #ffffffae; font: 10px ui-monospace, monospace; letter-spacing: 1px; }
 .build-badge { position: absolute; top: 14px; right: 14px; display: flex; align-items: center; gap: 6px; padding: 6px 8px; color: #f5f7ef; background: #102319c9; border: 1px solid #ffffff29; border-radius: 5px; font: 9px ui-monospace, monospace; letter-spacing: .3px; }
 .build-badge .status-dot { width: 4px; height: 4px; flex-basis: 4px; }
@@ -166,4 +176,5 @@ h2 { display: flex; align-items: center; gap: 12px; margin: 0; font-size: 29px; 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after { transition: none !important; }
+  .preview-hint { display: none !important; }
 }

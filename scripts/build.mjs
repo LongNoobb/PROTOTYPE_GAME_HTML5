@@ -44,8 +44,14 @@ for (const { name } of games) {
       || !lstatSync(join(root, 'site', 'assets', art), { throwIfNoEntry: false })?.isFile()) {
     throw new Error(`Missing or invalid catalog artwork for ${name}: ${art}`);
   }
+  const demo = details.demo;
+  if (demo !== undefined && (typeof demo !== 'string' || !/^[a-z0-9-]+\.(?:mp4|webm)$/.test(demo)
+      || !lstatSync(join(root, 'site', 'assets', 'demos', demo), { throwIfNoEntry: false })?.isFile())) {
+    throw new Error(`Missing or invalid demo video for ${name}: ${demo}`);
+  }
+  const preview = demo ? `<video class="game-demo" data-src="./assets/demos/${demo}" muted loop playsinline preload="none" disablepictureinpicture tabindex="-1" aria-hidden="true"></video><span class="preview-hint" aria-hidden="true"><svg viewBox="0 0 16 16" fill="currentColor"><path d="m5 3 8 5-8 5V3Z"/></svg><span class="preview-label-idle">Hover to preview</span><span class="preview-label-playing">Gameplay · muted</span></span>` : '';
   links.push(`<li><a class="game" href="./${name}/" aria-labelledby="game-${name}">
-          <div class="game-art"><img src="./assets/${art}" alt="" width="800" height="500" decoding="async"><span class="game-number" aria-hidden="true">EXP. ${String(links.length + 1).padStart(2, '0')}</span><span class="build-badge"><span class="status-dot" aria-hidden="true"></span>Prototype</span></div>
+          <div class="game-art"><img src="./assets/${art}" alt="" width="800" height="500" decoding="async">${preview}<span class="game-number" aria-hidden="true">EXP. ${String(links.length + 1).padStart(2, '0')}</span><span class="build-badge"><span class="status-dot" aria-hidden="true"></span>Prototype</span></div>
           <div class="game-body"><p class="game-category">${category}</p><h3 id="game-${name}">${title}</h3><p class="game-description">${description}</p>
             <div class="game-footer"><span class="platform"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M3 9h18M7 6.5h.01m3 0h.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Browser game</span><span class="play-link">Play prototype <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div>
           </div></a></li>`);
