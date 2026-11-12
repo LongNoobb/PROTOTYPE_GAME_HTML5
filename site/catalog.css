@@ -27,7 +27,7 @@ a:focus-visible, .library:focus-visible { outline: 3px solid var(--accent); outl
 .navigation a { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; }
 .navigation .current { color: var(--accent); }
 .nav-count { display: grid; place-items: center; min-width: 23px; min-height: 22px; padding: 0 5px; background: #293626; border-radius: 5px; font: 11px ui-monospace, monospace; }
-.brand:hover, .site-footer a:hover { color: var(--accent); }
+.site-footer a:hover { color: var(--accent); }
 .intro { display: grid; grid-template-columns: 1.25fr 1fr; align-items: center; gap: 40px; padding: 82px 0 86px; }
 .eyebrow { display: flex; align-items: center; gap: 9px; margin: 0 0 23px; color: var(--muted); font: 11px/1.5 ui-monospace, "Cascadia Mono", monospace; letter-spacing: 1.8px; text-transform: uppercase; }
 .status-dot { display: inline-block; width: 6px; height: 6px; flex: 0 0 6px; border-radius: 50%; background: var(--accent); }
