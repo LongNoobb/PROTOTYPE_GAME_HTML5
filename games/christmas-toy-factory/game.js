@@ -20,8 +20,7 @@
   $('settings').innerHTML=ui.icons.gear;
   $('gift-icon').innerHTML=ui.icons.trophy;
   $('home-settings').innerHTML=ui.icons.gear;
-  $('home-gift-icon').innerHTML=ui.icons.trophy;
-  $('home-profile').innerHTML=ui.icons.profile;
+  $('home-profile').innerHTML='<svg viewBox="0 0 72 72" fill="none" aria-hidden="true"><path d="M8 71v-7c0-13 12-21 28-21s28 8 28 21v7" fill="#cd6e7b" stroke="#773e4b" stroke-width="2.5"/><path d="m26 47 10 8 10-8 2 24H24Z" fill="#fff0d6"/><rect x="29" y="39" width="14" height="15" rx="6" fill="#e5ac7f"/><ellipse cx="15" cy="31" rx="5" ry="7" fill="#f5c89b" stroke="#86503d" stroke-width="2"/><ellipse cx="57" cy="31" rx="5" ry="7" fill="#f5c89b" stroke="#86503d" stroke-width="2"/><rect x="17" y="10" width="38" height="39" rx="18" fill="#ffdbab" stroke="#86503d" stroke-width="2.5"/><path d="M17 27V21C17 8 26 3 38 4c12 1 18 9 17 23l-9-10c-8 7-18 8-29 10Z" fill="#704b36" stroke="#593d31" stroke-width="2.5" stroke-linejoin="round"/><path d="M17 17C16 6 27 1 39 3c10 1 16 6 17 16-11-4-27-4-39-2Z" fill="#408576" stroke="#255c50" stroke-width="2.5"/><path d="M14 18c14-4 30-4 44 1" stroke="#a3d7b9" stroke-width="5" stroke-linecap="round"/><path d="M28 31v3m16-3v3" stroke="#624734" stroke-width="3" stroke-linecap="round"/><path d="M31 40q5 4 10 0" stroke="#a35c4e" stroke-width="2.5" stroke-linecap="round"/><ellipse cx="24" cy="38" rx="4" ry="2" fill="#efac92"/><ellipse cx="48" cy="38" rx="4" ry="2" fill="#efac92"/><circle cx="36" cy="63" r="2" fill="#dba94f"/></svg>';
   $('home-collection').innerHTML=ui.icons.shop;
   $('home-tab').innerHTML=ui.icons.home+'Toy Factory';
   $('home-levels').innerHTML=ui.icons.trophy;
@@ -48,7 +47,7 @@
     return stock.map((kind,i)=>{const [x,y]=positions[i%18];return {id:++id,kind,x:x+rand(-17,17),y:y+rand(-22,22),size:rand(163,187),angle:rand(-2.5,2.5),pose:i%5===0?1:0,tier:Math.floor(i/18)};});
   }
   function status(message){$('instruction').textContent=message;}
-  function toast(message){$('toast').textContent=message;$('toast').hidden=false;toastUntil=state.clock+2.2;}
+  function toast(message,seconds=2.2){$('toast').textContent=message;$('toast').hidden=false;toastUntil=state.clock+seconds;}
   function sound(kind){sfx.play(kind);}
   function setSound(){sfx.setEnabled(state.sound);}
   function setMusic(){
@@ -68,15 +67,16 @@
     $('batch-label').setAttribute('aria-label','Chọn level · Level '+state.batch+' / '+missions.length+' · '+unpacked+' quà chưa gói');$('batch-count').textContent=unpacked;$('total-gifts').textContent=state.total;
     $('total-gifts').style.fontSize=String(state.total).length>5?Math.max(14,Math.floor(140/String(state.total).length))+'px':'';
     const remaining=state.orders.reduce((a,o)=>a+o.missing.length-o.filled.length-o.reserved.length,0);$('parts-count').textContent=state.phase==='playing'?`CÒN ${remaining} MẢNH CẦN TÌM`:'SẴN SÀNG LẮP RÁP';
-    $('hint').disabled=$('shuffle').disabled=state.phase!=='playing';
+    $('hint').disabled=$('shuffle').disabled=state.phase!=='playing'||!!state.tutorial.kind;
     moveStations();
   }
   function moveStations(){for(const b of $('stations').children){const o=state.orders[+b.dataset.index];b.hidden=!o.active||o.shipped||o.x<-60||o.x>600;b.style.left=(o.x-78)+'px';b.classList.toggle('urgent',o.packageAt===null&&o.x>425);b.querySelector('.deadline').textContent=o.packageAt===null?Math.max(0,Math.ceil((EXIT-o.x)/state.beltSpeed))+'s':'';b.disabled=paused||!canAssemble(o);}}
   function canAssemble(o){return !!o&&state.phase==='playing'&&o.active&&!o.shipped&&o.x>=25&&o.x<=565&&o.packageAt===null;}
   function selectStation(i){const o=state.orders[i];if(paused||!canAssemble(o))return;state.selected=state.selected===i?null:i;status('Cần tìm: '+o.missing.filter(k=>!o.filled.includes(k)).map(k=>partName(k).toLowerCase()).join(' + '));sound('click');updateStations();}
   function reset({autostart=true}={}){
-    state.phase='ready';state.clock=0;state.mission=missions[state.batch-1];state.orders=[];state.flights=[];state.queue=Array(art.QUEUE_SLOTS).fill(null);state.particles=[];cancelDrag();state.selected=null;state.highlight=null;state.beltDistance=0;state.cruiseSpeed=26+Math.min(12,(state.batch-1)*.65);state.beltSpeed=state.cruiseSpeed;state.shippingBoost=false;setBoost(false);state.stats={fits:0,wrong:0,hints:0,shuffles:0};toastUntil=0;hitAt=0;
-    state.pour=null;state.spinStart=0;state.reelsStopped=0;setLever(0);$('machine').classList.remove('spinning');$('machine').style.setProperty('--wobble',0);
+    state.tutorial={pending:state.batch<=2,kind:null,piece:null};$('tutorial').hidden=true;
+    state.phase='ready';state.clock=0;state.mission=missions[state.batch-1];state.orders=[];state.flights=[];state.queue=Array(art.QUEUE_SLOTS).fill(null);state.particles=[];cancelDrag();state.selected=null;state.highlight=null;state.beltDistance=0;state.cruiseSpeed=state.mission.speed||26+Math.min(12,(state.batch-1)*.65);state.beltSpeed=state.cruiseSpeed;state.shippingBoost=false;setBoost(false);state.stats={fits:0,wrong:0,hints:0,shuffles:0};toastUntil=0;hitAt=0;
+    state.pour=null;state.spinStart=0;state.reelsStopped=0;setLever(0);$('machine').classList.remove('spinning');
     $('stations').replaceChildren();$('piece-buttons').replaceChildren();$('toast').hidden=true;$('spin').disabled=false;$('spin').textContent='QUAY ĐỒ CHƠI';
     art.preload(state.mission.types);$('mission-title').textContent=state.mission.title;$('machine-caption').textContent='Cần ghép '+state.mission.toyCount+' đồ chơi trước khi ra hết chuyền';
     clearTray();reels(state.mission.types);
@@ -84,12 +84,8 @@
   }
   function updateHome(){
     const mission=missions[state.batch-1],resuming=['spinning','pouring','playing'].includes(state.phase);
-    $('home-total').textContent=state.total;
-    $('home-level').textContent=state.batch;
-    $('home-level-picker').setAttribute('aria-label','Chọn level · Level '+state.batch+' / '+missions.length);
     $('home-play').textContent=resuming?'Tiếp tục':'Level '+state.batch;
     $('home-play').setAttribute('aria-label',(resuming?'Tiếp tục':'Chơi')+' level '+state.batch+': '+mission.title);
-    $('home-progress').textContent='Level '+state.batch+' / '+missions.length;
   }
   function showGame(){
     screen='game';$('home').hidden=true;$('home').inert=true;$('game-screen').hidden=false;$('game-screen').inert=false;
@@ -123,15 +119,13 @@
       if(settled)stopped++;
     });
     if(stopped>state.reelsStopped){sound('click');state.reelsStopped=stopped;}
-    // Arrows rock side to side until every reel has stopped.
-    $('machine').style.setProperty('--wobble',stopped<state.mission.types.length?Math.sin(elapsed*Math.PI*2*3.2).toFixed(3):0);
     if(elapsed>=.25+1.05+(state.mission.types.length-1)*.22+.45)startPour();
   }
   function startPour(){
     state.phase='pouring';state.orders=missionOrders();
     const parts=prepareParts();
     state.pour={start:state.clock,duration:reduce.matches?.08:2.15,reduced:reduce.matches,parts:parts.map((piece,i)=>({piece,at:reduce.matches?0:.3+i/Math.max(1,parts.length-1)*.9,duration:reduce.matches?.02:.5,landed:false}))};
-    $('machine').classList.remove('spinning');$('machine').style.setProperty('--wobble',0);$('machine').setAttribute('aria-busy','false');setLever(0);
+    $('machine').classList.remove('spinning');$('machine').setAttribute('aria-busy','false');setLever(0);
     $('spin').textContent='ĐANG ĐỔ LINH KIỆN…';status('Hộp linh kiện đã tới! Đợi đổ xong rồi bắt đầu ghép.');updateStations();
   }
   function updatePour(){
@@ -139,12 +133,45 @@
     for(const drop of state.pour.parts){if(!drop.landed&&elapsed>=drop.at+drop.duration){drop.landed=true;state.tray.push(drop.piece);physics.add(drop.piece,12);dirty=true;}}
     if(elapsed>=state.pour.duration){state.pour=null;startConveyor();}
   }
-  function startConveyor(){state.phase='playing';state.roundStart=state.clock;assistAt=state.clock+2.2;$('spin').textContent='BĂNG CHUYỀN ĐANG CHẠY →';$('machine-caption').textContent=state.mission.types.length+' loại · Cần ghép '+state.orders.length+' đồ chơi ('+state.mission.parts+' mảnh)';status('Đồ chơi đang tới! Chạm mảnh đúng hoặc kéo vào đồ chơi.');updateStations();}
+  function startConveyor(){state.phase='playing';state.roundStart=state.clock;assistAt=state.clock+2.2;$('spin').textContent='BĂNG CHUYỀN ĐANG CHẠY →';$('machine-caption').textContent=state.mission.types.length+' loại · Cần ghép '+state.orders.length+' đồ chơi ('+state.mission.parts+' mảnh)';status('Đồ chơi đang tới! Chạm mảnh đúng hoặc kéo vào đồ chơi.');if(state.mission.tip&&!state.tutorial.pending)toast('Kỹ năng · '+state.mission.skillName+' — '+state.mission.tip,5);updateStations();}
   function openSlot(o,kind){if(!canAssemble(o))return null;const open=o.missing.filter(k=>samePart(k,kind)&&!o.filled.includes(k)&&!o.reserved.includes(k));return open.includes(kind)?kind:(open[0]??null);}
+  function finishTutorial(){
+    state.tutorial.pending=false;state.tutorial.kind=null;state.tutorial.piece=null;$('tutorial').hidden=true;state.highlight=null;
+    updateStations();syncHits();last=performance.now();
+  }
+  function showTutorial(kind,piece=null){
+    cancelDrag();setBoost(false);state.tutorial.kind=kind;state.tutorial.piece=piece?.id??null;$('boost').disabled=true;
+    const layer=$('tutorial'),assembly=kind==='assemble';layer.dataset.kind=kind;layer.hidden=false;
+    $('tutorial-level').textContent='LEVEL '+state.batch+' · CÁCH CHƠI';
+    $('tutorial-title').textContent=assembly?'Chạm để lắp':'Đừng để đầy hàng đợi!';
+    $('tutorial-copy').innerHTML=assembly?'Chọn mảnh được đánh dấu.<br>Mảnh sẽ tự lắp vào chỗ còn thiếu trên đồ chơi.':'Mảnh chưa có đồ chơi cần sẽ vào hàng đợi và tự lắp khi đồ chơi tới.<br><strong>Đầy cả 5 ô, bạn sẽ thua!</strong>';
+    const f=assembly?renderer.focus(piece):null;
+    const r=assembly?{x:Math.max(12,f.x-10),y:Math.max(700,f.y-10),w:Math.min(170,f.w+20),h:Math.min(170,f.h+20)}:{x:57,y:614,w:426,h:68};
+    const rect=`M${r.x} ${r.y}h${r.w}v${r.h}h${-r.w}Z`;
+    const toy=state.orders.find(o=>available(o,piece?.kind));
+    $('tutorial-mask').setAttribute('d','M0 110H540V1172H0Z '+rect+(assembly?` M${toy.x-83} 416h166v166h-166Z`:''));
+    const style={left:r.x+'px',top:r.y+'px',width:r.w+'px',height:r.h+'px'};
+    Object.assign($('tutorial-outline').style,style);Object.assign($('tutorial-piece').style,style);
+    $('tutorial-piece').hidden=!assembly;$('tutorial-continue').hidden=assembly;
+    if(assembly){state.highlight={id:piece.id,until:Infinity};$('tutorial-piece').setAttribute('aria-label','Chọn '+partName(piece.kind)+' để lắp');}
+    updateStations();syncHits();(assembly?$('tutorial-piece'):$('tutorial-continue')).focus({preventScroll:true});
+  }
+  function tryTutorial(){
+    if(!state.tutorial.pending||state.tutorial.kind||state.phase!=='playing')return;
+    if(state.batch===2){showTutorial('queue');return;}
+    if(!state.orders.some(o=>canAssemble(o)&&o.x>=115))return;
+    const piece=state.tray.find(p=>targetFor(p.kind)>=0&&renderer.exposed(p)&&renderer.focus(p));
+    if(piece)showTutorial('assemble',piece);else revealNeeded(true);
+  }
+  $('tutorial-continue').onclick=finishTutorial;
+  $('tutorial-piece').onclick=()=>{const piece=state.tray.find(p=>p.id===state.tutorial.piece);if(piece)choose(piece);};
   function available(o,kind){return openSlot(o,kind)!==null;}
   function targetFor(kind,forced){if(forced!==undefined)return available(state.orders[forced],kind)?forced:-1;if(state.selected!==null&&available(state.orders[state.selected],kind))return state.selected;return state.orders.findIndex(o=>available(o,kind));}
   function burst(x,y,count=17){for(let i=0;i<count;i++){const a=rand(0,Math.PI*2),v=rand(30,140);state.particles.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-50,age:0,life:rand(.45,1),size:rand(3,8),color:pick(['#fff0ad','#ffd061','#b0f1e4','#ffffff'])});}}
   function choose(piece,forced){if(paused||state.phase!=='playing'||!state.tray.includes(piece))return false;const i=targetFor(piece.kind,forced);
+    if(state.batch===1&&state.tutorial.pending&&!state.tutorial.kind)return false;
+    if(state.tutorial.kind&&(state.tutorial.kind!=='assemble'||piece.id!==state.tutorial.piece||i<0))return false;
+    if(state.tutorial.kind==='assemble')finishTutorial();
     if(i<0){if(forced===undefined)return enqueue(piece);state.stats.wrong++;sound('wait');toast('Chưa đúng đồ chơi. Hãy nhìn đường viền còn thiếu.');return false;}
     $('toast').hidden=true;toastUntil=0;
     const from=state.drag?{x:state.drag.x,y:state.drag.y}:{x:piece.x,y:piece.y};
@@ -155,20 +182,21 @@
     o.reserved.push(slotKind);state.flights.push({kind:slotKind,from,to:{x:o.x+slot.x*r,y:y-slot.y*r},offsetX:slot.x*r,fromSize,toSize:166*slot.s,at:state.clock,duration:reduce.matches?.04:.48,order:i});sound('lift');updateStations();}
   // Waiting queue: parts with no toy on the belt yet wait here, then jump in as soon as a matching toy can take them.
   function enqueue(piece){const s=state.queue.indexOf(null);
-    if(s<0){state.stats.wrong++;sound('wait');toast('Hàng chờ đã đầy! Đợi đồ chơi cần các mảnh đang chờ tới.');return false;}
+    if(paused||state.phase!=='playing'||state.tutorial.kind||(state.batch===1&&state.tutorial.pending)||!state.tray.includes(piece))return false;
+    if(s<0){fail(null);return false;}
     $('toast').hidden=true;toastUntil=0;
     const from=state.drag?{x:state.drag.x,y:state.drag.y}:{x:piece.x,y:piece.y};
     takeFromTray(piece);state.queue[s]={kind:piece.kind,size:piece.size,from,at:state.clock};
-    status('Chưa có đồ chơi cần '+partName(piece.kind).toLowerCase()+' · đã cất vào hàng chờ.');sound('lift');updateStations();return true;
+    status('Chưa có đồ chơi cần '+partName(piece.kind).toLowerCase()+' · đã cất vào hàng chờ.');sound('lift');updateStations();if(state.queue.every(Boolean))fail(null);return true;
   }
   function releaseQueue(){for(let s=0;s<state.queue.length;s++){const q=state.queue[s];if(!q||state.clock-q.at<.32)continue;const i=targetFor(q.kind);if(i<0)continue;state.queue[s]=null;launch(q.kind,art.queueSlot(s),art.QUEUE_SIZE,i);}}
   function land(f){const o=state.orders[f.order];o.reserved=o.reserved.filter(k=>k!==f.kind);o.filled.push(f.kind);state.stats.fits++;sound('fit');burst(f.to.x,f.to.y,12);if(o.missing.every(k=>o.filled.includes(k))){o.packageAt=state.clock;status('Hoàn hảo! Gói một món quà Giáng sinh…');sound('row');if(state.selected===f.order)state.selected=null;}else status('Khớp rồi! Tìm tiếp mảnh còn thiếu nhé.');updateStations();}
   function neededPieces(){return state.tray.filter(p=>state.orders.some(o=>available(o,p.kind)));}
   function revealNeeded(force=false){const needed=neededPieces();if(!needed.length)return null;const visible=needed.filter(p=>renderer.exposed(p));if(visible.length&&!force)return pick(visible);const piece=visible.length?pick(visible):needed.sort((a,b)=>b.depth-a.depth)[0];physics.uncover(piece,force?3:2);dirty=true;return piece;}
-  function hint(){if(paused)return;if(state.phase!=='playing')return;const p=revealNeeded(true);if(!p)return;state.stats.hints++;state.highlight={id:p.id,until:state.clock+4.5};status('Tìm '+partName(p.kind).toLowerCase()+' đang được đánh dấu trong hộp.');sound('click');}
-  function shake(){if(paused)return;if(state.phase!=='playing')return;state.stats.shuffles++;for(const p of state.tray)physics.poke(p,rand(-2.8,2.8),rand(-1.9,1.9),rand(2,4));dirty=true;sound('lift');toast('Xóc nhẹ một chút, mảnh mới lộ ra!');}
-  function syncHits(){const layer=$('piece-buttons'),existing=new Map(Array.from(layer.children,b=>[+b.dataset.id,b]));const active=document.activeElement;for(const p of state.tray){if(state.phase!=='playing'||!renderer.exposed(p))continue;let b=existing.get(p.id);if(!b){b=document.createElement('button');b.className='piece-hit';b.dataset.id=p.id;b.dataset.kind=p.kind;b.addEventListener('click',()=>choose(p));b.addEventListener('focus',()=>{state.highlight={id:p.id,until:state.clock+20};});layer.append(b);}existing.delete(p.id);const f=renderer.focus(p);b.setAttribute('aria-label',partName(p.kind));if(f)Object.assign(b.style,{left:f.x+'px',top:f.y+'px',width:f.w+'px',height:f.h+'px'});}for(const b of existing.values())b.remove();if(active?.classList.contains('piece-hit')&&!active.isConnected){(layer.firstElementChild||$('hint')).focus({preventScroll:true});}}
-  function modalTitle(title,subtitle='Toy Factory'){document.querySelector('#modal .panel').classList.remove('settings-panel');$('modal-title').textContent=title;$('modal-subtitle').textContent=subtitle;}
+  function hint(){if(paused||state.tutorial.kind)return;if(state.phase!=='playing')return;const p=revealNeeded(true);if(!p)return;state.stats.hints++;state.highlight={id:p.id,until:state.clock+4.5};status('Tìm '+partName(p.kind).toLowerCase()+' đang được đánh dấu trong hộp.');sound('click');}
+  function shake(){if(paused||state.tutorial.kind)return;if(state.phase!=='playing')return;state.stats.shuffles++;for(const p of state.tray)physics.poke(p,rand(-2.8,2.8),rand(-1.9,1.9),rand(2,4));dirty=true;sound('lift');toast('Xóc nhẹ một chút, mảnh mới lộ ra!');}
+  function syncHits(){const layer=$('piece-buttons'),existing=new Map(Array.from(layer.children,b=>[+b.dataset.id,b]));const active=document.activeElement;for(const p of state.tray){if(state.phase!=='playing'||!renderer.exposed(p))continue;let b=existing.get(p.id);if(!b){b=document.createElement('button');b.className='piece-hit';b.dataset.id=p.id;b.dataset.kind=p.kind;b.addEventListener('click',()=>choose(p));b.addEventListener('focus',()=>{state.highlight={id:p.id,until:state.clock+20};});layer.append(b);}existing.delete(p.id);const f=renderer.focus(p);b.setAttribute('aria-label',partName(p.kind));b.disabled=!!state.tutorial.kind&&(state.tutorial.kind!=='assemble'||state.tutorial.piece!==p.id);if(f)Object.assign(b.style,{left:f.x+'px',top:f.y+'px',width:f.w+'px',height:f.h+'px'});}for(const b of existing.values())b.remove();if(active?.classList.contains('piece-hit')&&!active.isConnected){(layer.firstElementChild||$('hint')).focus({preventScroll:true});}}
+  function modalTitle(title,subtitle='Toy Factory',kind='default'){const panel=document.querySelector('#modal .panel');panel.classList.remove('settings-panel');panel.dataset.kind=kind;$('modal-title').textContent=title;$('modal-subtitle').textContent=subtitle;}
   function drawCollection(){for(const canvas of $('modal-content').querySelectorAll('#toy-collection canvas'))art.reel(canvas,canvas.dataset.kind);}
   art.onPage(drawCollection);
   function showCollection(){
@@ -178,13 +206,13 @@
   }
   function showLevels(){
     paused=true;cancelDrag();modalTitle('Chọn level',kinds.length+' đồ chơi · '+missions.length+' mission');
-    $('modal-content').innerHTML='<div class="level-list toy-level-list"><div class="level-choices">'+missions.map(m=>'<button class="level-choice '+(m.level===state.batch?'current':'')+'" data-level="'+m.level+'" aria-label="Level '+m.level+': '+m.title+'"><canvas width="118" height="84" aria-hidden="true"></canvas><b>LEVEL '+m.level+'</b><span>'+m.title+'</span></button>').join('')+'</div></div><div class="actions"><button class="action glossy" id="level-back">Quay lại</button></div>';
+    $('modal-content').innerHTML='<div class="level-list toy-level-list"><div class="level-choices">'+missions.map(m=>'<button class="level-choice '+(m.level===state.batch?'current':'')+'" data-level="'+m.level+'"'+(m.level===state.batch?' aria-current="true"':'')+' aria-label="Level '+m.level+': '+m.title+(m.level===state.batch?', đang chọn':'')+'">'+(m.level===state.batch?'<i class="level-current-marker" aria-hidden="true">✓</i>':'')+'<canvas width="118" height="84" aria-hidden="true"></canvas><b>LEVEL '+m.level+'</b><span>'+m.title+'</span></button>').join('')+'</div></div><div class="actions"><button class="action glossy" id="level-back">Quay lại</button></div>';
     $('modal').showModal();
     for(const button of $('modal-content').querySelectorAll('[data-level]')){const level=Number(button.dataset.level);art.reel(button.querySelector('canvas'),missions[level-1].orders[0].kind);button.onclick=()=>{state.batch=level;persist();$('modal').close();reset({autostart:false});showGame();};}
     $('level-back').onclick=closeModal;
   }
-  function complete(){state.phase='complete';cancelDrag();syncHits();persist();const seconds=Math.round(state.clock-state.roundStart);modalTitle('Mission hoàn thành!','Level '+state.batch+' · '+state.mission.title);$('modal-content').innerHTML='<div class="reward">'+ui.icons.trophy+'</div><div class="panel-copy"><p>'+state.orders.length+' món đồ chơi đã được lắp hoàn chỉnh, gói thật xinh và gửi tới ông già Noel.</p></div><div class="result"><span><b>'+state.orders.length+'</b>quà đã gửi</span><span><b>'+state.stats.fits+'</b>mảnh đã lắp</span><span><b>'+seconds+'s</b>thời gian</span></div><div class="actions"><button class="action glossy" id="next">'+(state.batch===missions.length?'CHƠI LẠI TỪ LEVEL 1':'LEVEL TIẾP THEO →')+'</button></div>';addHomeAction();$('modal').showModal();$('next').onclick=()=>{state.batch=state.batch%missions.length+1;persist();$('modal').close();paused=false;reset();spin();};updateStations();}
-  function showHelp(){paused=true;cancelDrag();modalTitle('Cách chơi','Nhanh tay trên băng chuyền');$('modal-content').innerHTML='<div class="panel-copy guide-copy"><p><b>1. Quay máy đồ chơi</b><br>Vào màn, tay cầm tự gạt và các ô slot quay rồi dừng lần lượt. Số ô cho biết màn có bao nhiêu loại đồ chơi; số đồ chơi phải ghép hiện dưới máy và ở mục QUÀ ĐÃ GÓI. Mỗi món cần ghép 1–4 mảnh. Quay xong, đồ chơi lần lượt xuất hiện từ bên trái. Băng chuyền luôn di chuyển sang phải, càng lên level càng nhanh.</p><p><b>2. Ghép trước cửa ra</b><br>Nhìn đường viền nét đứt trên đồ chơi. Chạm mảnh đúng trong khay để tự lắp, hoặc kéo thả vào đồ chơi đang chạy. Số giây dưới mỗi món là thời gian còn lại. Mảnh chưa có đồ chơi cần sẽ vào 5 ô hàng chờ và tự nhảy vào đồ chơi khi nó tới.</p><p><b>3. Đóng hộp quà</b><br>Ghép đủ mảnh, đồ chơi tự được đóng thành hộp có nơ và tiếp tục chạy ra cửa. Gửi đủ số hộp theo mục tiêu của màn để qua level. Nếu đồ chơi chưa hoàn chỉnh ra hết chuyền, hãy chơi lại!</p><p class="help-keyboard">Gợi ý đánh dấu mảnh cần tìm. Xóc hộp để lộ mảnh bên dưới.<br>Tab chọn mảnh, Enter để lắp. Mở hướng dẫn hoặc cài đặt để tạm dừng.</p></div><div class="actions"><button class="action glossy" id="understood">VÀO XƯỞNG NÀO!</button></div>';$('modal').showModal();$('understood').textContent=screen==='home'?'QUAY LẠI':'VÀO XƯỞNG NÀO!';$('understood').onclick=closeModal;}
+  function complete(){state.phase='complete';cancelDrag();syncHits();persist();const seconds=Math.round(state.clock-state.roundStart);modalTitle('Mission hoàn thành!','Level '+state.batch+' · '+state.mission.title,'success');$('modal-content').innerHTML='<div class="reward">'+ui.icons.trophy+'</div><div class="panel-copy"><p>'+state.orders.length+' món đồ chơi đã được lắp hoàn chỉnh, gói thật xinh và gửi tới ông già Noel.</p></div><div class="result"><span><b>'+state.orders.length+'</b>quà đã gửi</span><span><b>'+state.stats.fits+'</b>mảnh đã lắp</span><span><b>'+seconds+'s</b>thời gian</span></div><div class="actions"><button class="action glossy" id="next">'+(state.batch===missions.length?'CHƠI LẠI TỪ LEVEL 1':'LEVEL TIẾP THEO →')+'</button></div>';addHomeAction();$('modal').showModal();$('next').onclick=()=>{state.batch=state.batch%missions.length+1;persist();$('modal').close();paused=false;reset();spin();};updateStations();}
+  function showHelp(){paused=true;cancelDrag();modalTitle('Cách chơi','Nhanh tay trên băng chuyền');$('modal-content').innerHTML='<div class="panel-copy guide-copy"><p><b>1. Quay máy đồ chơi</b><br>Vào màn, tay cầm tự gạt và các ô slot quay rồi dừng lần lượt. Số ô cho biết màn có bao nhiêu loại đồ chơi; số đồ chơi phải ghép hiện dưới máy và ở mục QUÀ ĐÃ GÓI. Mỗi món cần ghép 1–4 mảnh. Quay xong, đồ chơi lần lượt xuất hiện từ bên trái. Băng chuyền luôn di chuyển sang phải, càng lên level càng nhanh.</p><p><b>2. Ghép trước cửa ra</b><br>Nhìn đường viền nét đứt trên đồ chơi. Chạm mảnh đúng trong khay để tự lắp, hoặc kéo thả vào đồ chơi đang chạy. Số giây dưới mỗi món là thời gian còn lại. Mảnh chưa có đồ chơi cần sẽ vào 5 ô hàng chờ và tự nhảy vào đồ chơi khi nó tới. Đầy cả 5 ô hàng đợi sẽ thua màn chơi.</p><p><b>3. Đóng hộp quà</b><br>Ghép đủ mảnh, đồ chơi tự được đóng thành hộp có nơ và tiếp tục chạy ra cửa. Gửi đủ số hộp theo mục tiêu của màn để qua level. Nếu đồ chơi chưa hoàn chỉnh ra hết chuyền, hãy chơi lại!</p><p class="help-keyboard">Gợi ý đánh dấu mảnh cần tìm. Xóc hộp để lộ mảnh bên dưới.<br>Tab chọn mảnh, Enter để lắp. Mở hướng dẫn hoặc cài đặt để tạm dừng.</p></div><div class="actions"><button class="action glossy" id="understood">VÀO XƯỞNG NÀO!</button></div>';$('modal').showModal();$('understood').textContent=screen==='home'?'QUAY LẠI':'VÀO XƯỞNG NÀO!';$('understood').onclick=closeModal;}
   function showSettings(){
     paused=true;cancelDrag();setBoost(false);modalTitle('Cài đặt');
     document.querySelector('#modal .panel').classList.add('settings-panel');
@@ -204,23 +232,23 @@
   function addHomeAction(){const button=document.createElement('button');button.className='home-action';button.id='return-home';button.textContent='Về màn hình chính';button.onclick=showHome;$('modal-content').append(button);}
   function closeModal(){if(state.phase==='failed'){reset();}else if(state.phase==='complete'){state.batch=state.batch%missions.length+1;persist();reset();}$('modal').close();paused=screen==='home';last=performance.now();}
   function point(e){const rect=$('world').getBoundingClientRect();return{x:(e.clientX-rect.left)*540/rect.width,y:(e.clientY-rect.top)*1172/rect.height};}
-  $('world').addEventListener('pointerdown',e=>{if(state.phase!=='playing'||paused)return;const p=point(e),piece=renderer.pick(p.x,p.y);if(!piece)return;pressed={piece,x:p.x,y:p.y,pointer:e.pointerId};$('world').setPointerCapture(e.pointerId);e.preventDefault();});
+  $('world').addEventListener('pointerdown',e=>{if(state.phase!=='playing'||paused||state.tutorial.kind==='queue')return;const p=point(e),piece=renderer.pick(p.x,p.y);if(!piece||(state.tutorial.kind&&piece.id!==state.tutorial.piece))return;pressed={piece,x:p.x,y:p.y,pointer:e.pointerId};$('world').setPointerCapture(e.pointerId);e.preventDefault();});
   $('world').addEventListener('pointermove',e=>{const p=point(e);if(pressed){if(!state.drag&&Math.hypot(p.x-pressed.x,p.y-pressed.y)>8){state.drag={piece:pressed.piece,x:p.x,y:p.y};sound('lift');dirty=true;}if(state.drag)Object.assign(state.drag,p);}else $('world').style.cursor=state.phase==='playing'&&renderer.pick(p.x,p.y)?'grab':'';});
   $('world').addEventListener('pointerup',e=>{if(!pressed||pressed.pointer!==e.pointerId)return;if(!paused&&state.phase==='playing'){if(state.drag){const p=point(e),candidates=state.orders.map((o,i)=>({o,i})).filter(({o})=>canAssemble(o)&&p.y>385&&p.y<593&&Math.abs(p.x-o.x)<83).sort((a,b)=>Math.abs(p.x-a.o.x)-Math.abs(p.x-b.o.x));if(candidates.length)choose(pressed.piece,candidates[0].i);else if(p.y>612&&p.y<684)enqueue(pressed.piece);else toast('Kéo mảnh lên đồ chơi đang chạy trên băng chuyền.');}else choose(pressed.piece);}cancelDrag();});
   $('world').addEventListener('pointercancel',cancelDrag);
   // Hold-to-speed-up: belt ramps to 3x cruise while pressed, eases back on release.
-  function setBoost(on){on=!!on&&state.phase==='playing'&&!paused&&!state.shippingBoost;if(state.holdBoost===on)return;state.holdBoost=on;$('boost').classList.toggle('held',on);if(on)sound('lift');}
+  function setBoost(on){on=!!on&&state.phase==='playing'&&!paused&&!state.tutorial.kind&&!state.shippingBoost;if(state.holdBoost===on)return;state.holdBoost=on;$('boost').classList.toggle('held',on);if(on)sound('lift');}
   {const b=$('boost');b.addEventListener('pointerdown',e=>{if(b.disabled)return;b.setPointerCapture(e.pointerId);setBoost(true);e.preventDefault();});for(const t of['pointerup','pointercancel','lostpointercapture'])b.addEventListener(t,()=>setBoost(false));b.addEventListener('contextmenu',e=>e.preventDefault());b.addEventListener('keydown',e=>{if((e.key===' '||e.key==='Enter')&&!e.repeat){setBoost(true);e.preventDefault();}});b.addEventListener('keyup',e=>{if(e.key===' '||e.key==='Enter')setBoost(false);});b.addEventListener('blur',()=>setBoost(false));addEventListener('blur',()=>setBoost(false));}
   $('world').addEventListener('lostpointercapture',cancelDrag);
   $('spin').onclick=spin;$('hint').onclick=hint;$('shuffle').onclick=shake;$('settings').onclick=showSettings;$('batch-label').onclick=showLevels;$('close').onclick=closeModal;const restartLevel=()=>{if($('modal').open)$('modal').close();paused=false;reset();sound('click');};
-  $('home-play').onclick=showGame;$('home-settings').onclick=showSettings;$('home-help').onclick=showHelp;$('home-levels').onclick=showLevels;
-  $('home-profile').onclick=showLevels;$('home-level-picker').onclick=showLevels;$('home-collection').onclick=showCollection;$('home-tab').onclick=()=>{$('home-play').focus({preventScroll:true});};
+  $('home-play').onclick=showGame;$('home-settings').onclick=showSettings;$('home-levels').onclick=showLevels;
+  $('home-collection').onclick=showCollection;$('home-tab').onclick=()=>{$('home-play').focus({preventScroll:true});};
   $('modal').addEventListener('cancel',e=>{e.preventDefault();closeModal();});document.addEventListener('visibilitychange',()=>{last=performance.now();if(document.hidden)cancelDrag();setMusic();});addEventListener('resize',fit);
   function fail(o){
-    state.phase='failed';cancelDrag();state.highlight=null;syncHits();updateStations();
-    status('Đồ chơi ra hết chuyền khi chưa ghép xong!');sound('wait');
-    modalTitle('Chưa kịp rồi!','Level '+state.batch+' · Thử lại nhé');
-    $('modal-content').innerHTML='<div class="panel-copy"><p>'+catalog.toys[o.kind].name+' đã ra hết băng chuyền khi còn thiếu mảnh. Hãy ưu tiên đồ chơi gần cửa ra trước!</p></div><div class="result"><span><b>'+state.orders.filter(o=>o.shipped).length+' / '+state.orders.length+'</b>quà đã gửi</span><span><b>'+state.stats.fits+'</b>mảnh đã lắp</span></div><div class="actions"><button class="action glossy" id="retry">CHƠI LẠI →</button></div>';
+    state.tutorial.pending=false;state.tutorial.kind=null;$('tutorial').hidden=true;state.phase='failed';cancelDrag();state.highlight=null;syncHits();updateStations();
+    status(o?'Đồ chơi ra hết chuyền khi chưa ghép xong!':'Hàng đợi đã đầy cả 5 ô!');sound('wait');
+    modalTitle(o?'Chưa kịp rồi!':'Hàng đợi đã đầy!','Level '+state.batch+' · Thử lại nhé','failure');
+    $('modal-content').innerHTML='<div class="panel-copy"><div class="failure-symbol" aria-hidden="true">'+settingsIcon('<path d="m24 5 21 37H3Z" fill="currentColor" fill-opacity=".12"/><path d="M24 18v11m0 6h.1"/>')+'</div><p>'+(o?catalog.toys[o.kind].name+' đã ra hết băng chuyền khi còn thiếu mảnh. Hãy ưu tiên đồ chơi gần cửa ra trước!':'Cả 5 ô hàng đợi đã kín. Hãy chọn mảnh mà đồ chơi trên băng chuyền đang cần để tránh đầy hàng đợi!')+'</p></div><div class="result"><span><b>'+state.orders.filter(o=>o.shipped).length+' / '+state.orders.length+'</b>quà đã gửi</span><span><b>'+state.stats.fits+'</b>mảnh đã lắp</span></div><div class="actions"><button class="action glossy" id="retry">CHƠI LẠI →</button></div>';
     addHomeAction();$('modal').showModal();$('retry').onclick=()=>{$('modal').close();paused=false;reset();spin();};
   }
   function cancelDrag(){if(pressed&&$('world').hasPointerCapture(pressed.pointer))$('world').releasePointerCapture(pressed.pointer);pressed=null;state.drag=null;dirty=true;}
@@ -233,7 +261,7 @@
     for(let i=state.flights.length-1;i>=0;i--){const f=state.flights[i];f.to.x=state.orders[f.order].x+f.offsetX;if(state.clock-f.at>=f.duration){state.flights.splice(i,1);land(f);}}
     for(const o of state.orders){
       if(!o.active||o.shipped)continue;
-      if(o.packageAt!==null&&!o.credited&&state.clock-o.packageAt>1.1){o.credited=true;state.total++;persist();burst(o.x,480,25);sound('coin');updateStations();}
+      if(o.packageAt!==null&&!o.credited&&state.clock-o.packageAt>art.PACK_DONE){o.credited=true;state.total++;persist();burst(o.x,480,25);sound('coin');updateStations();}
       if(o.x>=EXIT){if(o.packageAt===null){fail(o);return;}if(o.credited){o.shipped=true;updateStations();}}
     }
     if(!state.shippingBoost&&state.orders.length&&state.orders.every(o=>o.credited)){
@@ -243,11 +271,11 @@
     if(state.selected!==null&&!canAssemble(state.orders[state.selected])){state.selected=null;updateStations();}
     moveStations();if(state.orders.every(o=>o.shipped))complete();
   }
-  function frame(now){const dt=Math.min(.04,Math.max(0,(now-last)/1000));last=now;if(!paused&&!document.hidden){
+  function frame(now){const dt=Math.min(.04,Math.max(0,(now-last)/1000));last=now;if(!paused&&!document.hidden&&!state.tutorial.kind){
       if(state.phase!=='complete'&&state.phase!=='failed')state.clock+=dt;
       if(state.phase==='spinning')updateSpin();
       if(state.phase==='pouring')updatePour();
-      {const off=state.phase!=='playing'||state.shippingBoost;if($('boost').disabled!==off){$('boost').disabled=off;if(off)setBoost(false);}}
+      {const off=state.phase!=='playing'||state.shippingBoost||!!state.tutorial.kind;if($('boost').disabled!==off){$('boost').disabled=off;if(off)setBoost(false);}}
       if(state.phase==='playing')updateConveyor(dt);
       if(physics&&(state.phase==='playing'||state.phase==='pouring')){if(physics.update(dt))dirty=true;}
       if(dirty){renderer.render(state.drag?state.tray.filter(p=>p!==state.drag.piece):state.tray);dirty=false;}
@@ -255,10 +283,10 @@
       if(state.phase==='playing'&&state.clock>assistAt&&!state.drag){revealNeeded();assistAt=state.clock+2.2;}
       for(const p of state.particles){p.age+=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=90*dt;}state.particles=state.particles.filter(p=>p.age<p.life);if(toastUntil&&state.clock>toastUntil){$('toast').hidden=true;toastUntil=0;}
     }
-    if(screen==='game')art.draw(state,now);requestAnimationFrame(frame);
+    if(screen==='game'&&!paused){tryTutorial();}if(screen==='game')art.draw(state,now);requestAnimationFrame(frame);
   }
   // Read-only diagnostics for reproducible playtests; actions remain real UI inputs.
-  window.FactoryDebug={snapshot:()=>({phase:state.phase,paused:paused||document.hidden,batch:state.batch,total:state.total,clock:state.clock,beltDistance:state.beltDistance,beltSpeed:state.beltSpeed,cruiseSpeed:state.cruiseSpeed,shippingBoost:state.shippingBoost,holdBoost:state.holdBoost,spinElapsed:state.phase==='spinning'?state.clock-state.spinStart:null,reelsStopped:state.reelsStopped,mission:{level:state.mission.level,title:state.mission.title,goal:state.mission.goal,parts:state.mission.parts,slotCount:state.mission.slotCount,types:[...state.mission.types],toyCount:state.mission.toyCount},orders:state.orders.map(o=>({kind:o.kind,x:o.x,active:o.active,canAssemble:canAssemble(o),shipped:o.shipped,secondsLeft:Math.max(0,(EXIT-o.x)/state.beltSpeed),missing:[...o.missing],filled:[...o.filled],reserved:[...o.reserved],packaging:o.packageAt!==null,packaged:o.credited})),tray:state.tray.map(p=>({id:p.id,kind:p.kind,x:p.x,y:p.y,depth:p.depth,focus:renderer.focus(p)?.point,exposed:renderer.exposed(p)})),queue:state.queue.map(q=>q&&q.kind),stats:{...state.stats},flights:state.flights.length})};
+  window.FactoryDebug={snapshot:()=>({phase:state.phase,paused:paused||document.hidden,batch:state.batch,total:state.total,tutorial:{...state.tutorial},clock:state.clock,beltDistance:state.beltDistance,beltSpeed:state.beltSpeed,cruiseSpeed:state.cruiseSpeed,shippingBoost:state.shippingBoost,holdBoost:state.holdBoost,spinElapsed:state.phase==='spinning'?state.clock-state.spinStart:null,reelsStopped:state.reelsStopped,mission:{level:state.mission.level,title:state.mission.title,goal:state.mission.goal,parts:state.mission.parts,slotCount:state.mission.slotCount,types:[...state.mission.types],toyCount:state.mission.toyCount},orders:state.orders.map(o=>({kind:o.kind,x:o.x,active:o.active,canAssemble:canAssemble(o),shipped:o.shipped,secondsLeft:Math.max(0,(EXIT-o.x)/state.beltSpeed),missing:[...o.missing],filled:[...o.filled],reserved:[...o.reserved],packaging:o.packageAt!==null,packaged:o.credited})),tray:state.tray.map(p=>({id:p.id,kind:p.kind,x:p.x,y:p.y,depth:p.depth,focus:renderer.focus(p)?.point,exposed:renderer.exposed(p)})),queue:state.queue.map(q=>q&&q.kind),stats:{...state.stats},flights:state.flights.length})};
   fit();setSound();setMusic();reset({autostart:false});art.home();
   if(Number.isInteger(requestedLevel)&&requestedLevel>=1&&requestedLevel<=missions.length)showGame();else showHome();
   requestAnimationFrame(frame);

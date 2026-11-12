@@ -7,13 +7,16 @@
 #home{z-index:9;text-align:center;color:var(--cream)}
 #home button{pointer-events:auto}
 #home-art{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
-.home-hud .hud-pill{min-width:0;gap:5px;letter-spacing:0}
-.home-gifts .heart-token{width:59px;height:59px;flex:0 0 59px;margin-left:-6px}
-.home-gifts small{font:900 13px var(--font-body)}
-#home-total{font-size:23px;min-width:16px}
-#home-level{font-size:25px;flex:1;min-width:0;text-align:center}
-.home-level-pill .coin{position:relative}
-.home-level-pill .coin small{position:absolute;inset:0;display:grid;place-items:center;font-size:17px;color:#955410;text-shadow:0 1px #fff086}
+/* Home keeps the avatar and settings aligned at opposite edges. */
+.home-hud{top:30px;left:24px;right:24px;height:90px;display:grid;grid-template-columns:90px 68px;justify-content:space-between;align-items:center}
+.home-hud #home-profile,.home-hud #home-settings{position:static;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;width:90px;height:90px;padding:7px 4px;border:3px solid var(--cream);border-radius:23px;background:var(--ui-primary);color:var(--ui-on-primary);box-shadow:0 0 0 1.5px var(--ui-primary-edge),inset 0 3px 0 #96c7ae,inset 0 -4px 0 #194a42,0 5px 0 #315850,0 7px 9px #234f4720}
+.home-hud #home-profile{padding:4px;overflow:hidden;background:linear-gradient(#e4efd8,#a6c5a2)}
+.home-hud #home-profile svg{width:76px;height:76px;align-self:center;transform:translateY(4px)}
+.home-hud #home-settings{width:68px;height:68px;padding:12px;border-radius:50%}
+.home-hud #home-settings svg{width:38px;height:38px;flex-shrink:0}
+.home-hud button:focus-visible{outline:3px solid var(--ui-ink);outline-offset:5px}
+.home-hud button:hover{filter:brightness(1.06)}
+.home-hud button:active{transform:translateY(2px)}
 #home .tabs{pointer-events:auto}
 .toy-collection-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;max-height:540px;overflow:auto;padding:4px;overscroll-behavior:contain}
 .toy-collection-item{display:flex;align-items:center;flex-direction:column;padding:4px 3px 10px;border:3px solid #ffe7bd;border-radius:13px;background:#ffd0a4;color:var(--dark-jade);text-align:center}
@@ -22,6 +25,25 @@
 .panel-body .home-action{display:block;margin:20px auto 0;background:transparent;color:var(--cream);text-decoration:underline;text-underline-offset:4px;font:800 17px var(--font-body);min-height:48px;padding:8px 20px}
 button:disabled{cursor:default}button:disabled:not(#spin){filter:saturate(.45);opacity:.65}
 #world{touch-action:none}
+/* Guided actions share the 540 × 1172 gameplay coordinates and scale with the stage. */
+#tutorial{position:absolute;inset:0;z-index:10;pointer-events:none;color:var(--dark-jade)}
+#tutorial[hidden]{display:none}
+.tutorial-shade{position:absolute;inset:0;width:100%;height:100%;fill:#142d38b8}
+.tutorial-card{position:absolute;top:220px;left:44px;right:44px;padding:23px 24px;background:linear-gradient(#fff8e5,#ffe3b2);border:4px solid #fff0d6;border-radius:24px;box-shadow:0 6px 0 #896747,0 12px 24px #10232e55;text-align:center}
+.tutorial-level{font:900 15px/1.3 var(--font-body);letter-spacing:1.5px;color:#417e70}
+.tutorial-card h2{margin:9px 0 12px;font:900 29px/1.15 var(--font-body)}
+.tutorial-card p{margin:0;font:700 21px/1.5 var(--font-body)}
+.tutorial-card strong{color:#ad344d;font-weight:900}
+#tutorial[data-kind="queue"] .tutorial-card{top:338px}
+#tutorial-continue{pointer-events:auto;display:block;width:100%;min-height:66px;margin-top:20px;border:3px solid #28786f;border-radius:16px;background:linear-gradient(#a4deca,#61b5a8);color:var(--dark-jade);font:900 21px var(--font-body);box-shadow:0 4px 0 #28786f}
+#tutorial-continue[hidden],#tutorial-piece[hidden]{display:none}
+#tutorial-outline{position:absolute;border:4px solid #ffe684;border-radius:18px;box-shadow:0 0 0 3px #9c7530,0 0 24px #ffdc7599;box-sizing:border-box}
+#tutorial[data-kind="queue"] #tutorial-outline{border-color:#ffb4a1;box-shadow:0 0 0 3px #a74455,0 0 24px #ffb4a188}
+#tutorial-piece{position:absolute;pointer-events:auto;background:transparent;border:0;border-radius:18px;padding:0;touch-action:manipulation}
+#tutorial-piece svg{position:absolute;right:-30px;bottom:-43px;width:58px;height:68px;fill:#fff1d3;stroke:#764b35;stroke-width:2.7;stroke-linejoin:round;filter:drop-shadow(0 3px 2px #17333366);animation:tutorial-tap 1.2s ease-in-out infinite}
+#tutorial-piece:focus-visible,#tutorial-continue:focus-visible{outline:5px solid #fff;outline-offset:5px}
+@keyframes tutorial-tap{50%{transform:translateY(-10px)}}
+@media(prefers-reduced-motion:reduce){#tutorial-piece svg{animation:none}}
 /* Gameplay HUD: one aligned row, with all artwork contained inside its control. */
 .hud{position:absolute;inset:24px 24px auto;display:grid;grid-template-columns:minmax(0,1fr) 166px 64px;gap:12px;height:68px;pointer-events:none}
 .hud button{pointer-events:auto}
@@ -46,11 +68,8 @@ button:disabled{cursor:default}button:disabled:not(#spin){filter:saturate(.45);o
 .hud button:active{transform:translateY(2px)}
 .brand.press-title{top:23px;left:23px;right:auto;width:213px;height:68px;padding:7px 6px;border-width:3px;border-radius:18px;box-shadow:0 0 0 2px #577d70,0 5px 0 #315850,inset 0 -4px #d3af7b}
 .brand small{display:block;font:850 9px/1.4 var(--font-body);letter-spacing:1.5px;color:#44685b}.brand strong{font-size:31px;line-height:1.15;white-space:nowrap;color:#23564f;text-shadow:0 2px #fff1cf}
-#machine{position:absolute;top:100px;left:22px;width:478px;height:262px;--wobble:0}
+#machine{position:absolute;top:100px;left:22px;width:478px;height:262px}
 .slot-cabinet,.slot-payline{position:absolute;inset:0;width:100%;height:256px;pointer-events:none}
-/* Payline arrows wobble while reels spin; --wobble is driven by the game clock so pause freezes it. */
-.slot-arrow{transform-box:fill-box;transform-origin:center;transform:translateX(calc(var(--wobble) * 3px)) rotate(calc(var(--wobble) * 10deg))}
-.slot-arrow.right{transform:translateX(calc(var(--wobble) * -3px)) rotate(calc(var(--wobble) * -10deg))}
 .slot-cabinet{filter:drop-shadow(0 4px 0 #254c4280)}
 .slot-payline{z-index:2}
 .machine-title,.machine-foot{display:none}
@@ -130,3 +149,67 @@ button:disabled{cursor:default}button:disabled:not(#spin){filter:saturate(.45);o
 .instruction-plate.clue-plate{display:none}
 #parts-count{display:none}
 .station .toy-name,.station .deadline,.station .part-dots{display:none!important}
+
+/* Color roles for Toy Factory; keep the original Letter Press stylesheet intact. */
+:root{
+  --ui-ink:#233b35;
+  --ui-surface:#fff4e2;
+  --ui-primary:linear-gradient(#327663,#286b60 60%,#21584f);
+  --ui-primary-edge:#1f5147;
+  --ui-on-primary:#fff4e2;
+  --ui-toggle-on:linear-gradient(#b7e0cf,#93c6b0);
+  --ui-toggle-off:linear-gradient(#e6ddd2,#d7c9ba);
+  --ui-off-ink:#58454b;
+  --ui-warning:#ad344d;
+  --ui-scrim:#142d38b8;
+}
+#modal{background:var(--ui-scrim)}
+.tutorial-shade{fill:var(--ui-scrim)}
+.panel .close{
+  background:linear-gradient(#d87582,#ad445f);
+  border-color:#843c4d;
+  box-shadow:inset 0 3px 1px #efa4a7,inset 0 -4px 1px #923c53,0 3px 0 #723346;
+  -webkit-text-stroke:2px #6b2f40;
+}
+.panel-body .action:not(.alt){
+  background:var(--ui-primary);
+  border-color:var(--ui-primary-edge);
+  color:var(--ui-on-primary);
+  -webkit-text-stroke:0;
+  text-shadow:0 1px #173f37;
+  box-shadow:inset 0 3px 0 #96c7ae,inset 0 -4px 0 #194a42,0 3px 0 #774352;
+}
+.panel-body .action:not(.alt):hover{filter:brightness(1.04)}
+.settings-panel #resume{box-shadow:0 0 0 1px #306d60,inset 0 3px 0 #96c7ae,inset 0 -4px 0 #194a42,0 4px 0 #875263;text-shadow:0 1px #173f37}
+.setting-tile{
+  background:var(--ui-toggle-on);
+  color:var(--ui-ink);
+  box-shadow:0 0 0 1px #5a8874,inset 0 3px 0 #d7eedc,inset 0 -4px 0 #79ac95,0 4px 0 #875263;
+}
+.setting-label{text-shadow:none}
+.setting-icon{filter:drop-shadow(0 1px 0 #daefdc)}
+.setting-tile[aria-pressed="false"]{background:var(--ui-toggle-off);color:var(--ui-off-ink);box-shadow:0 0 0 1px #9a8379,inset 0 3px 0 #f6eee0,inset 0 -4px 0 #bcaa9a,0 4px 0 #875263}
+.setting-tile[aria-pressed="false"] .setting-label{color:var(--ui-off-ink);text-shadow:none}
+.setting-tile[aria-pressed="false"] .setting-state{background:#73575f;color:var(--ui-surface)}
+.setting-tile[aria-pressed="false"] .setting-icon>svg+svg{filter:drop-shadow(1px -1px 0 #e6ddd2)}
+.setting-guide{background:linear-gradient(#fff4e2,#f7dcb2);color:#674930;box-shadow:0 0 0 1px #9b7756,inset 0 3px 0 #fff9e5,inset 0 -4px 0 #dfbd8e,0 4px 0 #875263}
+.setting-guide .setting-label{text-shadow:none}
+.setting-guide .setting-state{background:#805d3b;color:var(--ui-surface)}
+.settings-panel .panel-heading #modal-subtitle{color:#fff4e2;background:#843b50;border-radius:8px;padding:3px 11px;text-shadow:none}
+.settings-navigation button{background:#994458;box-shadow:inset 0 2px 0 #c66a7e,0 3px 0 #80394c}
+.panel-body .home-action{background:#823b50;border-radius:12px;text-shadow:none}
+.toy-collection-item{background:var(--ui-surface)}
+.toy-level-list .level-choice{position:relative}
+.toy-level-list .level-choice.current{border-color:#296b60;background:#fff4e2;box-shadow:0 0 0 1px #fff0d6,0 3px #24584e}
+.level-current-marker{position:absolute;right:5px;top:5px;display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:#296b60;color:#fff4e2;font:900 16px/1 var(--font-body);box-shadow:0 1px 0 #173f37}
+.panel[data-kind="success"] .panel-heading{background:linear-gradient(#fff1bd,#efcb82);box-shadow:0 0 0 2px #8b6541,inset 0 0 0 5px #e0b876,inset 0 9px 0 #fff7d8,0 5px 0 #9b7147;color:var(--ui-ink);-webkit-text-stroke:0;text-shadow:0 1px #fff5d4}
+.panel[data-kind="success"] .panel-heading p{-webkit-text-stroke:0;text-shadow:none}
+.panel[data-kind="success"] .reward{background:radial-gradient(ellipse at center,#fff1bc 0%,#fff1bc00 68%)}
+.panel[data-kind="success"] .result{background:#d3e6ca;border-color:#a8c39c;color:var(--ui-ink);box-shadow:inset 0 2px 0 #e9f3d9}
+.panel[data-kind="success"] .result b{color:#24584e;-webkit-text-stroke:0;text-shadow:none}
+.panel[data-kind="failure"] .panel-heading{background:linear-gradient(#c56376,#963c56);box-shadow:0 0 0 2px #7e394a,inset 0 0 0 5px #a74c66,inset 0 9px 0 #de8992,0 5px 0 #79364e}
+.failure-symbol{color:#ffe2b2;margin:0 auto 8px;width:40px;height:40px}
+.failure-symbol svg{display:block;width:100%;height:100%}
+.tutorial-card strong{color:var(--ui-warning)}
+.panel button:focus-visible{outline:4px solid #fff8d5;outline-offset:3px;box-shadow:0 0 0 7px #24584e}
+.toy-level-list .level-choice:focus-visible{outline:3px solid #24584e;outline-offset:2px;box-shadow:0 0 0 5px #fff4e2}

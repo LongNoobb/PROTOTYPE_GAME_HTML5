@@ -86,6 +86,32 @@
     c.closePath();c.fillStyle=glow?'#ffe58d66':'#244b6275';c.fill();c.setLineDash([4,3]);c.strokeStyle=glow?'#fff2ae':'#f4fff9';c.lineWidth=2.2;c.stroke();c.restore();
   }
   function gift(c,x,y,scale=1,variant=0){const name=GiftCatalog.models[variant%GiftCatalog.models.length];c.save();c.translate(x,y);c.scale(scale,scale);c.drawImage(sprite(name,166),-115,-115);c.restore();}
+  // Gift packing, rendered in Blender by source/build_gift_fold.py with the same box, materials and
+  // lights as the 3D gift: a plus-shaped box net lies under the toy, the four walls fold up around it,
+  // the lid closes, then the ribbon wraps the box and the bow is tied. Fold frames come in two layers
+  // (behind / in front of the toy) so the toy sits inside the box while the walls rise.
+  // Timeline in seconds after the last part lands; PACK_DONE is when the gift is credited.
+  const PACK={net:[0,.3],settle:[.25,.6],fold:[.55,1.5],wrap:[1.5,2.06]},PACK_DONE=2.15;
+  const foldAtlas=new Image();foldAtlas.src=GiftFold.src;
+  const clamp01=v=>Math.max(0,Math.min(1,v)),easeOut=v=>1-Math.pow(1-v,3),easeInOut=v=>v<.5?4*v*v*v:1-Math.pow(-2*v+2,3)/2;
+  function foldCell(c,index,dx,dy,k){const F=GiftFold,col=index%F.columns,row=Math.floor(index/F.columns);c.drawImage(foldAtlas,col*F.cellW,row*F.cellH,F.cellW,F.cellH,dx-F.originX*k,dy-F.originY*k,F.cellW*k,F.cellH*k);}
+  function packGift(c,game,order,i,x,toyY,t){
+    const F=GiftFold,v=i%F.models.length,span=([a,b])=>clamp01((t-a)/(b-a)),ground=536+BELT_DROP,giftY=ground+GiftCatalog.bottom[F.models[v]]*166*.329,k=230/256;
+    if(!ready(foldAtlas)){gift(c,x,giftY,1,i);return;}
+    const fold=span(PACK.fold),wrap=t>=PACK.wrap[0];
+    // Cells are drawn about the box bottom so the net can pop in from the belt.
+    const pop=.3+.7*easeOut(span(PACK.net)),cell=index=>{c.save();c.translate(x,ground);c.scale(pop,pop);foldCell(c,index,0,giftY-ground,k);c.restore();};
+    if(wrap){cell(F.wrap[v][Math.min(F.ribbon-1,Math.floor(span(PACK.wrap)*F.ribbon))]);}
+    else{
+      const f=Math.round(fold*(F.fold-1));cell(F.back[v][f]);
+      // The toy hops, shrinks into the box and is hidden once the front wall is up.
+      const settle=easeInOut(span(PACK.settle)),hop=Math.sin(span(PACK.net)*Math.PI)*12,alpha=1-clamp01((fold-.42)/.16);
+      if(alpha>0){const s=1-.45*settle;c.save();c.globalAlpha=alpha;c.translate(x,toyY+(giftY+4-toyY)*settle-hop);c.scale(s,s);drawToy(c,order,0,0,166);c.restore();}
+      cell(F.front[v][f]);
+    }
+    const bowAt=PACK.wrap[0]+(PACK.wrap[1]-PACK.wrap[0])*.6;
+    if(t>bowAt&&t<bowAt+.7){const g=(t-bowAt)/.7;for(let j=0;j<5;j++){const a=j*1.256+game.clock*2;star(c,x+Math.cos(a)*78,480+BELT_DROP+Math.sin(a)*64,(3+Math.sin(g*Math.PI*3)*3)*(1-g),'#ffe391');}}
+  }
   // 3D conveyor: perspective rubber surface, belt wrapping over the front drum, bevelled frame with spinning rollers.
   function belt(c,now,moving){const d=moving?now*.065:0,VX=270,BK=.84,TOP=534,FR=574,LIP=586,BOT=615,PITCH=34;
     // Soft drop shadow onto the workbench and back rail behind the belt.
@@ -160,8 +186,8 @@
   function draw(game,now){ctx.clearRect(0,0,W,H);ctx.drawImage(bg,0,0);belt(ctx,game.beltDistance/.065,true);
     ctx.save();ctx.beginPath();ctx.rect(0,398,W,218);ctx.clip();
     for(let i=0;i<game.orders.length;i++){const order=game.orders[i];if(!order.active||order.shipped)continue;const x=order.x,y=beltY(order.kind),progress=order.packageAt===null?0:Math.max(0,game.clock-order.packageAt);ellipse(ctx,x,537+BELT_DROP,59,8,'#32687933');
-      if(progress<.5){const scale=progress?1+Math.sin(progress/.5*Math.PI)*.1:1;ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);drawToy(ctx,order,0,0,166);const toy=catalog.toys[order.kind],glow=game.selected===i||x>425;if(toy.maskGhosts)maskGhost(ctx,toy,order,0,0,166,glow);else for(const slot of toy.slots)if(order.missing.includes(slot.kind)&&!order.filled.includes(slot.kind))ghost(ctx,slot,0,0,166,glow);ctx.restore();}
-      else{const p=Math.min(1,(progress-.5)/.38),s=.25+.75*(1-Math.pow(1-p,3));const giftName=GiftCatalog.models[i%GiftCatalog.models.length],giftY=536+BELT_DROP+GiftCatalog.bottom[giftName]*166*.329;gift(ctx,x,giftY,s,i);if(progress<1.2){for(let j=0;j<5;j++){const a=j*1.256+game.clock*2;star(ctx,x+Math.cos(a)*78,480+BELT_DROP+Math.sin(a)*64,3+Math.sin(progress*5)*3,'#ffe391');}}}
+      if(order.packageAt===null){ctx.save();ctx.translate(x,y);drawToy(ctx,order,0,0,166);const toy=catalog.toys[order.kind],glow=game.selected===i||x>425;if(toy.maskGhosts)maskGhost(ctx,toy,order,0,0,166,glow);else for(const slot of toy.slots)if(order.missing.includes(slot.kind)&&!order.filled.includes(slot.kind))ghost(ctx,slot,0,0,166,glow);ctx.restore();}
+      else packGift(ctx,game,order,i,x,y,progress);
     }
     ctx.restore();
     ctx.drawImage(tray,0,0);ctx.save();ctx.beginPath();ctx.roundRect(57,709,423,322,23);ctx.clip();ctx.drawImage(game.trayRenderer.canvas,40,690);ctx.restore();
@@ -270,5 +296,5 @@
     });
   }
   onPage(home);
-  window.FactoryArt={queueSlot,drawQueue:queue,QUEUE_SLOTS,QUEUE_SIZE,draw,home,reel,slotReel,sprite,drawToy,gift,beltY,preload,onPage};
+  window.FactoryArt={PACK_DONE,queueSlot,drawQueue:queue,QUEUE_SLOTS,QUEUE_SIZE,draw,home,reel,slotReel,sprite,drawToy,gift,beltY,preload,onPage};
 })();

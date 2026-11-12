@@ -11,6 +11,7 @@
   <script defer src="assets/toy-meshes.js"></script>
   <script defer src="toy-models.js"></script>
   <script defer src="assets/gift-models.js"></script>
+  <script defer src="assets/gift-fold.js"></script>
   <script defer src="missions.js"></script>
   <script defer src="assets/cannon-es.min.js"></script>
   <script defer src="tray-physics.js"></script>
@@ -27,15 +28,12 @@
     <div id="stage">
       <section id="home" aria-labelledby="home-title">
         <canvas id="home-art" width="540" height="1172" aria-hidden="true"></canvas>
-        <header class="home-hud">
-          <button id="home-profile" class="profile glossy" aria-label="Chọn level"></button>
-          <div class="hud-pill home-gifts" aria-label="Tổng quà đã gói"><span class="heart-token" id="home-gift-icon" aria-hidden="true"></span><b id="home-total">0</b><small>QUÀ</small><button id="home-help" class="plus glossy" aria-label="Cách chơi">+</button></div>
-          <div class="hud-pill home-level-pill"><span class="coin" aria-hidden="true"><small>LV</small></span><b id="home-level">1</b><button id="home-level-picker" class="plus glossy" aria-label="Chọn level">+</button></div>
-          <button id="home-settings" class="gear glossy" aria-label="Cài đặt"></button>
+        <header class="home-hud" aria-label="Menu màn hình chính">
+          <div id="home-profile" class="profile" role="img" aria-label="Avatar người chơi"></div>
+          <button id="home-settings" class="gear glossy" aria-label="Cài đặt" title="Cài đặt"></button>
         </header>
         <div class="home-title press-title"><p>PERFECT SHAPE 3D</p><h1 id="home-title">Toy Factory</h1></div>
         <button id="home-play" class="play glossy">Level 1</button>
-        <p id="home-progress">Level 1 / 38</p>
         <nav class="tabs" aria-label="Menu chính">
           <button id="home-collection" aria-label="Bộ đồ chơi"></button>
           <button id="home-tab" class="selected" aria-current="page">Toy Factory</button>
@@ -98,6 +96,17 @@
       <div id="piece-buttons" aria-label="Mảnh trong hộp"></div>
       <footer class="tools order-rail"><button id="hint" class="glossy"><span>✧</span> Gợi ý</button><button id="shuffle" class="glossy"><span>⤨</span> Xóc hộp</button><button id="boost" class="boost glossy" disabled aria-label="Giữ để tăng tốc băng chuyền"><span>»</span> GIỮ TĂNG TỐC</button></footer>
       <div id="toast" role="status" hidden></div>
+      <section id="tutorial" hidden aria-labelledby="tutorial-title">
+        <svg class="tutorial-shade" viewBox="0 0 540 1172" aria-hidden="true"><path id="tutorial-mask" fill-rule="evenodd"/></svg>
+        <div id="tutorial-outline" aria-hidden="true"></div>
+        <article class="tutorial-card">
+          <span id="tutorial-level" class="tutorial-level"></span>
+          <h2 id="tutorial-title"></h2>
+          <p id="tutorial-copy" role="status"></p>
+          <button id="tutorial-continue" class="glossy" hidden>ĐÃ HIỂU · CHƠI TIẾP</button>
+        </article>
+        <button id="tutorial-piece" aria-describedby="tutorial-copy" hidden><svg viewBox="0 0 48 56" aria-hidden="true"><path d="M18 31V9a4 4 0 0 1 8 0v14-4a4 4 0 0 1 8 0v5-2a4 4 0 0 1 8 0v15c0 9-5 15-13 15h-2c-5 0-8-2-11-6L6 33a4 4 0 0 1 6-5l6 6"/></svg></button>
+      </section>
       </div>
       <dialog id="modal" aria-labelledby="modal-title"><article class="panel"><header class="panel-heading"><h1 id="modal-title"></h1><p id="modal-subtitle"></p></header><button id="close" class="close glossy" aria-label="Đóng">×</button><div class="panel-body" id="modal-content"></div></article></dialog>
     </div>

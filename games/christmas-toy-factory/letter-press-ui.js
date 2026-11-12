@@ -12,5 +12,12 @@
   };
 
 
+// A hidden home screen must not own another trophy's SVG paint server.
+const trophyTemplate=icons.trophy;
+let trophyInstance=0;
+Object.defineProperty(icons,'trophy',{get(){
+  const id='letter-press-cup-'+(++trophyInstance);
+  return trophyTemplate.replace('id="cup"','id="'+id+'"').replace('url(#cup)','url(#'+id+')');
+}});
 window.LetterPressUI={icons};
 })();
