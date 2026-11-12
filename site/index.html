@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="A little playground for game ideas. Explore Long Tran's experiments and play the latest prototypes in your browser.">
-  <meta name="theme-color" content="#111613">
+  <meta name="theme-color" content="#f5f2e9">
   <title>Game Prototypes · Long Tran</title>
   <link rel="icon" href="./assets/playground.svg" type="image/svg+xml">
   <link rel="stylesheet" href="./catalog.css">
@@ -15,7 +15,7 @@
   <div class="catalog">
     <header class="site-header">
       <div class="brand">
-        <svg class="brand-mark" viewBox="0 0 32 32" fill="none" aria-hidden="true"><rect x="3" y="3" width="10" height="10" rx="3" fill="currentColor"/><rect x="19" y="3" width="10" height="10" rx="3" fill="currentColor" opacity=".45"/><rect x="3" y="19" width="10" height="10" rx="3" fill="currentColor" opacity=".45"/><path d="m20 19 9 5-9 5V19Z" fill="currentColor"/></svg>
+        <svg class="brand-mark" viewBox="0 0 40 40" fill="none" aria-hidden="true"><rect x="1" y="1" width="38" height="38" rx="10" fill="currentColor"/><path d="M13 15v10m-5-5h10" stroke="#fff" stroke-width="3"/><circle cx="28" cy="16" r="2.5" fill="#fff"/><circle cx="25" cy="25" r="2.5" fill="#fff"/></svg>
         <span>Tran Duc Long<span class="brand-divider">/</span><span class="brand-section">Playground</span></span>
       </div>
       <nav class="navigation" aria-label="Main navigation">
@@ -25,8 +25,8 @@
     <main>
       <section class="intro" aria-labelledby="page-title">
         <div class="intro-copy">
-          <p class="eyebrow"><span class="status-dot" aria-hidden="true"></span> A little lab for game ideas</p>
-          <h1 id="page-title">Ideas you can<br><span>play with.</span><svg class="title-spark" viewBox="0 0 60 60" fill="none" aria-hidden="true"><path d="M30 3v15m0 24v15M3 30h15m24 0h15M11 11l11 11m16 16 11 11M11 49l11-11m16-16 11-11" stroke="currentColor" stroke-width="5" stroke-linecap="round"/></svg></h1>
+          <p class="eyebrow"><span class="eyebrow-label">The prototype club</span> A little lab for game ideas</p>
+          <h1 id="page-title">Ideas you can<br><span>play with.</span></h1>
           <p class="description">Small experiments, curious mechanics, and a few happy accidents. Pick a prototype and give it a play.</p>
           <div class="intro-actions">
             <a class="button button-primary" href="#prototypes">Explore the games <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 5v14m-6-6 6 6 6-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
@@ -34,18 +34,23 @@
           </div>
         </div>
         <div class="hero-art" aria-hidden="true">
-          <div class="orbit orbit-outer"></div><div class="orbit orbit-inner"></div>
-          <span class="art-cross cross-one">+</span><span class="art-cross cross-two">+</span>
-          <span class="art-dot dot-one"></span><span class="art-dot dot-two"></span>
-          <div class="play-tile tile-p">P<span>01</span></div><div class="play-tile tile-l">L<span>02</span></div>
-          <div class="play-tile tile-a">A<span>03</span></div><div class="play-tile tile-y">Y<span>04</span></div>
-          <div class="art-caption"><span class="status-dot"></span> work in play</div>
-          <svg class="art-arrow" viewBox="0 0 100 70" fill="none"><path d="M4 7c12 37 60 2 71 42m-16-5 18 12 8-21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <div class="arcade-window">
+            <div class="arcade-toolbar"><span class="window-dots"><i></i><i></i><i></i></span><span>PLAYGROUND.EXE</span><span>↗</span></div>
+            <div class="arcade-screen">
+              <div class="screen-label"><span>Small games. Big curiosity.</span><span>01 / ∞</span></div>
+              <span class="screen-word">PLAY</span>
+              <svg class="controller" viewBox="0 0 360 190" fill="none"><path d="M88 31c-27 0-41 18-50 50L18 143c-8 27 18 45 38 28l49-37h150l49 37c20 17 46-1 38-28l-20-62c-9-32-23-50-50-50H88Z" fill="#17243b" transform="translate(0 9)"/><path d="M88 31c-27 0-41 18-50 50L18 143c-8 27 18 45 38 28l49-37h150l49 37c20 17 46-1 38-28l-20-62c-9-32-23-50-50-50H88Z" fill="#f5f2e9" stroke="#17243b" stroke-width="4"/><path d="M88 63v45m-22-22h44" stroke="#17243b" stroke-width="16" stroke-linejoin="round"/><circle cx="271" cy="65" r="13" fill="#f36c39" stroke="#17243b" stroke-width="3"/><circle cx="296" cy="96" r="13" fill="#edce59" stroke="#17243b" stroke-width="3"/><rect x="153" y="94" width="22" height="7" rx="3.5" fill="#17243b"/><rect x="186" y="94" width="22" height="7" rx="3.5" fill="#17243b"/></svg>
+              <span class="screen-cross cross-one">+</span><span class="screen-cross cross-two">+</span>
+            </div>
+            <div class="arcade-status"><span><span class="status-dot"></span> Ready when you are</span><span>NO INSTALL NEEDED</span></div>
+          </div>
+          <div class="play-sticker">JUST<br>ONE<br><span>MORE!</span></div>
+          <span class="art-caption">Built to try. Made to play.</span>
         </div>
       </section>
       <section id="prototypes" class="library" aria-labelledby="library-title" tabindex="-1">
         <div class="library-heading">
-          <div><p class="eyebrow section-eyebrow">The collection</p><h2 id="library-title">Game prototypes<span class="collection-count"><!-- COUNT --></span></h2></div>
+          <div><p class="eyebrow section-eyebrow">Choose your next little obsession</p><h2 id="library-title">Game prototypes<span class="collection-count"><!-- COUNT --></span></h2></div>
           <p class="library-note"><span class="status-dot" aria-hidden="true"></span> Early builds. Fresh ideas.</p>
         </div>
         <!-- GAMES -->
