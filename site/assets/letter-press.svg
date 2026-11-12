@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" fill="none">
+  <defs>
+    <radialGradient id="bg"><stop stop-color="#68617f"/><stop offset="1" stop-color="#38384e"/></radialGradient>
+    <linearGradient id="tile" x2=".4" y2="1"><stop stop-color="#fff9df"/><stop offset="1" stop-color="#e5dcbe"/></linearGradient>
+    <filter id="shadow" x="-50%" y="-50%" width="200%" height="210%"><feDropShadow dx="0" dy="19" stdDeviation="13" flood-color="#171526" flood-opacity=".45"/></filter>
+    <pattern id="grid" width="56" height="56" patternUnits="userSpaceOnUse"><path d="M56 0H0v56" stroke="#d9ccef" stroke-opacity=".06"/></pattern>
+  </defs>
+  <path fill="url(#bg)" d="M0 0h800v500H0z"/><path fill="url(#grid)" d="M0 0h800v500H0z"/>
+  <ellipse cx="400" cy="400" rx="227" ry="35" fill="#252335" opacity=".3"/>
+  <g transform="translate(400 255) rotate(-11)" filter="url(#shadow)">
+    <rect x="-255" y="-132" width="510" height="265" rx="47" fill="#333347" stroke="#827993" stroke-width="3"/>
+    <rect x="-234" y="-113" width="468" height="218" rx="31" fill="#454156" stroke="#242334" stroke-width="4"/>
+    <g transform="translate(-216 -92) rotate(-3 53 86)">
+      <rect y="12" width="102" height="182" rx="17" fill="#b7ab83"/><rect width="102" height="182" rx="17" fill="url(#tile)" stroke="#fff9e4" stroke-width="2"/>
+      <text x="49" y="119" text-anchor="middle" font-family="Arial,sans-serif" font-weight="700" font-size="89" fill="#655779">P</text><circle cx="81" cy="156" r="3" fill="#a49777"/>
+    </g>
+    <g transform="translate(-105 -97) rotate(4 53 86)">
+      <rect y="12" width="102" height="182" rx="17" fill="#7b9672"/><rect width="102" height="182" rx="17" fill="#c4e2ac" stroke="#def2c9" stroke-width="2"/>
+      <text x="50" y="120" text-anchor="middle" font-family="Arial,sans-serif" font-weight="700" font-size="89" fill="#3b6149">L</text><circle cx="81" cy="156" r="3" fill="#7e9a6c"/>
+    </g>
+    <g transform="translate(7 -90) rotate(-2 53 86)">
+      <rect y="12" width="102" height="182" rx="17" fill="#b7ab83"/><rect width="102" height="182" rx="17" fill="url(#tile)" stroke="#fff9e4" stroke-width="2"/>
+      <text x="51" y="119" text-anchor="middle" font-family="Arial,sans-serif" font-weight="700" font-size="89" fill="#655779">A</text><circle cx="81" cy="156" r="3" fill="#a49777"/>
+    </g>
+    <g transform="translate(120 -96) rotate(3 53 86)">
+      <rect y="12" width="102" height="182" rx="17" fill="#a17b70"/><rect width="102" height="182" rx="17" fill="#edb6a0" stroke="#f8cbb7" stroke-width="2"/>
+      <text x="51" y="120" text-anchor="middle" font-family="Arial,sans-serif" font-weight="700" font-size="89" fill="#8b5146">Y</text><circle cx="81" cy="156" r="3" fill="#b77865"/>
+    </g>
+  </g>
+  <g stroke="#d0c0ea" stroke-width="3" stroke-linecap="round" opacity=".7"><path d="M124 132v20m-10-10h20m539 199v20m-10-10h20"/></g>
+  <circle cx="650" cy="122" r="5" fill="#c7e1ae"/><circle cx="158" cy="377" r="4" fill="#e9b59f"/>
+</svg>

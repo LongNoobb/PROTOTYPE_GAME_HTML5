@@ -19,6 +19,10 @@ games/
 
 Với Unity WebGL, dùng **Compression Format → Disabled** hoặc bật **Decompression Fallback** khi export build nén. GitHub Pages phục vụ tệp tĩnh và không có cấu hình header riêng cho từng build. Repo và các bản build đã đăng đều công khai.
 
+## Nội dung trang chủ
+
+Trang chủ tự tạo thẻ và đếm số game từ các thư mục trong `games/`. Để tùy chỉnh tên, thể loại, mô tả và hình minh họa, thêm mục có key trùng tên thư mục game vào `site/games.json`. Trường `art` là tên tệp SVG trong `site/assets/`. Game chưa có mục riêng vẫn tự xuất hiện với tên từ thư mục, mô tả và hình minh họa mặc định. Giao diện nằm trong `site/index.html` và `site/catalog.css`.
+
 ## Xem thử trên máy
 
 ```sh
