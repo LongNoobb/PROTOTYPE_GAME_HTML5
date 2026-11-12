@@ -65,6 +65,7 @@
     })
     .filter(([,wheel]) => wheel.half < wheel.radius*.6));
 
+  const trueProportions = new Set(["robotAntenna"]);
   function pieceSize(piece) {
     const radius = piece.size * .329;
     // Wheels keep their true modelled thickness (renderer z scale = radius).
@@ -74,10 +75,28 @@
     // depth squashed chunky parts (rocket base, legs, studs, ball patches) to
     // 20–60% along the view axis, so they read as flat 2D stickers. Thin parts
     // keep the slab minimum so they stay easy to see and grab.
-    const slab = piece.size*(piece.kind === "hammer" ? .069 : .099);
     const model = window.ShapeModels[piece.kind];
+    // Round parts must keep true proportions: stretching the antenna's stick and ball
+    // to the slab minimum turned them into a flat blade and disc.
+    if (model && trueProportions.has(piece.kind)) return {radius, depth: radius*model.depth};
+    const slab = piece.size*(piece.kind === "hammer" ? .069 : .099);
     return {radius, depth: Math.max(slab, model ? radius*model.depth : 0)};
   }
+
+  // Parts whose colour only reads from one broad face (the striped ice-cream canopy)
+  // always land with that face toward the camera and never tip over. The face normal
+  // is the mesh's thinnest principal axis, signed toward model +Y (the part's top).
+  const faceUp = Object.fromEntries(["iceCreamWindow"].filter(kind => window.ShapeModels[kind]).map(kind => {
+    const v = window.ShapeModels[kind].vertices, points = [];
+    for (let i = 0; i < v.length; i += 6) points.push([v[i],-v[i+1],v[i+2]]);
+    const extent = n => {
+      let low = Infinity, high = -Infinity;
+      for (const p of points) { const t = n[0]*p[0]+n[1]*p[1]+n[2]*p[2]; low = Math.min(low,t); high = Math.max(high,t); }
+      return high-low;
+    };
+    const normal = principalFrame(points).reduce((a,b) => extent(b) < extent(a) ? b : a);
+    return [kind, normal[1] > 0 ? normal.map(x => -x) : normal];
+  }));
 
   function cylinder(wheel, scale) {
     const SEGMENTS = 16;
@@ -312,7 +331,14 @@
         position:new Vec3((piece.x-cx)/PIXELS,(piece.y-cy)/PIXELS,.04+(reach+lift)/PIXELS),
         linearDamping:.31, angularDamping:.54, sleepSpeedLimit:.68, sleepTimeLimit:.28
       });
-      if (wheel) {
+      if (!piece.fixed && faceUp[piece.kind]) {
+        const Quaternion = body.quaternion.constructor;  // not exported by the ShapeRigid bundle
+        const up = new Vec3(0,0,1);
+        const align = new Quaternion().setFromVectors(new Vec3(...faceUp[piece.kind]),up);
+        new Quaternion().setFromAxisAngle(up,Math.random()*Math.PI*2).mult(align,body.quaternion);
+        body.angularFactor.set(0,0,1);   // may spin flat on the tray, never flip over
+        body.angularVelocity.set(0,0,(Math.random()-.5)*3);
+      } else if (wheel) {
         tumblePose(body);
         body.angularVelocity.set((Math.random()-.5)*3,(Math.random()-.5)*3,(Math.random()-.5)*3);
       } else if (tumbling) {

@@ -69,8 +69,9 @@
   ];
   const catalog=window.ToyCatalog.toys;
   const names=Object.fromEntries(Object.entries(catalog).map(([k,v])=>[k,v.name.toLowerCase()]));
-  // Gifts to pack per level (6–12). Extra toys repeat the level's authored belt pattern,
-  // so each skill block keeps its rhythm over a longer run.
+  // Gifts to pack per phase (6–12). Each level runs PHASES phases, so the level goal is
+  // 3× this. Extra toys repeat the level's authored belt pattern, so each skill block
+  // keeps its rhythm over a longer run.
   const giftTargets=[
     6,6,6,7,7,        // 1–5 shape
     7,8,8,8,          // 6–9 precision
@@ -80,11 +81,33 @@
     9,10,10,11,       // 24–27 speed
     10,10,11,11,11,12,12,12,12,12,12 // 28–38 master
   ];
+  const PHASES=3;
   // Keep the tray readable: repeated toys drop to one missing part beyond this stock.
   const MAX_STOCK=24;
   const partsOf=kind=>[...new Set(catalog[kind].slots.map(s=>s.kind))].filter(k=>!fixedParts.has(k));
-  const missions=authored.map((mission,index)=>{
-    const base=mission.toys,total=Math.max(giftTargets[index]||base.length,base.length);
+  // Look-alike families: later phases swap each authored toy for an unused one from the
+  // same family (similar parts keep the level's skill), falling back to any unused toy.
+  const families=[
+    ['car','bus','train','iceCreamTruck','ambulance','sportsCar','cadillac','hotdogCart','tank'],
+    ['plane','rocket','spaceship'],
+    ['bear','koala','panda','polarBear','tiger','penguin','chicken'],
+    ['robot','doll','lego','cactus'],
+    ['yoyo','discoBall','poolBall','billiardBall','easterEgg']
+  ];
+  const familyOf=Object.fromEntries(families.flatMap((f,i)=>f.map(k=>[k,i])));
+  const allKinds=Object.keys(catalog);
+  function substitutes(base,used,index,phase){
+    const map={},want={};
+    for(const {kind,n} of base)want[kind]=Math.max(want[kind]||0,n);
+    for(const kind of new Set(base.map(t=>t.kind))){
+      const need=Math.min(4,want[kind]),rot=index*3+phase*5;
+      const rank=k=>(familyOf[k]===familyOf[kind]?0:100)+(partsOf(k).length>=need?0:10)+((allKinds.indexOf(k)+rot)%allKinds.length)/100;
+      const pick=allKinds.filter(k=>!used.has(k)).sort((a,b)=>rank(a)-rank(b))[0]||kind;
+      map[kind]=pick;used.add(pick);
+    }
+    return base.map(t=>({kind:map[t.kind],n:t.n}));
+  }
+  function buildPhase(base,total,index,phase){
     const toys=Array.from({length:total},(_,i)=>({...base[i%base.length]}));
     const pieces=toys.map(({kind,n})=>Math.max(1,Math.min(4,n,partsOf(kind).length)));
     for(let i=total-1,stock=pieces.reduce((a,b)=>a+b,0);i>=base.length&&stock>MAX_STOCK;i--){stock-=pieces[i]-1;pieces[i]=1;}
@@ -92,16 +115,31 @@
       const parts=partsOf(kind);
       const count=pieces[i];
       // Rotate the starting part so repeated toys miss different parts (head, legs ...).
-      const shift=parts.length>count?(i+index)%parts.length:0,order=[...parts.slice(shift),...parts.slice(0,shift)];
+      const shift=parts.length>count?(i+index+phase)%parts.length:0,order=[...parts.slice(shift),...parts.slice(0,shift)];
       return {kind,missing:order.slice(0,count)};
     });
     const types=[...new Set(orders.map(o=>o.kind))];
     const counts={};for(const o of orders)counts[o.kind]=(counts[o.kind]||0)+1;
-    const parts=orders.reduce((n,o)=>n+o.missing.length,0);
+    return {orders,types,slotCount:types.length,toyCount:orders.length,
+      parts:orders.reduce((n,o)=>n+o.missing.length,0),
+      goal:Object.entries(counts).map(([k,n])=>n+' '+names[k]).join(' · ')};
+  }
+  const missions=authored.map((mission,index)=>{
+    // Phase count ramps up: 1 phase (tutorial levels 1–2), 2 phases (levels 3–9), then 3.
+    // The gift total stays 3× the base target, split as evenly as possible.
+    const phaseCount=Math.min(PHASES,index<2?1:index<9?2:3);
+    const base=mission.toys,total=Math.max(giftTargets[index]||base.length,base.length)*PHASES;
+    const used=new Set(base.map(t=>t.kind));
+    const phases=Array.from({length:phaseCount},(_,p)=>{
+      const size=Math.max(base.length,Math.floor(total/phaseCount)+(p<total%phaseCount?1:0));
+      return buildPhase(p?substitutes(base,used,index,p):base,size,index,p);
+    });
+    const orders=phases.flatMap(p=>p.orders);
+    const parts=phases.reduce((n,p)=>n+p.parts,0);
     const skill=skills[mission.skill];
-    return {title:mission.title,orders,types,slotCount:types.length,toyCount:orders.length,level:index+1,speed:mission.speed,
+    return {title:mission.title,phases,orders,types:[...new Set(orders.map(o=>o.kind))],toyCount:orders.length,level:index+1,speed:mission.speed,
       skill:mission.skill,skillName:skill.name,tip:skill.tip,
-      goal:Object.entries(counts).map(([k,n])=>n+' '+names[k]).join(' · '),parts,stockCount:parts};
+      goal:phases.map((p,i)=>'Phase '+(i+1)+': '+p.goal).join(' | '),parts,stockCount:parts};
   });
   window.FactoryMissions=missions;
 })();
