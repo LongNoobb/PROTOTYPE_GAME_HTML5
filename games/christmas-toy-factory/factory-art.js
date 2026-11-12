@@ -164,7 +164,7 @@
     face([[-92,-65],[-43,-40],[-43,90],[-92,65]],'#d39d55');
     face([[-43,-40],[123,-40],[123,90],[-43,90]],grad(c,-43,-40,123,90,[[0,'#eec37d'],[1,'#c38b43']]));
     c.fillStyle='#ffe3a7';c.fillRect(27,-40,26,130);
-    round(c,-17,-6,112,61,5,'#fff4d6');c.fillStyle='#315d53';c.textAlign='center';c.font='900 13px system-ui';c.fillText('LINH KIỆN',39,19);c.font='900 11px system-ui';c.fillText('LEVEL '+game.batch,39,39);
+    round(c,-17,-6,112,61,5,'#fff4d6');c.fillStyle='#315d53';c.textAlign='center';c.font='900 13px system-ui';c.fillText('PARTS',39,19);c.font='900 11px system-ui';c.fillText('LEVEL '+game.batch,39,39);
     c.restore();
   }
   // Waiting queue: 5 slots in the gap between the belt and the parts tray.
@@ -191,7 +191,7 @@
     }
     ctx.restore();
     ctx.drawImage(tray,0,0);ctx.save();ctx.beginPath();ctx.roundRect(57,709,423,322,23);ctx.clip();ctx.drawImage(game.trayRenderer.canvas,40,690);ctx.restore();
-    if(!game.tray.length&&!game.pour){ctx.save();ctx.textAlign='center';ctx.fillStyle='#385664';ctx.font='800 17px system-ui';ctx.fillText(game.phase==='playing'||game.phase==='complete'?'ĐÃ GHÉP ĐỦ MẢNH':'KHAY ĐANG TRỐNG',270,862);ctx.font='13px system-ui';ctx.fillStyle='#4b6875';ctx.fillText(game.phase==='playing'?'Đang đóng gói và gửi quà…':game.phase==='complete'?'Tất cả quà đã được gửi đi':'Chờ máy quay để nhận linh kiện',270,889);ctx.restore();}
+    if(!game.tray.length&&!game.pour){ctx.save();ctx.textAlign='center';ctx.fillStyle='#385664';ctx.font='800 17px system-ui';ctx.fillText(game.phase==='playing'||game.phase==='complete'?'ALL PARTS FITTED':'TRAY EMPTY',270,862);ctx.font='13px system-ui';ctx.fillStyle='#4b6875';ctx.fillText(game.phase==='playing'?'Wrapping and sending gifts…':game.phase==='complete'?'All gifts have been sent':'Spin the machine to get parts',270,889);ctx.restore();}
     if(game.highlight&&game.clock<game.highlight.until){const p=game.tray.find(p=>p.id===game.highlight.id);if(p){const focus=game.trayRenderer.focus(p);if(focus){ctx.save();ctx.strokeStyle='#24676f';ctx.lineWidth=3;ctx.setLineDash([7,5]);ctx.shadowColor='#ffffff';ctx.shadowBlur=14;ctx.beginPath();ctx.ellipse(p.x,p.y,44,44,now*.002,0,Math.PI*2);ctx.stroke();star(ctx,p.x+40,p.y-25,10,'#24676f');ctx.restore();}}}
     queue(ctx,game);
     if(game.pour)pouring(ctx,game);

@@ -10,62 +10,62 @@
   // geometry or tray stock.
   const fixedParts=new Set(['carWindow','carWindshield','rocketWindow']);
   const skills={
-    shape:{name:'Nhận diện hình dạng',tip:'Nhìn chỗ khuyết trên đồ chơi, tìm mảnh cùng hình trong khay.'},
-    precision:{name:'Chính xác & loại trừ',tip:'Mảnh trông giống nhau! Bánh, cánh, tai mỗi đồ chơi một kiểu — so kỹ rồi mới thả.'},
-    tray:{name:'Lục khay linh kiện',tip:'Khay đầy mảnh chồng nhau. Xóc hộp để lộ mảnh bị che, bí thì dùng Gợi ý.'},
-    priority:{name:'Ưu tiên theo thời gian',tip:'Băng chuyền nhanh! Lắp món gần cửa ra trước, chạm đồ chơi để ghim mục tiêu.'},
-    queue:{name:'Quản lý hàng đợi',tip:'Món đầu cần nhiều mảnh. Đừng nhặt trước quá nhiều mảnh của món sau — đầy 5 ô là thua!'},
-    speed:{name:'Kiểm soát tốc độ',tip:'Băng chuyền chậm. Giữ TĂNG TỐC khi đã sẵn mảnh, thả ra khi món nhiều mảnh tới gần.'},
-    master:{name:'Tổng hợp',tip:'Mọi kỹ năng cùng lúc: nhận hình nhanh, ưu tiên món sắp ra, giữ hàng đợi gọn.'}
+    shape:{name:'Shape recognition',tip:'Match the missing shape on the toy to a part in the tray.'},
+    precision:{name:'Spot the difference',tip:'Similar parts can be tricky! Compare wheels, wings and ears before dropping them.'},
+    tray:{name:'Search the tray',tip:'Parts overlap in the tray. Shake to uncover them, or use Hint if you get stuck.'},
+    priority:{name:'Beat the clock',tip:'Prioritize toys closest to the exit. Tap a toy to focus on it.'},
+    queue:{name:'Manage the queue',tip:'The first toy needs several parts. Avoid collecting too many parts for later toys: 5 full slots ends the level!'},
+    speed:{name:'Control the speed',tip:'Hold SPEED UP when your parts are ready. Release it when a toy needs more work.'},
+    master:{name:'Master all skills',tip:'Use every skill: match shapes quickly, prioritize urgent toys and keep the queue clear.'}
   };
   // L(skill, title, speed, 'kind:pieces', ...) — one entry per toy, in belt order.
   const L=(skill,title,speed,...toys)=>({skill,title,speed,toys:toys.map(s=>{const [kind,n]=s.split(':');return {kind,n:Number(n)};})});
   const authored=[
-    // 1–5 · Nhận diện hình dạng: ít loại, 1–2 mảnh, băng chậm.
-    L('shape','Ba điều ước đầu tiên',24,'car:1','car:1','car:1','car:1'),
-    L('shape','Những người bạn máy',24,'robot:1','robot:1','robot:1','robot:1'),
-    L('shape','Chuyến bay Bắc Cực',25,'rocket:1','car:1','rocket:1','car:1'),
-    L('shape','Gấu bông mùa đông',25,'bear:1','plane:2','bear:2','plane:1'),
-    L('shape','Tàu tốc hành Noel',26,'train:1','robot:2','train:2','robot:1'),
-    // 6–9 · Chính xác & loại trừ: các loại có mảnh na ná nhau (bánh xe, cánh, tai).
-    L('precision','Đội xe giao quà',26,'car:2','train:2','bus:1','car:2','train:2'),
-    L('precision','Xe kem mùa tuyết',26,'iceCreamTruck:2','bus:2','car:2','iceCreamTruck:2','bus:2'),
-    L('precision','Bầu trời đêm Noel',27,'plane:2','rocket:2','spaceship:2','plane:2','rocket:2','spaceship:2'),
-    L('precision','Rừng thú bông',27,'bear:2','koala:2','panda:2','bear:2','koala:2','panda:2'),
-    // 10–13 · Lục khay: 18–24 mảnh trong khay, băng chậm để có thời gian xóc và tìm.
-    L('tray','Xưởng đêm Giáng sinh',24,'robot:3','bear:3','plane:3','robot:3','bear:3','plane:3'),
-    L('tray','Phố đồ ăn Giáng sinh',24,'hotdogCart:3','iceCreamTruck:3','train:3','ambulance:3','hotdogCart:3','train:3'),
-    L('tray','Biệt đội robot Noel',25,'robot:3','tiger:3','koala:3','spaceship:3','robot:3','tiger:3','koala:3'),
-    L('tray','Góc xếp hình',25,'lego:4','doll:3','discoBall:4','panda:3','lego:4','doll:3'),
-    // 14–18 · Ưu tiên theo thời gian: băng nhanh dần, mỗi món ít mảnh.
-    L('priority','Đường đua trên tuyết',32,'sportsCar:1','cadillac:1','car:1','sportsCar:2','cadillac:1','car:2'),
-    L('priority','Đoàn xe đặc biệt',34,'ambulance:2','tank:1','sportsCar:1','cadillac:2','ambulance:1','tank:1','sportsCar:2'),
-    L('priority','Bạn thú mùa đông',35,'polarBear:2','penguin:2','chicken:2','bear:2','polarBear:1','penguin:2','chicken:1'),
-    L('priority','Câu lạc bộ bi-a',36,'poolBall:1','billiardBall:2','yoyo:1','easterEgg:1','cactus:2','poolBall:2','billiardBall:1','yoyo:2'),
-    L('priority','Ga quà Giáng sinh',38,'train:2','bus:2','plane:2','rocket:2','robot:2','train:1','bus:1','plane:2'),
-    // 19–23 · Quản lý hàng đợi: món đầu nặng, sau là nhiều món nhẹ khác loại dễ nhặt trước.
-    L('queue','Chuyến hàng mùa đông',28,'robot:4','bear:1','plane:1','train:1','bear:1','plane:1'),
-    L('queue','Garage ông già Noel',29,'hotdogCart:4','iceCreamTruck:3','car:1','sportsCar:1','ambulance:1','car:1','sportsCar:1'),
-    L('queue','Trạm không gian',30,'spaceship:4','rocket:3','plane:1','rocket:1','plane:1','spaceship:1','tank:1'),
-    L('queue','Vườn thú Giáng sinh',31,'tiger:4','koala:4','panda:1','penguin:1','polarBear:1','panda:1','penguin:1','polarBear:1'),
-    L('queue','Sàn nhảy Noel',32,'discoBall:4','doll:4','lego:3','chicken:1','cactus:1','lego:1','chicken:1','cactus:1'),
-    // 24–27 · Kiểm soát tốc độ: băng chậm, xen kẽ món nhẹ (nên tăng tốc) và món nặng (nên thả).
-    L('speed','Chuyến quà thong thả',22,'car:1','bus:1','train:4','car:1','bus:1','train:4'),
-    L('speed','Xe buýt đón Giáng sinh',22,'bus:1','iceCreamTruck:4','ambulance:1','hotdogCart:4','bus:1','ambulance:1','iceCreamTruck:4'),
-    L('speed','Gấu và chuyến bay',23,'bear:1','plane:1','bear:4','plane:1','koala:1','panda:4','koala:1'),
-    L('speed','Chuyến quà của ông Noel',24,'robot:1','rocket:1','robot:4','train:1','rocket:1','plane:4','train:1','plane:1'),
-    // 28–38 · Tổng hợp: 5 loại, 8 món, tới 4 mảnh, băng 34–38 px/s.
-    L('master','Đội cứu hộ tuyết',34,'ambulance:3','sportsCar:2','iceCreamTruck:3','bus:2','train:3','ambulance:2','sportsCar:3','bus:1'),
-    L('master','Căn cứ đồ chơi',34,'tank:1','spaceship:3','hotdogCart:4','cadillac:2','sportsCar:2','spaceship:2','hotdogCart:2','tank:1'),
-    L('master','Bữa tiệc kính râm',35,'penguin:3','doll:3','tiger:4','polarBear:2','panda:3','penguin:1','doll:2','tiger:2'),
-    L('master','Trang trại sa mạc',35,'chicken:3','cactus:4','doll:2','penguin:2','tiger:3','chicken:2','cactus:1','doll:4'),
-    L('master','Góc đồ chơi xếp hình',36,'lego:4','yoyo:2','cactus:3','chicken:4','doll:1','lego:2','yoyo:1','cactus:2'),
-    L('master','Đêm disco Giáng sinh',36,'discoBall:4','yoyo:2','lego:3','cactus:2','chicken:3','discoBall:2','lego:1','yoyo:1'),
-    L('master','Đêm bi-a Giáng sinh',37,'poolBall:3','billiardBall:2','discoBall:3','yoyo:2','lego:4','poolBall:1','billiardBall:3','discoBall:1'),
-    L('master','Giỏ quà lò sưởi',37,'easterEgg:1','billiardBall:3','poolBall:2','discoBall:4','yoyo:2','easterEgg:1','poolBall:3','discoBall:2'),
-    L('master','Đoàn hộ tống ông Noel',38,'ambulance:4','tank:1','spaceship:4','easterEgg:1','billiardBall:3','ambulance:2','spaceship:2','tank:1'),
-    L('master','Đêm hội thú bông',38,'panda:4','penguin:3','tiger:4','easterEgg:1','billiardBall:2','panda:2','tiger:3','penguin:1'),
-    L('master','Đại tiệc xưởng đồ chơi',38,'hotdogCart:3','doll:3','discoBall:3','robot:3','plane:3','hotdogCart:2','doll:2','discoBall:1')
+    // 1–5: recognize shapes with a small set of toys and 1–2 missing parts.
+    L('shape','Three First Wishes',24,'car:1','car:1','car:1','car:1'),
+    L('shape','Robot Friends',24,'robot:1','robot:1','robot:1','robot:1'),
+    L('shape','Arctic Flight',25,'rocket:1','car:1','rocket:1','car:1'),
+    L('shape','Winter Teddy Bears',25,'bear:1','plane:2','bear:2','plane:1'),
+    L('shape','Christmas Express',26,'train:1','robot:2','train:2','robot:1'),
+    // 6–9: distinguish similar wheels, wings and ears.
+    L('precision','Gift Delivery Fleet',26,'car:2','train:2','bus:1','car:2','train:2'),
+    L('precision','Snowy Ice Cream Trucks',26,'iceCreamTruck:2','bus:2','car:2','iceCreamTruck:2','bus:2'),
+    L('precision','Christmas Night Sky',27,'plane:2','rocket:2','spaceship:2','plane:2','rocket:2','spaceship:2'),
+    L('precision','Plush Toy Forest',27,'bear:2','koala:2','panda:2','bear:2','koala:2','panda:2'),
+    // 10–13: search through overlapping parts in the tray.
+    L('tray','Christmas Night Workshop',24,'robot:3','bear:3','plane:3','robot:3','bear:3','plane:3'),
+    L('tray','Christmas Food Street',24,'hotdogCart:3','iceCreamTruck:3','train:3','ambulance:3','hotdogCart:3','train:3'),
+    L('tray','Christmas Robot Squad',25,'robot:3','tiger:3','koala:3','spaceship:3','robot:3','tiger:3','koala:3'),
+    L('tray','Building Block Corner',25,'lego:4','doll:3','discoBall:4','panda:3','lego:4','doll:3'),
+    // 14–18: prioritize toys approaching the exit.
+    L('priority','Snowy Speedway',32,'sportsCar:1','cadillac:1','car:1','sportsCar:2','cadillac:1','car:2'),
+    L('priority','Special Convoy',34,'ambulance:2','tank:1','sportsCar:1','cadillac:2','ambulance:1','tank:1','sportsCar:2'),
+    L('priority','Winter Animal Friends',35,'polarBear:2','penguin:2','chicken:2','bear:2','polarBear:1','penguin:2','chicken:1'),
+    L('priority','Pool Club',36,'poolBall:1','billiardBall:2','yoyo:1','easterEgg:1','cactus:2','poolBall:2','billiardBall:1','yoyo:2'),
+    L('priority','Christmas Gift Station',38,'train:2','bus:2','plane:2','rocket:2','robot:2','train:1','bus:1','plane:2'),
+    // 19–23: manage queued parts while completing complex toys.
+    L('queue','Winter Delivery',28,'robot:4','bear:1','plane:1','train:1','bear:1','plane:1'),
+    L('queue','Santa’s Garage',29,'hotdogCart:4','iceCreamTruck:3','car:1','sportsCar:1','ambulance:1','car:1','sportsCar:1'),
+    L('queue','Space Station',30,'spaceship:4','rocket:3','plane:1','rocket:1','plane:1','spaceship:1','tank:1'),
+    L('queue','Christmas Zoo',31,'tiger:4','koala:4','panda:1','penguin:1','polarBear:1','panda:1','penguin:1','polarBear:1'),
+    L('queue','Christmas Dance Floor',32,'discoBall:4','doll:4','lego:3','chicken:1','cactus:1','lego:1','chicken:1','cactus:1'),
+    // 24–27: practice holding and releasing the speed boost.
+    L('speed','A Leisurely Delivery',22,'car:1','bus:1','train:4','car:1','bus:1','train:4'),
+    L('speed','Christmas Bus Ride',22,'bus:1','iceCreamTruck:4','ambulance:1','hotdogCart:4','bus:1','ambulance:1','iceCreamTruck:4'),
+    L('speed','Bears Take Flight',23,'bear:1','plane:1','bear:4','plane:1','koala:1','panda:4','koala:1'),
+    L('speed','Santa’s Gift Run',24,'robot:1','rocket:1','robot:4','train:1','rocket:1','plane:4','train:1','plane:1'),
+    // 28–38: combine all skills with five toy types and up to four missing parts.
+    L('master','Snow Rescue Team',34,'ambulance:3','sportsCar:2','iceCreamTruck:3','bus:2','train:3','ambulance:2','sportsCar:3','bus:1'),
+    L('master','Toy Base',34,'tank:1','spaceship:3','hotdogCart:4','cadillac:2','sportsCar:2','spaceship:2','hotdogCart:2','tank:1'),
+    L('master','Sunglasses Party',35,'penguin:3','doll:3','tiger:4','polarBear:2','panda:3','penguin:1','doll:2','tiger:2'),
+    L('master','Desert Farm',35,'chicken:3','cactus:4','doll:2','penguin:2','tiger:3','chicken:2','cactus:1','doll:4'),
+    L('master','Block Toy Corner',36,'lego:4','yoyo:2','cactus:3','chicken:4','doll:1','lego:2','yoyo:1','cactus:2'),
+    L('master','Christmas Disco Night',36,'discoBall:4','yoyo:2','lego:3','cactus:2','chicken:3','discoBall:2','lego:1','yoyo:1'),
+    L('master','Christmas Pool Night',37,'poolBall:3','billiardBall:2','discoBall:3','yoyo:2','lego:4','poolBall:1','billiardBall:3','discoBall:1'),
+    L('master','Fireside Gift Basket',37,'easterEgg:1','billiardBall:3','poolBall:2','discoBall:4','yoyo:2','easterEgg:1','poolBall:3','discoBall:2'),
+    L('master','Santa’s Escort',38,'ambulance:4','tank:1','spaceship:4','easterEgg:1','billiardBall:3','ambulance:2','spaceship:2','tank:1'),
+    L('master','Plush Toy Festival',38,'panda:4','penguin:3','tiger:4','easterEgg:1','billiardBall:2','panda:2','tiger:3','penguin:1'),
+    L('master','Toy Factory Celebration',38,'hotdogCart:3','doll:3','discoBall:3','robot:3','plane:3','hotdogCart:2','doll:2','discoBall:1')
   ];
   const catalog=window.ToyCatalog.toys;
   const names=Object.fromEntries(Object.entries(catalog).map(([k,v])=>[k,v.name.toLowerCase()]));
