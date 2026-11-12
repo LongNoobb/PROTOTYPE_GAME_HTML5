@@ -21,10 +21,44 @@
   <script defer src="game.js"></script>
 </head>
 <body>
+  <!-- Add src or a <source> here when the background music track is available. -->
+  <audio id="background-music" loop preload="none"></audio>
   <main id="viewport" aria-label="Xưởng đồ chơi Giáng sinh">
     <div id="stage">
+      <section id="home" aria-labelledby="home-title">
+        <canvas id="home-art" width="540" height="1172" aria-hidden="true"></canvas>
+        <header class="home-hud">
+          <button id="home-profile" class="profile glossy" aria-label="Chọn level"></button>
+          <div class="hud-pill home-gifts" aria-label="Tổng quà đã gói"><span class="heart-token" id="home-gift-icon" aria-hidden="true"></span><b id="home-total">0</b><small>QUÀ</small><button id="home-help" class="plus glossy" aria-label="Cách chơi">+</button></div>
+          <div class="hud-pill home-level-pill"><span class="coin" aria-hidden="true"><small>LV</small></span><b id="home-level">1</b><button id="home-level-picker" class="plus glossy" aria-label="Chọn level">+</button></div>
+          <button id="home-settings" class="gear glossy" aria-label="Cài đặt"></button>
+        </header>
+        <div class="home-title press-title"><p>PERFECT SHAPE 3D</p><h1 id="home-title">Toy Factory</h1></div>
+        <button id="home-play" class="play glossy">Level 1</button>
+        <p id="home-progress">Level 1 / 38</p>
+        <nav class="tabs" aria-label="Menu chính">
+          <button id="home-collection" aria-label="Bộ đồ chơi"></button>
+          <button id="home-tab" class="selected" aria-current="page">Toy Factory</button>
+          <button id="home-levels" aria-label="Chọn level"></button>
+        </nav>
+      </section>
+      <div id="game-screen" hidden inert>
       <canvas id="world" width="540" height="1172" aria-label="Đồ chơi trên băng chuyền và hộp linh kiện"></canvas>
-      <header class="hud"><div class="brand press-title"><small>PERFECT SHAPE 3D</small><strong>Toy Factory</strong></div><div class="gift-counter hud-pill"><span class="reward-token" id="gift-icon" aria-hidden="true"></span><b id="total-gifts">0</b><small>QUÀ</small></div><button id="sound" class="gear glossy" aria-label="Tắt âm thanh">♫</button><button id="settings" class="gear glossy" aria-label="Cài đặt"></button></header>
+      <header class="hud" aria-label="Thông tin chuyến quà">
+        <button id="batch-label" class="level-card glossy" aria-label="Chọn level">
+          <span class="batch-token" aria-hidden="true">
+            <svg viewBox="0 0 48 48" fill="none"><path d="M7 23h34v18a3 3 0 0 1-3 3H10a3 3 0 0 1-3-3Z" fill="#f3b991" stroke="#754b39" stroke-width="2"/><path d="M5 17h38v9H5Z" fill="#ffe6b5" stroke="#754b39" stroke-width="2" stroke-linejoin="round"/><path d="M21 17h7v27h-7Z" fill="#d96872" stroke="#954453" stroke-width="1.5"/><path d="M24 17C6 19 10 2 17 7c4 2 7 10 7 10Zm0 0C42 19 38 2 31 7c-4 2-7 10-7 10Z" fill="#f08b90" stroke="#954453" stroke-width="2"/><path d="M10 30v9m1-19h7" stroke="#fff4d7" stroke-width="2" stroke-linecap="round"/></svg>
+          </span>
+          <b id="batch-count" role="status" aria-label="Số quà chưa gói">3</b>
+          <span class="batch-copy"><small>QUÀ</small><strong>CHƯA GÓI</strong></span>
+          <svg class="batch-chevron" viewBox="0 0 8 14" aria-hidden="true"><path d="m2 2 4 5-4 5"/></svg>
+        </button>
+        <div class="gift-counter hud-pill" role="group" aria-label="Tổng quà đã gói">
+          <span class="reward-token" id="gift-icon" aria-hidden="true"></span>
+          <span class="gift-copy"><b id="total-gifts">0</b><small>TỔNG QUÀ</small></span>
+        </div>
+        <button id="settings" class="gear glossy" aria-label="Cài đặt"></button>
+      </header>
       <section id="machine" aria-label="Máy quay đồ chơi">
         <svg class="slot-cabinet" viewBox="0 0 454 238" preserveAspectRatio="none" aria-hidden="true">
           <defs>
@@ -48,22 +82,23 @@
           <rect x="12" y="86" width="430" height="77" rx="10" fill="none" stroke="#a97519" stroke-width="11"/>
           <rect x="12" y="86" width="430" height="77" rx="10" fill="none" stroke="url(#slot-gold)" stroke-width="7"/>
           <path d="M19 89H435" stroke="#fff5a1" stroke-width="2"/>
-          <path d="M12 113Q7 110 7 117v17q0 7 6 4l15-9q5-4 0-7Z" fill="#81d2ba" stroke="#c58b1d" stroke-width="5" stroke-linejoin="round"/>
-          <path d="M12 113Q7 110 7 117v17q0 7 6 4l15-9q5-4 0-7Z" fill="none" stroke="#ffdc44" stroke-width="2"/>
-          <path d="M442 113q5-3 5 4v17q0 7-6 4l-15-9q-5-4 0-7Z" fill="#81d2ba" stroke="#c58b1d" stroke-width="5" stroke-linejoin="round"/>
-          <path d="M442 113q5-3 5 4v17q0 7-6 4l-15-9q-5-4 0-7Z" fill="none" stroke="#ffdc44" stroke-width="2"/>
+          <g class="slot-arrow left"><path d="M12 113Q7 110 7 117v17q0 7 6 4l15-9q5-4 0-7Z" fill="#81d2ba" stroke="#c58b1d" stroke-width="5" stroke-linejoin="round"/>
+          <path d="M12 113Q7 110 7 117v17q0 7 6 4l15-9q5-4 0-7Z" fill="none" stroke="#ffdc44" stroke-width="2"/></g>
+          <g class="slot-arrow right"><path d="M442 113q5-3 5 4v17q0 7-6 4l-15-9q-5-4 0-7Z" fill="#81d2ba" stroke="#c58b1d" stroke-width="5" stroke-linejoin="round"/>
+          <path d="M442 113q5-3 5 4v17q0 7-6 4l-15-9q-5-4 0-7Z" fill="none" stroke="#ffdc44" stroke-width="2"/></g>
         </svg>
         <div id="lever" aria-hidden="true"><div class="lever-mount"></div><div class="lever-arm"></div><div class="lever-base"></div><i class="lever-ball"></i></div>
         <div class="machine-foot"><p id="machine-caption">Đang chuẩn bị quay đồ chơi…</p></div>
         <button id="spin" class="play glossy" disabled>ĐANG QUAY ĐỒ CHƠI…</button>
       </section>
-      <div class="conveyor-heading"><button id="batch-label" class="level-chip" aria-label="Chọn level">LEVEL 01</button><button id="boost" class="boost glossy" disabled aria-label="Giữ để tăng tốc băng chuyền"><span>»</span> GIỮ TĂNG TỐC</button><span id="batch-count">0 / 3 <i>QUÀ ĐÃ GÓI</i></span></div>
+
       <div id="stations" aria-label="Các đồ chơi cần lắp"></div>
       <div class="clue-plate instruction-plate"><span>LẮP RÁP</span><strong id="instruction" role="status">Khởi động băng chuyền để lắp đồ chơi!</strong></div>
       <div class="tray-heading"><span>HỘP LINH KIỆN</span><span id="parts-count">TÌM MẢNH CÒN THIẾU</span></div>
       <div id="piece-buttons" aria-label="Mảnh trong hộp"></div>
-      <footer class="tools order-rail"><button id="hint" class="glossy"><span>✧</span> Gợi ý</button><button id="shuffle" class="glossy"><span>⤨</span> Xóc hộp</button><button id="restart" class="glossy" aria-label="Chơi lại chuyến quà"><span>↻</span></button><button id="help" class="glossy" aria-label="Hướng dẫn">?</button></footer>
+      <footer class="tools order-rail"><button id="hint" class="glossy"><span>✧</span> Gợi ý</button><button id="shuffle" class="glossy"><span>⤨</span> Xóc hộp</button><button id="boost" class="boost glossy" disabled aria-label="Giữ để tăng tốc băng chuyền"><span>»</span> GIỮ TĂNG TỐC</button></footer>
       <div id="toast" role="status" hidden></div>
+      </div>
       <dialog id="modal" aria-labelledby="modal-title"><article class="panel"><header class="panel-heading"><h1 id="modal-title"></h1><p id="modal-subtitle"></p></header><button id="close" class="close glossy" aria-label="Đóng">×</button><div class="panel-body" id="modal-content"></div></article></dialog>
     </div>
   </main>

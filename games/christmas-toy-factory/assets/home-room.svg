@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 1172">
+  <defs>
+    <linearGradient id="wall" x2="0" y2="1"><stop stop-color="#c5ded0"/><stop offset="1" stop-color="#6f9c93"/></linearGradient>
+    <linearGradient id="glass" x2="0" y2="1"><stop stop-color="#fce0a5"/><stop offset="1" stop-color="#fff5cf"/></linearGradient>
+    <linearGradient id="counter" x2="0" y2="1"><stop stop-color="#b08b65"/><stop offset="1" stop-color="#6d513b"/></linearGradient>
+    <pattern id="wallpaper" width="62" height="62" patternUnits="userSpaceOnUse"><path d="M0 31 31 0l31 31-31 31Z" fill="none" stroke="#fff2d6" stroke-width="2" opacity=".3"/></pattern>
+  </defs>
+  <path fill="url(#wall)" d="M0 0h540v1172H0z"/>
+  <path fill="url(#wallpaper)" d="M0 0h540v570H0z"/>
+  <path d="M126 500V267a144 144 0 0 1 288 0v233Z" fill="#2b615c" stroke="#3c7669" stroke-width="14"/>
+  <path d="M145 486V270a125 125 0 0 1 250 0v216Z" fill="url(#glass)" stroke="#ffedc6" stroke-width="10"/>
+  <path d="M270 151v330m-124-141h248" stroke="#639989" stroke-width="8" opacity=".72"/>
+  <path d="M0 554q270-22 540 0v618H0Z" fill="url(#counter)"/>
+  <path d="M0 565h540m0 153H0m0 151h540m0 145H0" fill="none" stroke="#4b372d" stroke-width="4" opacity=".28"/>
+  <path d="M-42 720q306-175 620 0v170q-284 119-620 0Z" fill="#44342d" stroke="#826349" stroke-width="15" opacity=".65"/>
+  <path d="M-42 682q306-175 620 0v171q-284 119-620 0Z" fill="#d8b481" stroke="#ffe2b8" stroke-width="14"/>
+  <path d="M-42 703q306-153 620 0v133q-284 105-620 0Z" fill="#896748"/>
+</svg>

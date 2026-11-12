@@ -1,4 +1,5 @@
-/* Authored missions: slot reels announce the 1–3 toy types of a level; 4–8 toys
+/* Authored missions: slot reels announce the 1–5 toy types of a level (ramping up
+   from 1 type on the first levels); 4–8 toys
    must be assembled per level, 1–4 real parts per toy.
    The reveal animates; retries preserve the mission and its missing geometry. */
 (() => {
@@ -23,7 +24,7 @@
   const iceCreamTruck=(...missing)=>({kind:'iceCreamTruck',missing});
   const bothIceCream=()=>iceCreamTruck('iceCreamWheel','iceCreamSign');
   const t=kind=>({kind,missing:[]});
-  const missions=[
+  const authored=[
     {title:'Ba điều ước đầu tiên',orders:[car('wheel'),robot('robotArm'),rocket('rocketNozzle')]},
     {title:'Đội xe giao quà',orders:[car('wheel'),car('carRearWheel'),bothCar()]},
     {title:'Những người bạn máy',orders:[robot('robotArm'),robot('robotPanel'),bothRobot()]},
@@ -63,11 +64,21 @@
     {title:'Đoàn xe đặc biệt',orders:[t('ambulance'),t('tank'),t('spaceship')]},
     {title:'Vườn thú Giáng sinh',orders:[t('panda'),t('penguin'),t('tiger')]},
     {title:'Đại tiệc xưởng đồ chơi',orders:[t('hotdogCart'),t('doll'),t('discoBall')]}
-  ].map((mission,index)=>{
-    // Slot reels only announce the distinct toy types; toyCount is how many toys ride the belt.
+  ];
+  // Slot reels announce the distinct toy types (1–5, ramping up so new players start
+  // with one toy type); toyCount (4–8) is how many toys ride the belt.
+  const typeTarget=index=>index<2?1:index<5?2:index<10?3:index<17?4:5;
+  const firstSeen=[];
+  const missions=authored.map((mission,index)=>{
+    for(const o of mission.orders)if(!firstSeen.includes(o.kind))firstSeen.push(o.kind);
+    const target=typeTarget(index),authoredTypes=[...new Set(mission.orders.map(o=>o.kind))];
+    // Keep the mission's own toys first; top up with toys already met, newest first.
+    const types=[...authoredTypes,...firstSeen.filter(k=>!authoredTypes.includes(k)).reverse()].slice(0,target);
+    const pool=[...mission.orders.filter(o=>types.includes(o.kind)),...types.filter(k=>!authoredTypes.includes(k)).map(t)];
+    const sources=[...types.map(k=>pool.find(o=>o.kind===k)),...pool];
     const toyCount=Math.min(8,4+Math.floor(index/5)),maxPieces=Math.min(4,1+Math.floor((index+2)/4));
     const orders=Array.from({length:toyCount},(_,i)=>{
-      const source=mission.orders[i%mission.orders.length];
+      const source=i<types.length?sources[i]:pool[(i-types.length)%pool.length];
       const parts=[...new Set([...source.missing,...window.ToyCatalog.toys[source.kind].slots.map(s=>s.kind)])].filter(kind=>!fixedParts.has(kind));
       // Toys with more than four parts start at a different part per toy, so every
       // part (head, legs ...) can be missing, not only the first four.
@@ -75,7 +86,6 @@
       return {kind:source.kind,missing:order.slice(0,1+(index+i)%maxPieces)};
     });
     mission={...mission,orders};
-    const types=[...new Set(orders.map(o=>o.kind))];
     const counts={};for(const o of mission.orders)counts[o.kind]=(counts[o.kind]||0)+1;
     const names=Object.fromEntries(Object.entries(window.ToyCatalog.toys).map(([k,v])=>[k,v.name.toLowerCase()]));
     const parts=mission.orders.reduce((n,o)=>n+o.missing.length,0);

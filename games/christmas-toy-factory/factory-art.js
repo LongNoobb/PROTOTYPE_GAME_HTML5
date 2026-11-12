@@ -20,7 +20,7 @@
   function star(c,x,y,r,color){c.save();c.translate(x,y);c.beginPath();for(let i=0;i<8;i++){const a=i*Math.PI/4-Math.PI/2;const d=i%2?r*.26:r;c.lineTo(Math.cos(a)*d,Math.sin(a)*d);}c.closePath();c.fillStyle=color;c.fill();c.restore();}
   function tree(c,x,y,size,color){c.fillStyle=color;c.beginPath();c.moveTo(x,y-size);c.lineTo(x-size*.45,y-size*.25);c.lineTo(x-size*.20,y-size*.25);c.lineTo(x-size*.57,y+size*.17);c.lineTo(x+size*.57,y+size*.17);c.lineTo(x+size*.20,y-size*.25);c.lineTo(x+size*.45,y-size*.25);c.closePath();c.fill();}
   const bg=document.createElement('canvas');bg.width=W;bg.height=H;const b=bg.getContext('2d');
-  b.fillStyle=grad(b,0,0,0,H,[[0,'#c5ded0'],[.25,'#a9cbbf'],[.55,'#8fb8aa'],[1,'#6f9c93']]);b.fillRect(0,0,W,H);
+  b.fillStyle=grad(b,0,0,0,H,[[0,'#dde8eb'],[.25,'#cbdde3'],[.55,'#b4cbd5'],[1,'#93acbb']]);b.fillRect(0,0,W,H);
   // Quiet workshop architecture: cold daylight behind warm, saturated toys.
   for(const x of [14,520]){round(b,x,80,7,497,4,'#75a9b9');round(b,x+4,80,3,497,2,'#c4e2e5');}
   b.save();b.beginPath();b.roundRect(112,88,316,460,[155,155,8,8]);b.clip();b.fillStyle=grad(b,0,90,0,550,[[0,'#6bc5e4'],[.8,'#d9f3f1']]);b.fillRect(110,88,320,460);
@@ -34,18 +34,17 @@
   // Garland and tiny warm lights.
   b.lineWidth=9;b.strokeStyle='#428d82';b.beginPath();b.moveTo(-10,94);b.quadraticCurveTo(120,141,270,94);b.quadraticCurveTo(410,139,551,93);b.stroke();
   for(let i=0;i<16;i++){const x=i*36,y=98+Math.sin(i/15*Math.PI*4)*10;b.shadowColor='#ffe99b';b.shadowBlur=10;ellipse(b,x,y,3.3,4.5,i%3?'#fff0a8':'#ffd1a8');}b.shadowBlur=0;
-  b.fillStyle=grad(b,0,603,0,1172,[[0,'#88664e'],[.35,'#705344'],[.75,'#59483b'],[1,'#48413a']]);b.fillRect(0,603,540,569);
-  // Letter Press gameplay wallpaper on the workbench behind its gold tray.
-  for(let y=603,row=0;y<1172+68;y+=68,row++){for(let x=(row%2)*68;x<608;x+=136){b.beginPath();b.moveTo(x,y-68);b.lineTo(x+68,y);b.lineTo(x,y+68);b.lineTo(x-68,y);b.closePath();b.fillStyle=row%2?'#30211f1a':'#f0c49910';b.fill();}}
+  // A quiet, unpatterned workbench keeps the loose parts as the visual focus.
+  b.fillStyle=grad(b,0,603,0,1172,[[0,'#a4b9c5'],[.5,'#91aab7'],[1,'#829da9']]);b.fillRect(0,603,540,569);
 
   const tray=document.createElement('canvas');tray.width=W;tray.height=H;const t=tray.getContext('2d');
-  // Exact tray frame geometry, gold stops and felt colors from Letter Press drawTray.
-  round(t,41,697,454,353,33,'#361a1c');
-  round(t,42,694,452,354,34,grad(t,52,695,465,1046,[[0,'#fff16a'],[.13,'#ffcd12'],[.53,'#ffb90b'],[.89,'#ffda1b'],[1,'#fff171']]));
-  t.lineWidth=1.5;round(t,42,694,452,354,34,null,'#f7cc23');
-  const felt=t.createRadialGradient(256,836,25,260,875,255);felt.addColorStop(0,'#353c48');felt.addColorStop(1,'#232a34');
-  round(t,57,709,423,322,23,felt);t.lineWidth=3;round(t,57,709,423,322,23,null,'#cf7b10');
-  t.save();t.beginPath();t.roundRect(57,709,423,322,23);t.clip();t.fillStyle=grad(t,0,707,0,1030,[[0,'#181d28af'],[.052,'#181d2830'],[.13,'#181d2800'],[.94,'#181d2800'],[1,'#181d2899']]);t.fillRect(57,709,423,322);t.restore();
+  // Preserve the Letter Press geometry; pale neutral felt reveals dark wheels and shaded parts.
+  round(t,41,697,454,353,33,'#526c79');
+  round(t,42,694,452,354,34,grad(t,52,695,465,1046,[[0,'#fff4d8'],[.13,'#f1deaf'],[.53,'#dbc28d'],[.89,'#ead5a5'],[1,'#fff0cb']]));
+  t.lineWidth=1.5;round(t,42,694,452,354,34,null,'#fff2d5');
+  const felt=t.createRadialGradient(256,836,25,260,875,255);felt.addColorStop(0,'#d7dfe5');felt.addColorStop(1,'#bcc8d1');
+  round(t,57,709,423,322,23,felt);t.lineWidth=3;round(t,57,709,423,322,23,null,'#8398a6');
+  t.save();t.beginPath();t.roundRect(57,709,423,322,23);t.clip();t.fillStyle=grad(t,0,707,0,1030,[[0,'#536b7a40'],[.052,'#536b7a12'],[.13,'#536b7a00'],[.94,'#536b7a00'],[1,'#536b7a24']]);t.fillRect(57,709,423,322);t.restore();
   function sprite(kind,size=170){
     const key=kind+':'+Math.round(size*2)/2;if(cache.has(key))return cache.get(key);
     const isGift=window.GiftCatalog?.map[kind]!==undefined;
@@ -87,7 +86,39 @@
     c.closePath();c.fillStyle=glow?'#ffe58d66':'#244b6275';c.fill();c.setLineDash([4,3]);c.strokeStyle=glow?'#fff2ae':'#f4fff9';c.lineWidth=2.2;c.stroke();c.restore();
   }
   function gift(c,x,y,scale=1,variant=0){const name=GiftCatalog.models[variant%GiftCatalog.models.length];c.save();c.translate(x,y);c.scale(scale,scale);c.drawImage(sprite(name,166),-115,-115);c.restore();}
-  function belt(c,now,moving){round(c,-16,538,572,35,7,grad(c,0,538,0,573,[[0,'#f1f6ed'],[.25,'#a1c2cc'],[1,'#628d9e']]));c.save();c.beginPath();c.rect(0,540,540,30);c.clip();c.strokeStyle='#d2e5e6';c.lineWidth=2;for(let x=-100+(moving?now*.065%47:0);x<600;x+=47){c.beginPath();c.moveTo(x,541);c.lineTo(x-19,569);c.stroke();}c.restore();round(c,-9,568,558,48,7,grad(c,0,566,0,618,[[0,'#427c91'],[.5,'#2f627a'],[1,'#57899a']]));for(let i=0;i<5;i++){const x=21+i*124;ellipse(c,x,591,21,21,'#a9ced5');ellipse(c,x,590,17,17,'#6895a6');ellipse(c,x,590,11,11,'#f5cb65');ellipse(c,x-2,587,7,7,'#ffe18a');if(i<4){c.fillStyle='#b9eff2';c.font='bold 25px Arial';c.fillText('››',x+46,599);}}c.fillStyle='#e7f3e9';c.fillRect(0,612,540,4);}
+  // 3D conveyor: perspective rubber surface, belt wrapping over the front drum, bevelled frame with spinning rollers.
+  function belt(c,now,moving){const d=moving?now*.065:0,VX=270,BK=.84,TOP=534,FR=574,LIP=586,BOT=615,PITCH=34;
+    // Soft drop shadow onto the workbench and back rail behind the belt.
+    c.fillStyle=grad(c,0,BOT-4,0,BOT+18,[[0,'#1d3b4a66'],[1,'#1d3b4a00']]);c.fillRect(0,BOT-4,540,22);
+    round(c,-12,522,564,14,5,grad(c,0,522,0,536,[[0,'#e9f4f1'],[.35,'#a9c7cf'],[1,'#57808f']]));c.fillStyle='#2f55644d';c.fillRect(-12,533,564,3);
+    // Top surface, darker at the back where the rail shades it.
+    c.save();c.beginPath();c.rect(-20,TOP,580,FR-TOP);c.clip();
+    c.fillStyle=grad(c,0,TOP,0,FR,[[0,'#4c6f7c'],[.45,'#6f929c'],[1,'#94b6bd']]);c.fillRect(-20,TOP,580,FR-TOP);
+    for(let x=-80+((d%PITCH)+PITCH)%PITCH;x<640;x+=PITCH){const bx=VX+(x-VX)*BK;
+      c.beginPath();c.moveTo(bx,TOP);c.lineTo(x,FR);c.strokeStyle='#3b5d6a';c.lineWidth=2.2;c.stroke();
+      c.beginPath();c.moveTo(bx+1.8,TOP);c.lineTo(x+2.4,FR);c.strokeStyle='#c4dde0aa';c.lineWidth=1;c.stroke();}
+    c.fillStyle=grad(c,0,TOP,0,TOP+12,[[0,'#1e3d4a88'],[1,'#1e3d4a00']]);c.fillRect(-20,TOP,580,12);
+    c.fillStyle=grad(c,0,FR-14,0,FR,[[0,'#ffffff00'],[.7,'#ffffff30'],[1,'#ffffff10']]);c.fillRect(-20,FR-14,580,14);
+    c.restore();
+    // Belt curling over the front drum: bright crest fading into the underside.
+    c.save();c.beginPath();c.rect(-20,FR,580,LIP-FR);c.clip();
+    c.fillStyle=grad(c,0,FR,0,LIP,[[0,'#d5e9ea'],[.3,'#9dbcc3'],[.75,'#557885'],[1,'#33525e']]);c.fillRect(-20,FR,580,LIP-FR);
+    c.strokeStyle='#3b5d6a99';c.lineWidth=1.6;for(let x=-80+((d%PITCH)+PITCH)%PITCH;x<640;x+=PITCH){c.beginPath();c.moveTo(x,FR);c.lineTo(x,LIP);c.stroke();}
+    c.restore();
+    // Bevelled side frame.
+    round(c,-10,LIP-2,560,BOT-LIP+2,6,grad(c,0,LIP,0,BOT,[[0,'#5a97ab'],[.18,'#3f7890'],[.75,'#2c5d74'],[1,'#21495c']]));
+    c.fillStyle='#9fd0db';c.fillRect(-10,LIP-1,560,2);c.fillStyle='#173a4a';c.fillRect(-10,BOT-2,560,2);
+    const cy=(LIP+BOT)/2+.5;
+    for(let i=0;i<5;i++){const x=21+i*124,a=d/13;
+      // Recessed socket, metallic roller with spinning spokes, gold hub.
+      const sock=c.createRadialGradient(x,cy+2,8,x,cy,19);sock.addColorStop(0,'#10303d');sock.addColorStop(1,'#3c7186');ellipse(c,x,cy,18.5,18.5,sock);
+      const rol=c.createRadialGradient(x-5,cy-6,2,x,cy,15);rol.addColorStop(0,'#f2fbfb');rol.addColorStop(.55,'#9cc0c8');rol.addColorStop(1,'#4f7887');ellipse(c,x,cy,14.5,14.5,rol);
+      c.save();c.translate(x,cy);c.rotate(a);c.strokeStyle='#3f6675';c.lineWidth=2.4;c.lineCap='round';for(let k=0;k<3;k++){c.rotate(Math.PI*2/3);c.beginPath();c.moveTo(4,0);c.lineTo(12.5,0);c.stroke();}c.restore();
+      const hub=c.createRadialGradient(x-2,cy-2,1,x,cy,7);hub.addColorStop(0,'#fff0b0');hub.addColorStop(1,'#d9a441');ellipse(c,x,cy,6.5,6.5,hub);
+      if(i<4){c.font='bold 22px Arial';c.textBaseline='middle';c.fillStyle='#163846';c.fillText('››',x+48,cy+1.5);c.fillStyle='#b9eff2';c.fillText('››',x+47,cy);c.textBaseline='alphabetic';
+        for(const bx of [x+30,x+94]){ellipse(c,bx,cy,2.6,2.6,'#1c4253');ellipse(c,bx-.5,cy-.6,1.8,1.8,'#8ec2cf');}}
+    }
+  }
   function pouring(c,game){
     const pour=game.pour,elapsed=game.clock-pour.start;
     // Airborne parts join the physics tray only after reaching their landing positions.
@@ -110,6 +141,22 @@
     round(c,-17,-6,112,61,5,'#fff4d6');c.fillStyle='#315d53';c.textAlign='center';c.font='900 13px system-ui';c.fillText('LINH KIỆN',39,19);c.font='900 11px system-ui';c.fillText('LEVEL '+game.batch,39,39);
     c.restore();
   }
+  // Waiting queue: 5 slots in the gap between the belt and the parts tray.
+  const QUEUE_SLOTS=5,QUEUE_W=74,QUEUE_H=52,QUEUE_SIZE=150,queueSlot=i=>({x:102+i*84,y:648});
+  // Scale factor that fits a part's visible pixels inside a queue slot (cached per kind).
+  const queueFits={};
+  function queueFit(kind){if(queueFits[kind])return queueFits[kind];const none={k:1,dx:0,dy:0},img=sprite(kind,QUEUE_SIZE),w=img.width,h=img.height;let d;try{d=img.getContext('2d').getImageData(0,0,w,h).data;}catch{return none;}let x0=w,y0=h,x1=-1,y1=-1;for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(d[(y*w+x)*4+3]>24){if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;}if(x1<x0)return none;const k=Math.min(1.3,(QUEUE_W-14)/(x1-x0+1),(QUEUE_H-12)/(y1-y0+1));return queueFits[kind]={k,dx:115-(x0+x1+1)/2,dy:115-(y0+y1+1)/2};}
+  function queue(c,game){
+    const slots=game.queue||[];
+    for(let i=0;i<QUEUE_SLOTS;i++){const {x,y}=queueSlot(i),filled=!!slots[i];
+      round(c,x-QUEUE_W/2,y-QUEUE_H/2+2,QUEUE_W,QUEUE_H,13,'#6f93a255');
+      round(c,x-QUEUE_W/2,y-QUEUE_H/2,QUEUE_W,QUEUE_H,13,grad(c,0,y-QUEUE_H/2,0,y+QUEUE_H/2,filled?[[0,'#fff7df'],[1,'#f3dca6']]:[[0,'#c9dbe1'],[1,'#e6f0f1']]));
+      c.lineWidth=2.5;c.strokeStyle=filled?'#d9a441':'#8fb1bc';c.beginPath();c.roundRect(x-QUEUE_W/2,y-QUEUE_H/2,QUEUE_W,QUEUE_H,13);c.stroke();
+      if(!filled){c.save();c.setLineDash([4,4]);c.strokeStyle='#a7c3cb';c.lineWidth=1.5;c.beginPath();c.roundRect(x-QUEUE_W/2+7,y-QUEUE_H/2+7,QUEUE_W-14,QUEUE_H-14,8);c.stroke();c.restore();}
+    }
+    slots.forEach((q,i)=>{if(!q)return;const to=queueSlot(i),p=Math.min(1,(game.clock-q.at)/.32),e=1-Math.pow(1-p,3),x=q.from.x+(to.x-q.from.x)*e,y=q.from.y+(to.y-q.from.y)*e-Math.sin(p*Math.PI)*40,size=q.size+(QUEUE_SIZE-q.size)*e;
+      c.save();c.beginPath();if(p===1)c.roundRect(to.x-QUEUE_W/2,to.y-QUEUE_H/2,QUEUE_W,QUEUE_H,13);else c.rect(0,0,W,H);c.clip();const f=queueFit(q.kind),k=1+(f.k-1)*e;c.translate(x,y);c.scale(k,k);c.drawImage(sprite(q.kind,size),-115+f.dx*e,-115+f.dy*e);c.restore();});
+  }
   function draw(game,now){ctx.clearRect(0,0,W,H);ctx.drawImage(bg,0,0);belt(ctx,game.beltDistance/.065,true);
     ctx.save();ctx.beginPath();ctx.rect(0,398,W,218);ctx.clip();
     for(let i=0;i<game.orders.length;i++){const order=game.orders[i];if(!order.active||order.shipped)continue;const x=order.x,y=beltY(order.kind),progress=order.packageAt===null?0:Math.max(0,game.clock-order.packageAt);ellipse(ctx,x,537+BELT_DROP,59,8,'#32687933');
@@ -117,13 +164,10 @@
       else{const p=Math.min(1,(progress-.5)/.38),s=.25+.75*(1-Math.pow(1-p,3));const giftName=GiftCatalog.models[i%GiftCatalog.models.length],giftY=536+BELT_DROP+GiftCatalog.bottom[giftName]*166*.329;gift(ctx,x,giftY,s,i);if(progress<1.2){for(let j=0;j<5;j++){const a=j*1.256+game.clock*2;star(ctx,x+Math.cos(a)*78,480+BELT_DROP+Math.sin(a)*64,3+Math.sin(progress*5)*3,'#ffe391');}}}
     }
     ctx.restore();
-    // Entrance and exit markers stay fixed while toys and gifts travel past.
-    ctx.font='900 10px system-ui';ctx.textAlign='center';
-    round(ctx,0,410,43,24,[0,7,7,0],'#235e59');ctx.fillStyle='#e4fff2';ctx.fillText('VÀO →',21,426);
-    round(ctx,497,410,43,24,[7,0,0,7],'#ad5356');ctx.fillStyle='#fff0d6';ctx.fillText('RA →',519,426);
     ctx.drawImage(tray,0,0);ctx.save();ctx.beginPath();ctx.roundRect(57,709,423,322,23);ctx.clip();ctx.drawImage(game.trayRenderer.canvas,40,690);ctx.restore();
-    if(!game.tray.length&&!game.pour){ctx.save();ctx.textAlign='center';ctx.fillStyle='#a6b9bc';ctx.font='800 17px system-ui';ctx.fillText(game.phase==='playing'||game.phase==='complete'?'ĐÃ GHÉP ĐỦ MẢNH':'KHAY ĐANG TRỐNG',270,862);ctx.font='13px system-ui';ctx.fillStyle='#7d959b';ctx.fillText(game.phase==='playing'?'Đang đóng gói và gửi quà…':game.phase==='complete'?'Tất cả quà đã được gửi đi':'Chờ máy quay để nhận linh kiện',270,889);ctx.restore();}
-    if(game.highlight&&game.clock<game.highlight.until){const p=game.tray.find(p=>p.id===game.highlight.id);if(p){const focus=game.trayRenderer.focus(p);if(focus){ctx.save();ctx.strokeStyle='#fff7ba';ctx.lineWidth=3;ctx.setLineDash([7,5]);ctx.shadowColor='#ffed61';ctx.shadowBlur=14;ctx.beginPath();ctx.ellipse(p.x,p.y,44,44,now*.002,0,Math.PI*2);ctx.stroke();star(ctx,p.x+40,p.y-25,10,'#fff3a2');ctx.restore();}}}
+    if(!game.tray.length&&!game.pour){ctx.save();ctx.textAlign='center';ctx.fillStyle='#385664';ctx.font='800 17px system-ui';ctx.fillText(game.phase==='playing'||game.phase==='complete'?'ĐÃ GHÉP ĐỦ MẢNH':'KHAY ĐANG TRỐNG',270,862);ctx.font='13px system-ui';ctx.fillStyle='#4b6875';ctx.fillText(game.phase==='playing'?'Đang đóng gói và gửi quà…':game.phase==='complete'?'Tất cả quà đã được gửi đi':'Chờ máy quay để nhận linh kiện',270,889);ctx.restore();}
+    if(game.highlight&&game.clock<game.highlight.until){const p=game.tray.find(p=>p.id===game.highlight.id);if(p){const focus=game.trayRenderer.focus(p);if(focus){ctx.save();ctx.strokeStyle='#24676f';ctx.lineWidth=3;ctx.setLineDash([7,5]);ctx.shadowColor='#ffffff';ctx.shadowBlur=14;ctx.beginPath();ctx.ellipse(p.x,p.y,44,44,now*.002,0,Math.PI*2);ctx.stroke();star(ctx,p.x+40,p.y-25,10,'#24676f');ctx.restore();}}}
+    queue(ctx,game);
     if(game.pour)pouring(ctx,game);
     if(game.drag){const {piece,x,y}=game.drag;ctx.save();ctx.shadowColor='#ffed8c';ctx.shadowBlur=18;ctx.drawImage(sprite(piece.kind,160),x-115,y-115);ctx.restore();}
     for(const f of game.flights){const p=Math.min(1,(game.clock-f.at)/f.duration),e=1-Math.pow(1-p,3),x=f.from.x+(f.to.x-f.from.x)*e,y=f.from.y+(f.to.y-f.from.y)*e-Math.sin(p*Math.PI)*75;ctx.drawImage(sprite(f.kind,f.fromSize+(f.toSize-f.fromSize)*e),x-115,y-115);star(ctx,x+30,y-20,6,'#fff3aa');}
@@ -154,8 +198,8 @@
     // An array is the visible strip, top to bottom (rows -2..2), so neighbours stay continuous while spinning.
     const strip=Array.isArray(kind)?kind:null;if(strip)kind=strip[2];
     const c=canvas.getContext('2d'),keys=Object.keys(catalog.toys),index=Math.max(0,keys.indexOf(kind));
-    c.setTransform(canvas.width/118,0,0,canvas.height/154,0,0);c.clearRect(0,0,118,154);
-    c.fillStyle='#555563';c.fillRect(0,0,118,154);
+    const W=154*canvas.width/canvas.height;c.setTransform(canvas.height/154,0,0,canvas.height/154,0,0);c.clearRect(0,0,W,154);
+    c.fillStyle='#555563';c.fillRect(0,0,W,154);
     const R=122,FH=2*R*Math.sin(.4),project=a=>77+Math.sin(Math.max(-Math.PI/2,Math.min(Math.PI/2,a)))*R;
     for(let row=-2;row<=2;row++){
       const angle=(row+offset/84)*.8;if(Math.abs(angle)>1.9)continue;
@@ -164,18 +208,67 @@
       const toy=strip?strip[row+2]:row===0?kind:row===-1&&nextKind?nextKind:keys[(index+row+keys.length)%keys.length];
       const color=slotColor;
       const inset=1+Math.abs(Math.sin(angle))*6;
-      c.save();c.translate(inset,top);c.scale((118-inset*2)/118,height/FH);
+      c.save();c.translate(inset,top);c.scale((W-inset*2)/W,height/FH);
       c.lineWidth=1.6;
-      round(c,0,0,118,FH,4,grad(c,0,0,0,FH,[[0,color[0]],[.82,color[1]],[1,color[0]]]),'#7f6d63');
-      round(c,3,2,112,FH-4,6,color[2]);
-      c.save();c.beginPath();c.roundRect(3,2,112,FH-4,6);c.clip();
-      c.fillStyle=grad(c,0,2,0,FH-2,[[0,'#6a60451c'],[.16,'#6a604500'],[1,'#ffffff18']]);c.fillRect(3,2,112,FH-4);c.restore();
-      c.lineWidth=1.5;round(c,3,2,112,FH-4,6,null,'#8d806b66');
-      if(toy){const icon=slotIcon(toy),scale=.85*Math.min(108/icon.w,(FH-8)/icon.h),w=icon.w*scale,h=icon.h*scale;c.drawImage(icon.canvas,icon.x,icon.y,icon.w,icon.h,(118-w)/2,(FH-h)/2,w,h);}
-      else{c.fillStyle='#84775e';c.font='900 56px "Lilita One",system-ui';c.textAlign='center';c.fillText('?',59,FH/2+20);}
+      round(c,0,0,W,FH,4,grad(c,0,0,0,FH,[[0,color[0]],[.82,color[1]],[1,color[0]]]),'#7f6d63');
+      round(c,3,2,W-6,FH-4,6,color[2]);
+      c.save();c.beginPath();c.roundRect(3,2,W-6,FH-4,6);c.clip();
+      c.fillStyle=grad(c,0,2,0,FH-2,[[0,'#6a60451c'],[.16,'#6a604500'],[1,'#ffffff18']]);c.fillRect(3,2,W-6,FH-4);c.restore();
+      c.lineWidth=1.5;round(c,3,2,W-6,FH-4,6,null,'#8d806b66');
+      if(toy){const icon=slotIcon(toy),scale=.9*Math.min((W-14)/icon.w,(FH-10)/icon.h),w=icon.w*scale,h=icon.h*scale;c.drawImage(icon.canvas,icon.x,icon.y,icon.w,icon.h,(W-w)/2,(FH-h)/2,w,h);}
+      else{c.fillStyle='#84775e';c.font='900 56px "Lilita One",system-ui';c.textAlign='center';c.fillText('?',W/2,FH/2+20);}
       c.restore();
     }
-    c.fillStyle=grad(c,0,0,0,154,[[0,'#25203366'],[.26,'#25203300'],[.74,'#25203300'],[1,'#25203380']]);c.fillRect(0,0,118,154);
+    c.fillStyle=grad(c,0,0,0,154,[[0,'#25203366'],[.26,'#25203300'],[.74,'#25203300'],[1,'#25203380']]);c.fillRect(0,0,W,154);
   }
-  window.FactoryArt={draw,reel,slotReel,sprite,drawToy,gift,beltY,preload,onPage};
+  // Original Perfect Shape room, pile coordinates and mesh treatment.
+  // Toy parts replace the source game's letters; gameplay art is independent.
+  const homeRoom=new Image();homeRoom.onload=home;homeRoom.src='assets/home-room.svg';
+  const homePile = [
+    [260,427,134,"robotPanel",-.19],[211,457,94,"planePropeller",-.2],[352,456,108,"rocketFin",.55],
+    [116,493,110,"robotArm",.56],[179,467,119,"trainChimney",-.18],[319,472,134,"iceCreamSign",-.39],
+    [237,501,146,"bearEar",-.11],[389,526,121,"planeWing",.20],[64,545,110,"busUpperDeck",.47],
+    [143,551,136,"wheel",.26],[236,560,137,"robotAntenna",-.14],[313,542,132,"rocketNozzle",.20],
+    [464,555,124,"robotPanel",.38],[502,577,118,"planePropeller",.24],[388,582,126,"rocketFin",-.18],
+    [35,608,98,"robotArm",.44],[84,600,132,"trainChimney",-.12],[155,610,101,"iceCreamSign",-.22],
+    [219,629,108,"bearEar",.27],[312,610,147,"planeWing",-.21],[451,622,148,"busUpperDeck",.16],
+    [518,655,117,"wheel",-.19],[552,637,132,"robotAntenna",.14],[18,673,120,"rocketNozzle",.07],
+    [96,689,152,"robotPanel",.12],[152,635,137,"planePropeller",.21],[213,641,138,"rocketFin",-.06],
+    [285,684,137,"robotArm",.04],[371,674,153,"trainChimney",-.16],[475,716,154,"iceCreamSign",-.31],
+    [37,757,137,"bearEar",-.19],[101,776,143,"planeWing",.18],[198,744,155,"busUpperDeck",-.10],
+    [274,767,124,"wheel",.08],[329,749,164,"robotAntenna",-.25],[393,762,125,"rocketNozzle",.49],
+    [472,818,154,"robotPanel",.15],[285,854,148,"planePropeller",-.19],[378,879,139,"rocketFin",.09],
+    [99,880,169,"robotArm",.32]
+  ];
+
+
+  const homeArtwork=new Map();
+  function homePiece(kind,tipped){
+    const key=kind+Number(tipped);
+    if(!homeArtwork.has(key)){
+      const size=228,mesh=ShapeMeshes.create({width:size,height:size}),tilt=tipped?.54:.16;
+      mesh.render([{kind,size,x:size/2,y:size/2,orientation:[Math.sin(tilt/2),0,0,Math.cos(tilt/2)]}]);
+      // Parts have different source bounds; fit their visible silhouette like the source tiles.
+      const pixels=mesh.canvas.getContext('2d').getImageData(0,0,size,size).data;
+      let left=size,top=size,right=-1,bottom=-1;
+      for(let y=0;y<size;y++)for(let x=0;x<size;x++)if(pixels[(y*size+x)*4+3]>20){left=Math.min(left,x);top=Math.min(top,y);right=Math.max(right,x);bottom=Math.max(bottom,y);}
+      const canvas=document.createElement('canvas');canvas.width=canvas.height=152;
+      if(right>=left){const width=right-left+1,height=bottom-top+1,scale=144/Math.max(width,height);canvas.getContext('2d').drawImage(mesh.canvas,left,top,width,height,(152-width*scale)/2,(152-height*scale)/2,width*scale,height*scale);}
+      homeArtwork.set(key,canvas);
+    }
+    return homeArtwork.get(key);
+  }
+  function home(){
+    const c=document.getElementById('home-art').getContext('2d');
+    c.fillStyle='#87a8a0';c.fillRect(0,0,W,H);
+    if(homeRoom.complete&&homeRoom.naturalWidth)c.drawImage(homeRoom,0,0,W,H);
+    const shadow=c.createRadialGradient(268,696,35,268,696,283);shadow.addColorStop(0,'#244d4dab');shadow.addColorStop(1,'#244d4d00');
+    c.save();c.translate(0,186);c.scale(1,.76);c.fillStyle=shadow;c.fillRect(0,386,W,638);c.restore();
+    homePile.forEach(([x,y,size,kind,angle],i)=>{
+      c.save();c.shadowColor='#172c2a94';c.shadowBlur=9;c.shadowOffsetY=9;c.translate(x,y);c.rotate(angle);
+      c.drawImage(homePiece(kind,i%7<2),-size/2,-size/2,size,size);c.restore();
+    });
+  }
+  onPage(home);
+  window.FactoryArt={queueSlot,drawQueue:queue,QUEUE_SLOTS,QUEUE_SIZE,draw,home,reel,slotReel,sprite,drawToy,gift,beltY,preload,onPage};
 })();
