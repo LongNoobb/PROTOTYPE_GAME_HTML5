@@ -1,0 +1,1234 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Slot Sorting</title>
+<meta name="theme-color" content="#ffd286">
+
+<link rel="stylesheet" href="beach.css">
+<script>
+// level index (0-based) to start on: ?level=N, else the one remembered for this tab
+window.SLOT_RESUME = (() => { const requested = new URLSearchParams(location.search).get('level'); if (requested && Number.isInteger(+requested) && +requested > 0) return +requested - 1; try { const r = sessionStorage.getItem('slotsort_resume'); sessionStorage.removeItem('slotsort_resume'); return r == null ? 0 : +r || 0; } catch (e) { return 0; } })();
+</script>
+<script>
+// Opened by double-click (file://): load the packed modules/assets built by tools/build-offline.js.
+if (location.protocol === 'file:') document.write('<script src="offline-bundle.js"><\/script>');
+</script>
+<script type="importmap">
+{ "imports": {
+  "three": "./vendor/three/three.module.js",
+  "three/addons/": "./vendor/three/addons/"
+} }
+</script>
+</head>
+<body>
+<main id="game-shell" aria-label="Slot Sorting" aria-busy="true">
+  <div id="game-content">
+    <header class="game-header">
+      <div class="top-hud">
+        <button class="icon-button" id="gear" aria-label="Settings" title="Settings (Esc)" data-icon="gear"></button>
+        <button id="level-select" aria-label="Select a level"><span id="lvl">LEVEL 01</span><span class="level-subtitle"><span id="lname">Loading…</span><span aria-hidden="true">⌄</span></span></button>
+        <button class="icon-button" id="guide" aria-label="How to Play" title="How to Play" data-icon="help"></button>
+      </div>
+      <div class="goal-hud">
+        <div class="status-strip">
+          <div class="stat" id="waiting-stat"><span>Waiting</span><strong id="waiting-count">0/4</strong></div>
+          <div class="stat" id="error-stat"><span>Errors</span><strong id="error-count">0/3</strong></div>
+        </div>
+      </div>
+      <span id="level-count" hidden></span><span id="color-count" hidden></span>
+    </header>
+    <section id="stage" aria-label="Ball sorting machine">
+      <div id="frame"><div id="loading" role="status">Preparing the machine…</div><div id="drop-controls"></div></div>
+      <div id="tutorial-cue" hidden aria-hidden="true">
+        <div class="tutorial-focus"></div>
+        <div class="tutorial-hand"><svg viewBox="0 0 64 76"><path d="M22 39V12c0-8 12-8 12 0v20-7c0-7 11-7 11 0v10-5c0-6 10-6 10 0v10-3c0-6 9-6 9 0v17c0 12-7 20-19 20H34c-8 0-12-5-16-11L7 48c-5-7 3-13 9-8l6 6z" fill="#fff7e8" stroke="#58317d" stroke-width="3.5" stroke-linejoin="round"/><path d="M28 13v18M40 38v10m10-9v10" fill="none" stroke="#d7bdcd" stroke-width="3" stroke-linecap="round"/></svg></div>
+      </div>
+      <div class="stage-tools" hidden><button class="icon-button" id="palette" aria-label="Choose a color to release" data-icon="drop" hidden></button><button class="icon-button" id="inspect" aria-label="Change 3D view" aria-pressed="false" data-icon="cube"></button></div>
+    </section>
+    <footer class="game-footer">
+      <div id="tutorial-card" hidden>
+        <div role="status" aria-live="polite" aria-atomic="true"><span id="tutorial-step"></span><strong id="tutorial-title"></strong><p id="tutorial-copy"></p></div>
+        <button id="tutorial-skip" type="button" aria-label="Skip tutorial">Skip</button>
+      </div>
+      <div id="quick-drop-tray" hidden><div class="tray-heading"><span class="tray-label">Release by color</span><span class="tray-scroll-hint">Swipe for more colors →</span></div><div id="quick-drops" aria-label="Swipe to choose a color"></div></div>
+      <div class="feedback-line">
+        <p id="help">Drag to connect · Tap a color to release</p>
+        <div id="toast" class="hide" role="status" aria-live="polite"></div>
+      </div>
+      <div class="control-dock">
+        <button class="tool-button" id="bulb" aria-label="Hint" title="Hint (H)"><span data-icon="bulb"></span><span>Hint</span></button>
+        <button id="spin" aria-label="Auto finish: connect the pipes and release all balls into matching bins" title="Auto finish (Space)"><span data-icon="play"></span><span class="spin-copy"><strong>Auto finish</strong><small id="spin-status">Connect + release all balls</small></span></button>
+        <button class="tool-button" id="retry" aria-label="Restart level" title="Restart (R)"><span data-icon="retry"></span><span>Restart</span></button>
+      </div>
+      <div id="tip" class="hide" hidden></div>
+    </footer>
+  </div>
+  <div id="ov"></div>
+</main>
+<script src="ui.js"></script>
+<script src="core.js"></script>
+<script src="levels.js"></script>
+<script type="module">
+try {
+// ===================================================== 3D VIEW =====================================================
+const [THREE, { RoundedBoxGeometry }, { createToyArt }, { mergeGeometries }] = await Promise.all([
+  import('three'), import('three/addons/geometries/RoundedBoxGeometry.js'), import('./machine-art.js'),
+  import('three/addons/utils/BufferGeometryUtils.js')]);
+const art = createToyArt(THREE, RoundedBoxGeometry);
+
+const Core = window.SlotCore, LEVELS = window.SLOT_LEVELS;
+const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
+const lerp = (a, b, t) => a + (b - a) * t;
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+function easeOutBack(t, c1 = 1.2) { const c3 = c1 + 1; return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2); }
+
+// ================= world layout =================
+// The machine is rebuilt for each level's column count NC (1..Core.MAX_COLS = 9 containers/colors).
+const CW = 1.4, CH = 1.4;   // square slot cells
+// Vertical layout depends on the level's visible pipe rows (Core.rows, 3..9): the window grows
+// with the rows, the bottles ride above it and the bins hang below it at fixed offsets.
+let ROWS, WIN_H, WT, WB, NECK_BOT, NECK_TOP, BODY_BOT, BODY_TOP, BIN_BASE, BODY_H, CAP_R;
+function setRows(R) {
+  ROWS = R; WIN_H = R * CH; WT = WIN_H / 2; WB = -WT;
+  NECK_BOT = WT + 0.40; NECK_TOP = WT + 0.76; BODY_BOT = WT + 1.10; BODY_TOP = WT + 2.40;
+  BIN_BASE = WB - 2.08; BODY_H = WIN_H + 1.02; CAP_R = BODY_H / 2;
+}
+setRows(Core.ROWS);
+const rowY = r => ((ROWS - 1) / 2 - r) * CH;  // centre y of visible row r (0 = top)
+let NC = 0, WIN_W = 0, rigK = 1;            // built column count, window width, rig scale
+const colX = c => (c - (NC - 1) / 2) * CW;
+const binX = c => colX(c) * (NC <= 3 ? 1.08 : 1);
+const TUBE_R = 0.265, COLLAR_R = 0.32, COLLAR_L = 0.13;
+const BALL_R = 0.21, BALL_SPACING = BALL_R * 2 + 0.005; // Same size in storage, waiting chambers and pipes.
+const BALL_CAPACITY = 12; // Full upper hopper, with a loose pile of equal-size balls.
+const BOT_K = 0.62, BOT_KY = 0.75; // hopper width / shoulder height factors
+const BIN_H = 0.91, BIN_Z = 0.3, BIN_W = 1.24, BIN_D = 1.28;
+const PORT = { T: [0, CH / 2], B: [0, -CH / 2], L: [-CW / 2, 0], R: [CW / 2, 0] };
+const HEX = {}, CSS = {}, NAME = {};
+for (const [k, v] of Object.entries(Core.COLORS)) { HEX[k] = v.hex; CSS[k] = v.css; NAME[k] = v.name; }
+HEX.Y = 0xffd600;
+
+// ================= renderer / scene =================
+const frame = document.getElementById('frame');
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+// The shadow map is only re-rendered on frames where a shadow caster moved (see shadowsDirty).
+renderer.shadowMap.autoUpdate = false; renderer.shadowMap.needsUpdate = true;
+renderer.localClippingEnabled = true;
+renderer.toneMapping = THREE.NeutralToneMapping; renderer.toneMappingExposure = 0.95;
+renderer.setClearColor(0x000000, 0);
+frame.insertBefore(renderer.domElement, frame.firstChild);
+
+const scene = new THREE.Scene();
+scene.background = null; // One continuous CSS beach behind the transparent playfield.
+
+const pmrem = new THREE.PMREMGenerator(renderer);
+const studio = art.studio();
+scene.environment = pmrem.fromScene(studio, 0.025).texture;
+studio.traverse(o => { if (o.isMesh) { o.geometry.dispose(); o.material.dispose(); } });
+pmrem.dispose();
+scene.environmentIntensity = 0.62;
+
+const camera = new THREE.PerspectiveCamera(36, 6 / 7, 1, 100);
+const TARGET = V3(0, 0.30, 0), TILT = 0.14;
+let inspectionMode = new URLSearchParams(location.search).get('inspect') === '1';
+// Fit the camera tightly around the machine (cap domes .. pedestal) so it fills the stage.
+const MACHINE_TOP = () => BODY_TOP + 0.55, MACHINE_BOT = () => BIN_BASE - 0.35;
+function poseCamera() {
+  const fitHeight = (MACHINE_TOP() - MACHINE_BOT() + 0.5) * rigK;
+  const fitWidth = (WIN_W + (inspectionMode ? 2.6 : 2.0)) * rigK;
+  // Keep the domed caps clear of the stage edge below the HUD on tall phones.
+  const halfH = Math.max(fitHeight / 1.86, fitWidth / (camera.aspect * 1.96), 2.6);
+  const distance = halfH / Math.tan(THREE.MathUtils.degToRad(camera.fov/2));
+  const yaw=inspectionMode ? .38 : -.035, pitch=inspectionMode ? .23 : TILT;
+  // rig scales about TARGET, so the machine's world centre is TARGET + (centre - TARGET) * rigK
+  const look = V3(0, TARGET.y + ((MACHINE_TOP() + MACHINE_BOT()) / 2 - TARGET.y) * rigK, 0);
+  camera.position.set(look.x + Math.sin(yaw)*Math.cos(pitch)*distance, look.y+Math.sin(pitch)*distance, Math.cos(yaw)*Math.cos(pitch)*distance);
+  camera.lookAt(look); camera.updateMatrixWorld(true);
+}
+poseCamera();
+scene.add(new THREE.HemisphereLight(0xfffbff, 0x8455c1, 0.8));
+const sun = new THREE.DirectionalLight(0xfff5e7, 2.0);
+sun.position.set(-5, 9, 10); sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -9, right: 9, top: 10, bottom: -9, near: 1, far: 50 });
+sun.shadow.bias = -0.0005; sun.shadow.normalBias = 0.02; sun.shadow.radius = 4;
+scene.add(sun);
+const fill = new THREE.DirectionalLight(0xe7daff, 0.45); fill.position.set(6, 2, 5); scene.add(fill);
+const rimLight = new THREE.DirectionalLight(0xffffff, 0.7); rimLight.position.set(-3, 6, -1); scene.add(rimLight);
+
+let sizedW = 0, sizedH = 0; // stage size the renderer was last fitted to
+function resize() {
+  const stage = document.getElementById('stage');
+  const w = stage.clientWidth, h = stage.clientHeight;
+  // a zero-size stage (hidden or not laid out yet) would give aspect 0 → NaN camera and clip
+  // planes, which three.js cannot upload; keep the last size until the ResizeObserver fires again
+  if (!w || !h) return;
+  sizedW = w; sizedH = h;
+  frame.style.width = w + 'px'; frame.style.height = h + 'px';
+  document.documentElement.style.setProperty('--u', (w / 720) + 'px');
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h; camera.updateProjectionMatrix(); poseCamera();
+}
+window.addEventListener('resize', resize); new ResizeObserver(resize).observe(document.getElementById('stage')); resize();
+
+// ================= materials =================
+const clipTop = new THREE.Plane(V3(0, -1, 0), WT), clipBot = new THREE.Plane(V3(0, 1, 0), -WB);
+const CLIP = [clipTop, clipBot];
+// A light neutral tint preserves every ball color. Alpha glass keeps the moving
+// spheres crisp; the offset edge reflections below describe the tube's shape.
+const glassOpts = { color: 0xdff6ff, transparent: true, opacity: 0.26, transmission: 0, thickness: 0.035, ior: 1.46, attenuationColor: new THREE.Color(0xffffff), attenuationDistance: 8, roughness: 0.14, metalness: 0, clearcoat: 0.45, clearcoatRoughness: 0.12, side: THREE.FrontSide, depthWrite: false, envMapIntensity: 0.65 };
+
+const M = {
+  glass: new THREE.MeshPhysicalMaterial(glassOpts),
+  glassClip: new THREE.MeshPhysicalMaterial({ ...glassOpts, clippingPlanes: CLIP }),
+  bottle: new THREE.MeshPhysicalMaterial({ ...glassOpts, color: 0xffe5f7, transmission: 0, opacity: 0.30, thickness: 0.025, attenuationColor: new THREE.Color(0xffe3f7), attenuationDistance: 4 }),
+  collar: new THREE.MeshPhysicalMaterial({ color: 0x8da3bc, roughness: 0.32, clearcoat: 0.6, clearcoatRoughness: 0.14 }),
+  // clipShadows: reel strips extend past the window, and their hidden collars must not cast shadows
+  collarClip: new THREE.MeshPhysicalMaterial({ color: 0x8da3bc, roughness: 0.32, clearcoat: 0.6, clearcoatRoughness: 0.14, clippingPlanes: CLIP, clipShadows: true }),
+  seamClip: new THREE.MeshBasicMaterial({ color: 0x8babc3, transparent: true, opacity: 0.13, clippingPlanes: CLIP }),
+  plateClip: new THREE.MeshPhysicalMaterial({ color: 0x304154, roughness: 0.65, clearcoat: 0.1, clippingPlanes: CLIP }),
+  boltClip: new THREE.MeshStandardMaterial({ color: 0x60768b, clippingPlanes: CLIP }),
+  arrowClip: new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 0.35, clippingPlanes: CLIP }),
+  purple: new THREE.MeshPhysicalMaterial({ color: 0x68438f, roughness: 0.31, metalness: 0.02, clearcoat: 0.65, clearcoatRoughness: 0.16 }),
+  purpleDark: new THREE.MeshPhysicalMaterial({ color: 0x39264f, roughness: 0.40, clearcoat: 0.45 }),
+  purpleLight: new THREE.MeshPhysicalMaterial({ color: 0x997bb7, roughness: 0.29, clearcoat: 0.6 }),
+  gold: new THREE.MeshPhysicalMaterial({ color: 0xdab875, roughness: 0.32, metalness: 0.08, clearcoat: 0.55, emissive: 0x000000 }),
+  goldDark: new THREE.MeshPhysicalMaterial({ color: 0x45586a, roughness: 0.50, metalness: 0.08, clearcoat: 0.2 }),
+  goldLight: new THREE.MeshPhysicalMaterial({ color: 0xffe3aa, roughness: 0.26, metalness: 0.04, clearcoat: 0.6 }),
+  window: new THREE.MeshPhysicalMaterial({ color: 0x1b2838, roughness: 0.78, clearcoat: 0 }),
+  white: new THREE.MeshPhysicalMaterial({ color: 0xfff4e4, roughness: 0.35, clearcoat: 0.5 }),
+  cream: new THREE.MeshPhysicalMaterial({ color: 0xf0d6b4, roughness: 0.4 }),
+  chain: new THREE.MeshPhysicalMaterial({ color: 0x9aa3b5, roughness: 0.3, metalness: 0.6, clearcoat: 1 }),
+  frontGlass: new THREE.MeshPhysicalMaterial({ color: 0xf4faff, transparent: true, opacity: 0.012, roughness: 0.22, clearcoat: 0.25, depthWrite: false, envMapIntensity: 0.4 }),
+};
+const BALL_MAT = {}, PLASTIC = {}, PLASTIC_DK = {};
+// True lit 3D candy spheres: highlights follow the studio and camera.
+for (const k of Core.COLOR_KEYS) {
+  BALL_MAT[k] = new THREE.MeshPhysicalMaterial({ color: k === 'Y' ? 0xffdf00 : k === 'R' ? 0xff2145 : HEX[k], roughness: .16, clearcoat: 1, clearcoatRoughness: .025, metalness: 0, envMapIntensity: 1.5 });
+  PLASTIC[k] = new THREE.MeshPhysicalMaterial({ color: HEX[k], roughness: 0.19, clearcoat: 1, clearcoatRoughness: 0.06 });
+  PLASTIC_DK[k] = new THREE.MeshPhysicalMaterial({ color: new THREE.Color(HEX[k]).multiplyScalar(0.55), roughness: 0.5 });
+}
+// Same surface as BALL_MAT, white base so the per-instance colour (BALL_MAT[k].color) shows as-is.
+const ballInstMat = new THREE.MeshPhysicalMaterial({ color: 0xffffff, roughness: .16, clearcoat: 1, clearcoatRoughness: .025, metalness: 0, envMapIntensity: 1.5 });
+let ballInst = null, ballKey = '';
+function shadowy(o, cast = true, recv = true) { o.traverse(m => { if (m.isMesh) { m.castShadow = cast; m.receiveShadow = recv; } }); return o; }
+// ---- draw-call batching ----
+// Static meshes sharing a material are baked into one geometry: fewer draw calls (and shadow
+// draws) with the exact same pixels. parts: [{ geo, mat, matrix, cast, recv, order }]
+function geoForMerge(geo, matrix, indexed) {
+  let g = geo.clone().applyMatrix4(matrix);
+  if (!indexed && g.index) g = g.toNonIndexed();
+  for (const name of Object.keys(g.attributes)) if (!['position', 'normal', 'uv'].includes(name)) g.deleteAttribute(name);
+  g.clearGroups(); g.morphAttributes = {};
+  return g;
+}
+function mergeParts(parts) {
+  const buckets = new Map();
+  for (const p of parts) {
+    const key = p.mat.uuid + '|' + !!p.cast + !!p.recv + '|' + (p.order || 0);
+    if (!buckets.has(key)) buckets.set(key, []);
+    buckets.get(key).push(p);
+  }
+  const meshes = [];
+  for (const list of buckets.values()) {
+    const indexed = list.every(p => p.geo.index);
+    const geos = list.map(p => geoForMerge(p.geo, p.matrix, indexed));
+    const merged = mergeGeometries(geos, false);
+    const m = new THREE.Mesh(merged, list[0].mat);
+    m.castShadow = !!list[0].cast; m.receiveShadow = !!list[0].recv; m.renderOrder = list[0].order || 0;
+    // parts tagged with a `cell` index (in order) let the caller draw only a range of cells:
+    // cellStart[j] = first index (or vertex) of cell j's parts, cellStart[last] = total
+    if (list[0].cell != null) {
+      const cellStart = []; let at = 0;
+      list.forEach((p, i) => { while (cellStart.length <= p.cell) cellStart.push(at); at += indexed ? geos[i].index.count : geos[i].attributes.position.count; });
+      cellStart.push(at); m.userData.cellStart = cellStart;
+    }
+    meshes.push(m);
+  }
+  return meshes;
+}
+// Collapse every mesh under `root` (relative to root) into merged meshes; root keeps its transform.
+function mergeStatic(root) {
+  root.updateMatrixWorld(true);
+  const inv = root.matrixWorld.clone().invert(), parts = [];
+  root.traverse(o => { if (o.isMesh && o.visible) parts.push({ geo: o.geometry, mat: o.material, matrix: inv.clone().multiply(o.matrixWorld), cast: o.castShadow, recv: o.receiveShadow, order: o.renderOrder }); });
+  const merged = new THREE.Group(); merged.name = root.name;
+  merged.position.copy(root.position); merged.quaternion.copy(root.quaternion); merged.scale.copy(root.scale);
+  mergeParts(parts).forEach(m => merged.add(m));
+  return merged;
+}
+function canvasTex(w, h, draw) {
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  draw(c.getContext('2d'), w, h);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
+  return t;
+}
+function roundRectShape(w, h, r, cx = 0, cy = 0) {
+  const s = new THREE.Shape(), x = cx - w / 2, y = cy - h / 2;
+  s.moveTo(x + r, y); s.lineTo(x + w - r, y); s.quadraticCurveTo(x + w, y, x + w, y + r);
+  s.lineTo(x + w, y + h - r); s.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  s.lineTo(x + r, y + h); s.quadraticCurveTo(x, y + h, x, y + h - r);
+  s.lineTo(x, y + r); s.quadraticCurveTo(x, y, x + r, y);
+  return s;
+}
+function roundRectPath(w, h, r, cx = 0, cy = 0) { const p = new THREE.Path(); p.setFromPoints(roundRectShape(w, h, r, cx, cy).getPoints(12)); return p; }
+
+// ================= pipe cells =================
+const OPP = Core.OPP;
+function segPairs(seg) {
+  if (seg.cross) return [['T', 'B'], ['L', 'R']];
+  if (!seg.ports.length) return [];
+  if (seg.ports.length === 2) return [[seg.ports[0], seg.ports[1]]];
+  const out = [], seen = new Set();
+  for (const e of seg.ports) {
+    if (e === 'B') continue;
+    const x = Core.exitOf(seg, e); if (!x) continue;
+    const k = [e, x].sort().join('');
+    if (!seen.has(k)) { seen.add(k); out.push([e, x]); }
+  }
+  return out;
+}
+function makeCurve(a, b, curvy) {
+  const A = V3(PORT[a][0], PORT[a][1], 0), B = V3(PORT[b][0], PORT[b][1], 0);
+  if (OPP[a] === b) {
+    if (!curvy) return new THREE.LineCurve3(A, B);
+    const pts = [];
+    for (let i = 0; i <= 24; i++) {
+      const t = i / 24, w = 0.24 * Math.sin(2 * Math.PI * t) * Math.sin(Math.PI * t);
+      const p = A.clone().lerp(B, t);
+      if (a === 'T' || a === 'B') p.x += w; else p.y += w;
+      pts.push(p);
+    }
+    return new THREE.CatmullRomCurve3(pts);
+  }
+  return new THREE.QuadraticBezierCurve3(A, V3(0, 0, 0), B);
+}
+const G = {
+  collar: art.collarGeometry(COLLAR_R, COLLAR_L),
+  seam: new THREE.BoxGeometry(CW, 0.016, 0.01),
+  tile: new RoundedBoxGeometry(CW - 0.035, CH - 0.035, 0.22, 2, 0.10),
+  plate: new RoundedBoxGeometry(0.72, 0.58, 0.08, 3, 0.08),
+  bolt: new THREE.SphereGeometry(0.035, 10, 8),
+  arrow: new THREE.ConeGeometry(0.1, 0.22, 3),
+  ball: new THREE.SphereGeometry(1, 24, 16),
+  glint: new THREE.TorusGeometry(0.35, 0.022, 6, 28),
+};
+const reflectionMat = new THREE.MeshBasicMaterial({ color: 0xe7f8ff, transparent: true, opacity: 0.60, depthWrite: false, clippingPlanes: CLIP });
+const tileMat = new THREE.MeshPhysicalMaterial({ color: 0x263747, roughness: 0.76, metalness: 0, clearcoat: 0.08, clippingPlanes: CLIP });
+const cellGeoCache = {};
+function cellGeo(code) {
+  if (cellGeoCache[code]) return cellGeoCache[code];
+  const seg = Core.parseSeg(code), curvy = seg.curvy && !seg.cross;
+  const curves = segPairs(seg).map(([a, b]) => makeCurve(a, b, curvy));
+  const tubes = curves.map(c => new THREE.TubeGeometry(c, c.isLineCurve3 ? 1 : 28, TUBE_R, 16, false));
+  // Two slim edge reflections trace the route, leaving the center clear for balls.
+  const shines = curves.flatMap(c => [-1, 1].map(side => {
+    const pts = Array.from({ length: 25 }, (_, i) => {
+      const t = 0.04 + i / 24 * 0.92, p = c.getPoint(t), tangent = c.getTangent(t);
+      return p.add(V3(-tangent.y * 0.215 * side, tangent.x * 0.215 * side, 0.155));
+    });
+    return new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 20, side < 0 ? 0.014 : 0.009, 4, false);
+  }));
+  return (cellGeoCache[code] = { seg, tubes, shines, ports: seg.cross ? ['T', 'B', 'L', 'R'] : seg.ports });
+}
+// One pipe cell as mergeable parts, placed with its centre at y = cy.
+function cellParts(code, cy, cell) {
+  const { seg, tubes, shines, ports } = cellGeo(code), parts = [];
+  const add = (geo, mat, o, extra) => { o.position.y += cy; o.updateMatrix(); parts.push({ geo, mat, matrix: o.matrix.clone(), cell, ...extra }); };
+  const at = (x, y, z) => { const o = new THREE.Object3D(); o.position.set(x, y, z); return o; };
+  add(G.tile, tileMat, at(0, 0, -0.25), { recv: true });
+  add(G.seam, M.seamClip, at(0, CH / 2 - 0.008, -0.3));
+  if (!tubes.length) {
+    add(G.plate, M.plateClip, at(0, 0, -0.12));
+    for (const [bx, by] of [[-0.26, 0.2], [0.26, 0.2], [-0.26, -0.2], [0.26, -0.2]]) add(G.bolt, M.boltClip, at(bx, by, -0.06));
+  }
+  for (const t of tubes) add(t, M.glassClip, at(0, 0, 0));
+  for (const t of shines) add(t, reflectionMat, at(0, 0, 0), { order: 3 });
+  for (const pt of ports) {
+    const o = new THREE.Object3D();
+    if (pt === 'T') o.position.set(0, CH / 2 - COLLAR_L / 2, 0);
+    else if (pt === 'B') o.position.set(0, -CH / 2 + COLLAR_L / 2, 0);
+    else { o.rotation.z = Math.PI / 2; o.position.set((pt === 'L' ? -1 : 1) * (CW / 2 - COLLAR_L / 2), 0, 0); }
+    add(G.collar, M.collarClip, o, { cast: true });
+  }
+  if (seg.pref) {
+    const o = new THREE.Object3D(), dir = seg.pref === 'L' ? -1 : 1;
+    o.rotation.z = -dir * Math.PI / 2; o.position.set(dir * 0.2, 0, 0.27); o.scale.set(1, 1, 0.4);
+    add(G.arrow, M.arrowClip, o);
+  }
+  return parts;
+}
+
+// ================= machine (rebuilt per column count) =================
+// Everything that depends on the column count lives in `rig`; rig is uniformly scaled
+// down when there are more than 3 columns so up to 9 still fit the portrait frame.
+let rig = null, machine = null, contactShadow = null;
+let inletMats = [], reelRoots = [], hitPlanes = [], grabFrames = [], chains = [], glints = null, glintKey = '';
+let bottles = [], bins = [], dropTargets = [];
+const glintMat = new THREE.MeshBasicMaterial({ color: 0xeafcff, transparent: true, opacity: 0.9 });
+const BODY_Y = 0;
+function spriteFrom(draw, w, h) { return new THREE.Sprite(new THREE.SpriteMaterial({ map: canvasTex(w, h, draw), depthWrite: false })); }
+const bottleGeo = art.bottleGeometry(NECK_BOT, BODY_TOP, BOT_K, BOT_KY);
+
+const BG = {
+  ring: new THREE.TorusGeometry(0.29, 0.045, 12, 48),
+  dome: new THREE.SphereGeometry(0.27 + 0.51 * BOT_K, 40, 16, 0, Math.PI * 2, 0, Math.PI / 2),
+  brim: art.brimGeometry(BOT_K),
+  btn: new THREE.SphereGeometry(0.23, 28, 18), btnRim: new THREE.TorusGeometry(0.26, 0.05, 10, 40),
+  warn: new THREE.CylinderGeometry(0.3, 0.3, NECK_TOP - NECK_BOT, 24, 1, true),
+};
+
+function buildRig(n, R) {
+  if (rig) { scene.remove(rig); rig.traverse(o => { if (o.geometry) o.geometry.dispose(); }); }
+  setRows(R); NC = n; WIN_W = n * CW;
+  rig = new THREE.Group(); scene.add(rig);
+  machine = new THREE.Group(); rig.add(machine);
+  // balls / burst particles live in the rig (rig-local coordinates); drop the old pools
+  ballPool.length = 0;
+  for (let i = partPool.length - 1; i >= 0; i--) if (!partPool[i].conf) partPool.splice(i, 1);
+
+  // Deep molded cabinet, round drum, gold bezel and splayed pedestal.
+  machine.add(mergeStatic(shadowy(art.cabinet({width:WIN_W,windowHeight:WIN_H,colWidth:CW,columns:n,binBase:BIN_BASE}, M))));
+
+  // ---- inlets ----
+  inletMats = [];
+  {
+    const rims = new THREE.Group();
+    const tri = new THREE.Shape(); tri.moveTo(-0.27, 0.15); tri.lineTo(0.27, 0.15); tri.lineTo(0, -0.17); tri.closePath();
+    const geo = new THREE.ExtrudeGeometry(tri, { depth: 0.1, bevelEnabled: true, bevelThickness: 0.05, bevelSize: 0.05, bevelSegments: 3 });
+    const rimGeo = new THREE.ExtrudeGeometry(tri, { depth: 0.06, bevelEnabled: true, bevelThickness: 0.03, bevelSize: 0.1, bevelSegments: 2 });
+    for (let s = 0; s < n; s++) {
+      const mat = new THREE.MeshPhysicalMaterial({ color: 0xfffbef, roughness: 0.25, clearcoat: 1, emissive: 0xffd040, emissiveIntensity: 0 });
+      const m = new THREE.Mesh(geo, mat); m.position.set(colX(s), WT + 0.33, 0.66); machine.add(m);
+      const r = new THREE.Mesh(rimGeo, M.gold); r.position.set(colX(s), WT + 0.33, 0.61); rims.add(r);
+      inletMats.push(mat);
+    }
+    machine.add(mergeStatic(rims));
+  }
+
+  // ---- reels, drag hit planes, grab highlight, chains for fixed reels, connection glints ----
+  reelRoots = []; hitPlanes = []; grabFrames = []; chains = [];
+  const link = new THREE.TorusGeometry(0.11, 0.035, 8, 20);
+  for (let c = 0; c < n; c++) {
+    const rr = new THREE.Group(); rr.position.x = colX(c); machine.add(rr); reelRoots.push(rr);
+    const hp = new THREE.Mesh(new THREE.PlaneGeometry(CW, WIN_H), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false }));
+    hp.position.set(colX(c), 0, 0.55); hp.userData.col = c; machine.add(hp); hitPlanes.push(hp);
+    const fg = new THREE.Mesh(new THREE.PlaneGeometry(CW - 0.08, WIN_H - 0.08), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0, depthWrite: false }));
+    fg.position.set(colX(c), 0, 0.33); fg.renderOrder = 7; machine.add(fg); grabFrames.push(fg);
+    const ch = new THREE.Group(); ch.position.set(colX(c), 0, 0.42); ch.visible = false; machine.add(ch); chains.push(ch);
+    const links = Math.max(4, Math.round(WIN_H / 0.27));
+    for (let i = 0; i <= links; i++) { const m = new THREE.Mesh(link, M.chain); m.position.set((i % 2 ? 0.03 : -0.03), WT - 0.12 - i * (WIN_H - 0.24) / links, 0); m.rotation.y = i % 2 ? Math.PI / 2 : 0; m.scale.set(1, 1.4, 1); ch.add(m); }
+    const lockB = new THREE.Mesh(new RoundedBoxGeometry(0.36, 0.3, 0.14, 3, 0.05), M.chain); lockB.position.set(0, -0.05, 0.06); ch.add(lockB);
+    const sh = new THREE.Mesh(new THREE.TorusGeometry(0.11, 0.035, 8, 20, Math.PI), M.chain); sh.position.set(0, 0.1, 0.06); ch.add(sh);
+    shadowy(ch);
+    const chainMesh = mergeStatic(ch); ch.clear(); [...chainMesh.children].forEach(m => ch.add(m));
+  }
+  // connection glints: one instanced draw for every joint
+  glints = new THREE.InstancedMesh(G.glint, glintMat, ROWS * (2 * n - 1)); glints.count = 0; glints.frustumCulled = false;
+  glints.instanceMatrix.setUsage(THREE.DynamicDrawUsage); machine.add(glints); glintKey = '';
+
+  // ---- bottles + 3D drop buttons ----
+  bottles = [];
+  for (let s = 0; s < n; s++) {
+    const g = new THREE.Group(); g.position.x = colX(s); rig.add(g);
+    const b = new THREE.Mesh(bottleGeo, M.bottle); b.position.y = NECK_BOT; b.renderOrder = 2; g.add(b);
+    g.add(art.bottleHighlights(NECK_BOT, BODY_TOP, BOT_K, BOT_KY));
+    const ring = new THREE.Mesh(BG.ring, M.glass); ring.rotation.x = Math.PI / 2; ring.position.y = NECK_BOT + 0.06; g.add(ring);
+    const warn = new THREE.Mesh(BG.warn, new THREE.MeshBasicMaterial({ color: 0xffb21a, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide }));
+    warn.position.y = (NECK_TOP + NECK_BOT) / 2; g.add(warn);
+    const capG = new THREE.Group(); capG.position.y = BODY_TOP; g.add(capG);
+    const brim = new THREE.Mesh(BG.brim, null); brim.position.y = 0.06; capG.add(brim);
+    const dome = new THREE.Mesh(BG.dome, null); dome.scale.y = 0.53; dome.position.y = 0.14; capG.add(dome);
+    shadowy(capG);
+    // drop button sits on the cap
+    const btn = new THREE.Group(); btn.position.set(0, 0.25, 0.27 + 0.51 * BOT_K); capG.add(btn);
+    const rim = new THREE.Mesh(BG.btnRim, M.white); rim.position.z = -0.04; btn.add(rim);
+    const bmat = new THREE.MeshPhysicalMaterial({ color: 0x3fc52b, roughness: 0.16, clearcoat: 1, emissive: 0xfff36a, emissiveIntensity: 0 });
+    const body = new THREE.Mesh(BG.btn, bmat); body.scale.z = 0.55; btn.add(body);
+    shadowy(btn);
+    rim.userData.drop = body.userData.drop = s;
+    bottles.push({ g, brim, dome, warn, btn, bmat, hit: [rim, body] });
+  }
+  dropTargets = bottles.flatMap(b => b.hit);
+
+  // ---- bins ----
+  bins = [];
+  {
+    const binWidth = n <= 3 ? 1.42 : BIN_W;
+    const outer = roundRectShape(binWidth, BIN_D, 0.2);
+    const wallShape = roundRectShape(binWidth, BIN_D, 0.2); wallShape.holes.push(roundRectPath(binWidth - 0.22, BIN_D - 0.22, 0.1));
+    const wallGeo = art.binGeometry(binWidth, BIN_D, BIN_H);
+    const floorGeo = new THREE.ExtrudeGeometry(outer, { depth: 0.14, bevelEnabled: false, curveSegments: 16 });
+    const discGeo = new THREE.CylinderGeometry(0.29, 0.29, 0.07, 48);
+    const shineMat = new THREE.MeshBasicMaterial({ color: 0xe7f8ff, transparent: true, opacity: 0.6, depthWrite: false });
+    const outlets = new THREE.Group(); // static outlet pipes of every bin, merged below
+    for (let b = 0; b < n; b++) {
+      const g = new THREE.Group(); g.position.set(binX(b), 0, 0); rig.add(g);
+      const body = new THREE.Group(); g.add(body);
+      const mat = new THREE.MeshPhysicalMaterial({ color: 0xffffff, roughness: 0.18, clearcoat: 1, clearcoatRoughness: 0.04, emissive: 0x000000 });
+      const wall = new THREE.Mesh(wallGeo, mat); wall.rotation.x = -Math.PI / 2; wall.position.set(0, BIN_BASE, BIN_Z); body.add(wall);
+      const floor = new THREE.Mesh(floorGeo, null); floor.rotation.x = -Math.PI / 2; floor.position.set(0, BIN_BASE + 0.02, BIN_Z); body.add(floor);
+      const disc = new THREE.Mesh(discGeo, M.white); disc.rotation.x = Math.PI / 2; disc.position.set(0, BIN_BASE + 0.45, BIN_Z + BIN_D / 2 + 0.07); body.add(disc);
+      const er = new THREE.Mesh(new THREE.TorusGeometry(0.29, 0.035, 12, 48), M.cream); er.position.set(0, BIN_BASE + 0.45, BIN_Z + BIN_D / 2 + 0.1); body.add(er);
+      const eb = new THREE.Mesh(G.ball, null); eb.scale.setScalar(0.21); eb.position.set(0, BIN_BASE + 0.45, BIN_Z + BIN_D / 2 + 0.14); body.add(eb);
+      shadowy(body);
+      const dx = colX(b) - binX(b);
+      const outletCurve = new THREE.CatmullRomCurve3([V3(dx, WB - 0.16, 0), V3(dx, WB - 0.53, 0), V3(0, BIN_BASE + 1.05, 0), V3(0, BIN_BASE + 0.42, 0)]);
+      const og = new THREE.Group(); og.position.copy(g.position); outlets.add(og);
+      og.add(new THREE.Mesh(new THREE.TubeGeometry(outletCurve, 36, TUBE_R, 24, false), M.glass));
+      for (const side of [-1, 1]) {
+        const shinePts = outletCurve.getPoints(32).map(p => p.add(V3(side * 0.215, 0, 0.155)));
+        og.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(shinePts), 32, side < 0 ? 0.014 : 0.009, 6, false), shineMat));
+      }
+      const col = new THREE.Mesh(G.collar, M.collar); col.position.set(dx, WB - 0.2, 0); col.castShadow = true; og.add(col);
+      bins.push({ g, body, mat, floor, eb });
+    }
+    rig.add(mergeStatic(outlets));
+  }
+  // Every resting ball (hopper piles, waiting chambers, bin piles) is one instanced draw.
+  ballInst = new THREE.InstancedMesh(G.ball, ballInstMat, n * (BALL_CAPACITY * 2 + 4));
+  ballInst.castShadow = true; ballInst.frustumCulled = false; ballInst.name = 'Resting balls';
+  ballInst.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  ballInst.setColorAt(0, new THREE.Color()); // allocate instanceColor
+  rig.add(ballInst); ballKey = '';
+
+  // ---- fit: shrink the whole rig (about the camera target) so the widest part stays in frame ----
+  // fit width and height: every row above the classic 3 adds CH to the machine height
+  rigK = Math.min(1, 8.0 / (WIN_W + 2.6), 9.6 / (9.6 + Math.max(0, ROWS - 3) * CH));
+  rig.scale.setScalar(rigK);
+  rig.position.y = TARGET.y * (1 - rigK);
+  if (contactShadow) {
+    contactShadow.position.y = (BIN_BASE - 0.24) * rigK + rig.position.y;
+    contactShadow.scale.set((WIN_W + 1.8) * rigK * 1.15, 0.6 + 0.35 * rigK, 1);
+  }
+  rig.updateMatrixWorld(true);
+  // reel clipping planes are in world space: follow the rig transform
+  clipTop.constant = WT * rigK + rig.position.y;
+  clipBot.constant = -(WB * rigK + rig.position.y);
+  poseCamera();
+}
+
+// reels
+// Each reel is one strip of n + ROWS + 3 cells (its sequence repeated), merged per material and
+// scrolled as a whole; the window's clipping planes hide what is outside. Cell j of the strip
+// shows code seq[j % n] at strip-local y = -j * CH.
+let reelStrips = [], segCols = [];
+const stripCache = new Map(); // "codes|rows" -> merged meshes (geometry reused across reloads)
+function buildReels() {
+  reelRoots.forEach(r => r.clear());
+  reelStrips = L.reels.map((seq, c) => {
+    // per column: each strip's geometry carries its own draw range
+    const key = seq.join(',') + '|' + ROWS + '#' + c;
+    let meshes = stripCache.get(key);
+    if (!meshes) {
+      const parts = [];
+      for (let j = 0; j < seq.length + ROWS + 3; j++) parts.push(...cellParts(seq[j % seq.length], -j * CH, j));
+      meshes = mergeParts(parts); stripCache.set(key, meshes);
+    }
+    const strip = new THREE.Group(); meshes.forEach(m => strip.add(m.clone())); reelRoots[c].add(strip);
+    strip.userData.first = -1;
+    return strip;
+  });
+}
+function layoutReels() {
+  for (let c = 0; c < NC; c++) {
+    const n = L.reels[c].length, p = reels[c].p, base = Math.floor(p) - 1, first = Core.mod(base, n);
+    const shift = base - first;     // cell k of the reel = strip cell k - shift
+    const strip = reelStrips[c];
+    strip.position.y = rowY(0) - (shift - p) * CH;
+    // Only the ROWS + 3 cells around the window are drawn; the rest of the strip is skipped
+    // instead of being shaded and then clipped away.
+    if (strip.userData.first !== first) {
+      strip.userData.first = first;
+      for (const m of strip.children) {
+        const cs = m.userData.cellStart, at = j => cs[Math.min(j, cs.length - 1)];
+        m.geometry.setDrawRange(at(first), at(first + ROWS + 3) - at(first));
+      }
+    }
+  }
+}
+
+// Settled, irregular packing inside the hopper's shoulder and body, bottom first.
+// Rotate it per bottle/level for varied silhouettes without frame-to-frame jitter.
+const HOPPER_PILE = [
+  [-0.0485, 0.5500, 0.0242], [0.2818, 0.8052, -0.0558],
+  [-0.1350, 0.8570, -0.2566], [0.0327, 0.8703, 0.2915],
+  [-0.2781, 1.0715, 0.0827], [0.1540, 1.1746, -0.2226],
+  [0.1974, 1.2524, 0.2050], [-0.2110, 1.3950, -0.1846],
+  [-0.1710, 1.4618, 0.2375], [0.2802, 1.5585, -0.0912],
+  [0.1415, 1.7643, 0.2539], [-0.0425, 1.7735, -0.2793],
+];
+function containerSlot(s, i) {
+  const [x, y, z] = HOPPER_PILE[i], angle = s * 2.399963 + li * 0.73;
+  return V3(colX(s) + x * Math.cos(angle) - z * Math.sin(angle), NECK_BOT + y, x * Math.sin(angle) + z * Math.cos(angle));
+}
+// Settled pile in the receiving bin: uneven heights, clear of its floor and walls.
+const BIN_PILE = [
+  [-0.0494, 0.3800, -0.0431], [0.2397, 0.3800, 0.2804],
+  [0.2639, 0.5616, -0.2656], [-0.2442, 0.5586, 0.2898],
+  [-0.2647, 0.6531, -0.2873], [0.1169, 0.7512, 0.1138],
+  [-0.2676, 0.9202, 0.0486], [0.0438, 0.9454, -0.2855],
+  [0.2624, 1.1149, 0.2786], [-0.2700, 1.2320, -0.2815],
+  [-0.1806, 1.2629, 0.2845], [0.2639, 1.2718, -0.1254],
+];
+function binSlot(b, i) {
+  const [x, y, z] = BIN_PILE[i];
+  const mirrorX = (b + li) % 2 ? -1 : 1, mirrorZ = (b + Math.floor(li / 2)) % 2 ? -1 : 1;
+  return V3(x * mirrorX, BIN_BASE + y, BIN_Z + z * mirrorZ);
+}
+function chamberSlot(s, i) { return V3(colX(s), NECK_BOT + BALL_R + 0.02 + i * BALL_SPACING, 0); }
+
+// ================= tropical background and soft contact shadow =================
+// Background lives in CSS so it stays crisp and does not add WebGL draw calls.
+{
+  const tex = canvasTex(256, 128, (g, w, h) => {
+    const gr = g.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2);
+    gr.addColorStop(0, 'rgba(120,45,38,0.36)'); gr.addColorStop(0.48, 'rgba(148,65,34,0.16)'); gr.addColorStop(1, 'rgba(148,65,34,0)');
+    g.scale(1, 0.5); g.fillStyle = gr; g.fillRect(0, 0, w, h * 2);
+  });
+  const shadow = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, depthWrite: false }));
+  shadow.position.set(0.3, -4.02, -1.6); shadow.scale.set(8.0, 1.2, 1); scene.add(shadow);
+  contactShadow = shadow;
+}
+
+// ================= moving balls & particles =================
+const ballPool = [];
+function getBallMesh(color) {
+  let m = ballPool.find(b => !b.visible);
+  if (!m) { m = new THREE.Mesh(G.ball); m.castShadow = true; rig.add(m); ballPool.push(m); }
+  m.material = BALL_MAT[color]; m.visible = true; m.scale.setScalar(BALL_R); return m;
+}
+const partGeo = new THREE.SphereGeometry(0.06, 8, 6), confGeo = new THREE.PlaneGeometry(0.16, 0.08);
+const partPool = [];
+function getPart(conf) {
+  let p = partPool.find(q => !q.mesh.visible && q.conf === conf);
+  if (!p) { const mesh = new THREE.Mesh(conf ? confGeo : partGeo, new THREE.MeshBasicMaterial({ side: THREE.DoubleSide })); (conf ? scene : rig).add(mesh); p = { mesh, conf }; partPool.push(p); }
+  p.mesh.visible = true; p.mesh.scale.setScalar(1); return p;
+}
+
+// ================= audio =================
+let actx = null, soundOn = true;
+try { soundOn = localStorage.getItem('slotsort_sound') !== 'false'; } catch(e) {}
+function ensureAudio() { if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { } } if (actx && actx.state === 'suspended') actx.resume(); }
+function tone(freq, dur, type = 'sine', vol = 0.15, slide = 0, delay = 0) {
+  if (!soundOn || !actx) return;
+  const t = actx.currentTime + delay, o = actx.createOscillator(), g = actx.createGain();
+  o.type = type; o.frequency.setValueAtTime(freq, t);
+  if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(40, freq * slide), t + dur);
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g); g.connect(actx.destination); o.start(t); o.stop(t + dur + 0.02);
+}
+const SFX = {
+  tap: () => tone(660, 0.06, 'square', 0.05),
+  tick: () => tone(420, 0.035, 'square', 0.035),
+  stop: () => tone(180, 0.08, 'square', 0.1, 0.5),
+  deny: () => tone(220, 0.12, 'triangle', 0.1, 0.8),
+  spin: () => { for (let i = 0; i < 12; i++) tone(300 + i * 30, 0.04, 'square', 0.03, 1, i * 0.06); },
+  drop: () => tone(900, 0.07, 'sine', 0.08, 0.6),
+  ok: n => { tone(660 * Math.pow(1.06, n), 0.12, 'triangle', 0.14); tone(990 * Math.pow(1.06, n), 0.16, 'sine', 0.08, 1, 0.06); },
+  wrong: () => { tone(160, 0.22, 'sawtooth', 0.12, 0.7); tone(150, 0.22, 'square', 0.06, 0.7, 0.05); },
+  jam: () => tone(120, 0.18, 'triangle', 0.18, 0.6),
+  warn: () => { tone(880, 0.1, 'square', 0.06); tone(880, 0.1, 'square', 0.06, 1, 0.18); },
+  win: () => [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.25, 'triangle', 0.14, 1, i * 0.11)),
+  lose: () => [392, 330, 262, 196].forEach((f, i) => tone(f, 0.3, 'sawtooth', 0.08, 1, i * 0.15)),
+};
+
+// ================= game state =================
+let li = 0, L, logic, vis, reels, state, balls = [], timers = [], parts = [], overlay = null, toastT = 0, tipT = 0;
+let combo = 0, hintSrc = null, time = 0, loseReason = '';
+let drag = null, queued = 0, dropActive = false, endRes = null, dropPress = [];
+let binFx = [];
+let tutorial = null;
+let done = {};
+try { done = JSON.parse(localStorage.getItem('slotsort_done') || '{}'); } catch (e) { }
+const $ = id => document.getElementById(id);
+
+function loadLevel(i) {
+  li = clamp(i, 0, LEVELS.length - 1); L = LEVELS[li];
+  logic = Core.initialState(L);
+  // design review: ?level=N&solved=W opens the level with the reels already turned to release wave W
+  const solvedWave = +new URLSearchParams(location.search).get('solved');
+  if (solvedWave) { const plan = Core.planRelease(L, logic), w = plan && plan[solvedWave - 1]; if (w) logic.pos = w.pos.slice(); }
+  tutorial = li === 0 ? { step: 'drag' } : null;
+  vis = JSON.parse(JSON.stringify(logic));
+  reels = L.reels.map((r, c) => ({ p: logic.pos[c], anim: null, cell: logic.pos[c] }));
+  state = 'idle'; timers = []; combo = 0; hintSrc = null; auto = null;
+  drag = null; queued = 0; dropActive = false; endRes = null;
+  balls.forEach(b => (b.mesh.visible = false)); balls = [];
+  parts.forEach(p => (p.mesh.visible = false)); parts = [];
+  if (Core.cols(L) !== NC || Core.rows(L) !== ROWS) buildRig(Core.cols(L), Core.rows(L));
+  const cols = [...Array(NC).keys()];
+  dropPress = cols.map(() => 0);
+  binFx = cols.map(() => ({ glow: 0, shake: 0 }));
+  buildReels();
+  for (let s = 0; s < NC; s++) {
+    const bt = bottles[s], c = L.src[s];
+    bt.brim.material = PLASTIC[c]; bt.dome.material = PLASTIC[c];
+  }
+  for (let b = 0; b < NC; b++) {
+    const c = L.bins[b], bn = bins[b];
+    bn.mat.color.setHex(HEX[c]); bn.floor.material = PLASTIC_DK[c]; bn.eb.material = BALL_MAT[c];
+  }
+  ballKey = ''; segCols = L.reels.map(seq => seq.map(Core.parseSeg));
+  ctrlPos = []; shadowsDirty = true;
+  for (let c = 0; c < NC; c++) chains[c].visible = isFixed(c);
+  $('drop-controls').replaceChildren();
+  for (let s = 0; s < NC; s++) {
+    const button = document.createElement('button'); button.className = 'drop-control';
+    button.setAttribute('aria-label', 'Release ' + NAME[L.src[s]]);
+    button.title = 'Release ' + NAME[L.src[s]] + ' (' + (s + 1) + ')';
+    button.onclick = () => { ensureAudio(); SFX.tap(); dropFrom(s); };
+    const p = bottles[s].btn.getWorldPosition(new THREE.Vector3()).project(camera);
+    const width = Math.min(64, 500 / NC);
+    button.style.cssText = `left:${(p.x + 1) * 50}%;top:${(1 - p.y) * 50}%;width:calc(var(--u)*${width});height:calc(var(--u)*54)`;
+    bottles[s].control = button; $('drop-controls').appendChild(button);
+  }
+  $('lvl').textContent = 'LEVEL ' + L.id; $('lname').textContent = L.name;
+  document.getElementById('frame').dataset.columns = NC;
+  if (L.tip) { $('tip').textContent = L.tip; $('tip').classList.remove('hide'); tipT = 9; } else { $('tip').classList.add('hide'); tipT = 0; }
+  closeOverlay(); toastT = 0; $('toast').classList.add('hide'); refreshHUD();
+}
+function after(sec, fn) { timers.push({ t: sec, fn }); }
+function showToast(text, dur = 2.2) { $('toast').textContent = text; $('toast').classList.remove('hide'); toastT = dur; }
+
+// ---------- reels: drag by hand ----------
+const isFixed = c => !!(L.fixed && L.fixed[c]);
+function gridBusy() { return queued > 0 || balls.some(b => b.phase === 'path' || b.phase === 'shake'); }
+function reelsSettled() { return !drag && reels.every(r => !r.anim); }
+function canDrag(c) { return state === 'idle' && !overlay && !auto && !isFixed(c) && !gridBusy(); }
+function snapReel(c, to, dur = 0.22, ease = easeOutBack) { const rl = reels[c]; rl.anim = { from: rl.p, to, t: 0, dur, ease }; }
+const spinEase = t => 1 - Math.pow(1 - t, 3) + Math.sin(t * Math.PI) * 0.04 * t; // decelerate, tiny settle
+function nudgeReel(c, d) {
+  if (!canDrag(c)) { if (isFixed(c)) { showToast('This column is locked and cannot be moved'); SFX.deny(); } return; }
+  hintSrc = null;
+  const rl = reels[c], base = rl.anim ? rl.anim.to : Math.round(rl.p);
+  snapReel(c, base + d);
+}
+
+// ---------- automatic spin: align a working layout, then release every container ----------
+// Core.planRelease splits the containers into waves: each wave is one reel layout that routes
+// all of its containers into their bins at once. Bins are shuffled away from their containers,
+// so routes turn and cross; crossing routes cannot be open together and go in later waves.
+let auto = null; // { waves, i, spun }
+const hasBalls = () => logic.rem.some((x, s) => x > 0 || logic.pend[s] > 0);
+function canShuffle() { return !tutorial && state === 'idle' && !overlay && !auto && !dropActive && reelsSettled() && !gridBusy() && hasBalls(); }
+function shuffleReels() {
+  if (!canShuffle()) return;
+  const plan = Core.planRelease(L, logic, null, list => list[Math.floor(Math.random() * list.length)]);
+  if (!plan) { showToast('No solution remains — restart this level', 2.6); SFX.deny(); return; }
+  auto = { waves: plan, i: 0, spun: false };
+  hintSrc = null; tipT = 0; $('tip').classList.add('hide');
+}
+function spinTo(pos) {
+  [...Array(NC).keys()].filter(c => !isFixed(c)).forEach(c => {
+    const n = L.reels[c].length, base = Math.round(reels[c].p);
+    // one full turn, then stop on the planned segment (slot-machine style)
+    snapReel(c, base - n - Core.mod(base - pos[c], n), 0.7 + c * Math.min(0.22, 0.66 / Math.max(1, NC - 1)), spinEase);
+  });
+  SFX.spin();
+}
+function autoStep() {
+  if (!auto || overlay || !reelsSettled() || gridBusy() || dropActive) return;
+  const w = auto.waves[auto.i];
+  if (state !== 'idle' || !w) { auto = null; return; }
+  if (!auto.spun) { auto.spun = true; spinTo(w.pos); return; }
+  if (auto.waves.length > 1) showToast('Wave ' + (auto.i + 1) + '/' + auto.waves.length + ': release ' + w.sources.map(s => NAME[L.src[s]]).join(', '), 1.6);
+  w.sources.forEach(s => dropFrom(s, true));
+  auto.i++; auto.spun = false;
+}
+
+// ---------- drop ----------
+function tutorialRouteReady() { const tr = Core.trace(L, logic.pos, 0); return tr.kind === 'bin' && L.bins[tr.bin] === L.src[0]; }
+function canDrop(s) { return (!tutorial || tutorialRouteReady()) && state === 'idle' && !overlay && !auto && reelsSettled() && (logic.rem[s] > 0 || logic.pend[s] > 0); }
+function dropFrom(s, fromAuto = false) {
+  if (state !== 'idle' || overlay || !reelsSettled() || (auto && !fromAuto)) return;
+  if (tutorial && !tutorialRouteReady()) return;
+  if (logic.rem[s] === 0 && logic.pend[s] === 0) { showToast('This container is empty'); SFX.deny(); return; }
+  const res = Core.drop(L, logic, s), ev = res.event;
+  if (ev.outcome === 'blocked') { showToast('Waiting balls need a path to the matching bin: ' + NAME[ev.color], 2.2); SFX.deny(); return; }
+  if (tutorial) { tutorial = null; window.SlotUI.tutorial(null); showToast('Great job! The balls are heading to the matching bin.', 2.8); }
+  dropPress[s] = 1; hintSrc = null;
+  tipT = 0; $('tip').classList.add('hide');
+  logic = res.state; dropActive = true;
+  if (res.lose || res.win) { state = 'ending'; endRes = res; }
+  const route = routePts(ev.trace), x = colX(s);
+  ev.balls.forEach((b, i) => {
+    queued++;
+    after(i * 0.16, () => {
+      queued--;
+      let start;
+      if (b.fromPend) { start = chamberSlot(s, 0); vis.pend[s] = Math.max(0, vis.pend[s] - 1); }
+      else { start = containerSlot(s, 0); vis.rem[s] = Math.max(0, vis.rem[s] - 1); }
+      spawnBall(ev.color, [start, V3(x, NECK_TOP, 0), V3(x, NECK_BOT, 0), V3(x, WT + 0.12, 0), ...route], ev, s);
+      SFX.drop();
+    });
+  });
+}
+function routePts(tr) {
+  const pts = [];
+  for (const st of tr.steps) {
+    const seg = Core.parseSeg(st.code), curve = makeCurve(st.entry, st.exit, seg.curvy && !seg.cross);
+    const cx = colX(st.c), cy = rowY(st.r);
+    for (let i = pts.length ? 1 : 0; i <= 16; i++) { const p = curve.getPoint(i / 16); pts.push(V3(p.x + cx, p.y + cy, 0)); }
+  }
+  if (tr.kind === 'bin') {
+    const x = colX(tr.bin), bx = binX(tr.bin);
+    const outlet = new THREE.CatmullRomCurve3([V3(x, WB - 0.16, 0), V3(x, WB - 0.53, 0), V3(bx, BIN_BASE + 1.05, 0), V3(bx, BIN_BASE + 0.42, 0)]);
+    pts.push(...outlet.getPoints(20));
+  }
+  else if (tr.at) { const { r, c, side } = tr.at, p = PORT[side]; pts.push(V3(colX(c) + p[0] * 0.88, rowY(r) + p[1] * 0.88, 0)); }
+  return pts;
+}
+function spawnBall(color, pts, ev, s) {
+  const lens = [0];
+  for (let i = 1; i < pts.length; i++) lens.push(lens[i - 1] + pts[i].distanceTo(pts[i - 1]));
+  const mesh = getBallMesh(color); mesh.position.copy(pts[0]);
+  balls.push({ color, pts, lens, d: 0, v: 2.6, pos: pts[0].clone(), phase: 'path', ev, s, t: 0, mesh });
+}
+function burst(p, color, n) {
+  for (let i = 0; i < n; i++) {
+    const q = getPart(false), a = Math.random() * Math.PI * 2, sp = 1.5 + Math.random() * 2.5;
+    q.mesh.material.color.set(color); q.mesh.position.copy(p);
+    Object.assign(q, { v: V3(Math.cos(a) * sp, 2 + Math.random() * 2.5, Math.sin(a) * sp * 0.6 + 1), life: 0, max: 0.6 + Math.random() * 0.4 });
+    parts.push(q);
+  }
+}
+function confetti() {
+  const cols = ['#ff3d3d', '#2c78ff', '#ffcf1a', '#7fd34a', '#ff7ad9', '#ffffff'], q = getPart(true);
+  q.mesh.material.color.set(cols[Math.floor(Math.random() * cols.length)]);
+  q.mesh.position.set((Math.random() - 0.5) * 8, 8.5, Math.random() * 2);
+  Object.assign(q, { v: V3((Math.random() - 0.5) * 1.5, -2 - Math.random() * 2, 0), life: 0, max: 4, spin: V3(Math.random() * 6, Math.random() * 6, Math.random() * 6) });
+  parts.push(q);
+}
+function ballArrive(b) {
+  const ev = b.ev;
+  if (ev.outcome === 'ok') {
+    const bin = ev.trace.bin;
+    vis.got[bin]++; refreshHUD(); binFx[bin].glow = 1; combo++;
+    burst(V3(binX(bin), BIN_BASE + BIN_H, BIN_Z), CSS[b.color], 14);
+    SFX.ok(combo); b.phase = 'done';
+  } else if (ev.outcome === 'wrong') {
+    const bin = ev.trace.bin;
+    binFx[bin].shake = 1;
+    burst(V3(binX(bin), BIN_BASE + BIN_H, BIN_Z), '#ffffff', 8);
+    if (!ev.counted) { // one wrong press = one error, however many balls fell
+      ev.counted = true; vis.err++; refreshHUD();
+      SFX.wrong(); showToast('Wrong bin! The ' + NAME[b.color] + ' balls return to their container', 1.6);
+    }
+    startFly(b, V3(colX(b.s), BODY_TOP - 0.3, 0), 0.8, 2.2, 1.6, () => { vis.rem[b.s]++; });
+  } else { b.phase = 'shake'; b.t = 0; b.base = b.pos.clone(); SFX.jam(); }
+}
+function afterShake(b) {
+  if (b.ev.outcome === 'jam') {
+    startFly(b, chamberSlot(b.s, vis.pend[b.s]), 0.5, 0.7, 0.8, () => {
+      vis.pend[b.s]++; refreshHUD();
+      if (vis.pend.reduce((a, v) => a + v, 0) >= (L.cap ?? 4) - 1) SFX.warn();
+    });
+  } else {
+    SFX.warn();
+    if (L.noLose) startFly(b, V3(colX(b.s), BODY_TOP - 0.3, 0), 0.7, 1.6, 1, () => { vis.rem[b.s]++; });
+    else { b.phase = 'stuck'; b.t = 0; }
+  }
+}
+function startFly(b, to, dur, h, zb, cb) { Object.assign(b, { phase: 'fly', t: 0, f0: b.pos.clone(), f1: to.clone(), fdur: dur, fh: h, fz: zb, fcb: cb }); }
+function settleDrops() {
+  dropActive = false; combo = 0;
+  const pos = vis.pos; vis = JSON.parse(JSON.stringify(logic)); vis.pos = pos; refreshHUD();
+  balls.filter(b => b.phase !== 'stuck').forEach(b => (b.mesh.visible = false));
+  balls = balls.filter(b => b.phase === 'stuck');
+  const res = endRes; endRes = null;
+  if (!res) return;
+  if (res.lose) {
+    state = 'lose';
+    loseReason = res.lose === 'wrong' ? `Too many balls entered the wrong bin (${logic.err}/${L.maxErr ?? 3})` : `Waiting area full (${L.cap ?? 4} balls) — no room for blocked balls`;
+    after(0.7, () => { openOverlay('lose'); SFX.lose(); });
+  } else if (res.win) {
+    state = 'win';
+    done[L.id] = true; try { localStorage.setItem('slotsort_done', JSON.stringify(done)); } catch (e) { }
+    binFx.forEach(f => (f.glow = 1.5));
+    for (let i = 0; i < 80; i++) after(i * 0.012, confetti);
+    after(1.0, () => { openOverlay('win'); SFX.win(); });
+  }
+}
+// playtest hint: turn reels to the nearest working route and pulse that container's button
+function hint() {
+  if (tutorial) return;
+  if (state !== 'idle' || overlay || auto || gridBusy() || !reelsSettled()) return;
+  const ids = [...Array(NC).keys()];
+  const order = ids.filter(s => logic.pend[s] > 0).concat(ids.filter(s => logic.pend[s] === 0 && logic.rem[s] > 0));
+  for (const s of order) {
+    const r = Core.nearestRoute(L, logic.pos, s);
+    if (!r) continue;
+    r.pos.forEach((k, c) => {
+      const n = L.reels[c].length;
+      let d = Core.mod(k - logic.pos[c], n); if (d > n / 2) d -= n;
+      if (d) snapReel(c, Math.round(reels[c].p) + d, 0.25 + Math.abs(d) * 0.08);
+    });
+    hintSrc = s;
+    window.SlotUI.indicateHint(s);
+    showToast('Tap the color button: ' + NAME[L.src[s]] + ' to release balls', 2.6);
+    return;
+  }
+  showToast('No solution remains — restart this level', 2.6);
+}
+
+// ================= update =================
+function update(dt) {
+  if (overlay && overlay !== 'win' && overlay !== 'lose') return;
+  time += dt;
+  for (let i = timers.length - 1; i >= 0; i--) { const tm = timers[i]; tm.t -= dt; if (tm.t <= 0) { timers.splice(i, 1); tm.fn(); } }
+  reels.forEach((rl, c) => {
+    const a = rl.anim;
+    if (a) {
+      a.t += dt / a.dur;
+      if (a.t >= 1) { rl.p = a.to; rl.anim = null; logic.pos[c] = vis.pos[c] = Core.mod(a.to, L.reels[c].length); SFX.stop(); }
+      else rl.p = lerp(a.from, a.to, a.ease(a.t));
+    }
+    const cell = Math.round(rl.p);
+    if (cell !== rl.cell) { rl.cell = cell; if (drag && drag.c === c) SFX.tick(); }
+  });
+  autoStep();
+  for (let s = 0; s < dropPress.length; s++) dropPress[s] = Math.max(0, dropPress[s] - dt * 5);
+  for (const b of balls) {
+    if (b.phase === 'path') {
+      b.v = Math.min(7.2, b.v + 9 * dt); b.d += b.v * dt;
+      const total = b.lens[b.lens.length - 1];
+      if (b.d >= total) { b.d = total; b.pos.copy(b.pts[b.pts.length - 1]); ballArrive(b); }
+      else {
+        let i = 1; while (b.lens[i] < b.d) i++;
+        b.pos.lerpVectors(b.pts[i - 1], b.pts[i], (b.d - b.lens[i - 1]) / (b.lens[i] - b.lens[i - 1] || 1));
+      }
+    } else if (b.phase === 'shake') {
+      b.t += dt; b.pos.set(b.base.x + Math.sin(b.t * 60) * 0.04 * (1 - b.t / 0.45), b.base.y, b.base.z);
+      if (b.t >= 0.45) afterShake(b);
+    } else if (b.phase === 'fly') {
+      b.t += dt / b.fdur; const t = Math.min(1, b.t), k = 4 * t * (1 - t);
+      b.pos.lerpVectors(b.f0, b.f1, t); b.pos.y += b.fh * k; b.pos.z += b.fz * k;
+      if (t >= 1) { b.phase = 'done'; b.fcb && b.fcb(); }
+    } else if (b.phase === 'stuck') { b.t += dt; }
+    b.mesh.position.copy(b.pos);
+  }
+  balls.filter(b => b.phase === 'done').forEach(b => (b.mesh.visible = false));
+  balls = balls.filter(b => b.phase !== 'done');
+  if (dropActive && !queued && !balls.some(b => b.phase !== 'stuck')) settleDrops();
+  binFx.forEach(f => { f.glow = Math.max(0, f.glow - dt * 1.6); f.shake = Math.max(0, f.shake - dt * 2.2); });
+  for (const p of parts) {
+    p.life += dt; p.mesh.position.addScaledVector(p.v, dt);
+    if (p.conf) { p.mesh.rotation.x += p.spin.x * dt; p.mesh.rotation.y += p.spin.y * dt; p.v.x += Math.sin(time * 3 + p.mesh.position.y) * 0.05; }
+    else { p.v.y -= 9 * dt; p.mesh.scale.setScalar(Math.max(0.01, 1 - p.life / p.max)); }
+    if (p.life >= p.max) p.mesh.visible = false;
+  }
+  parts = parts.filter(p => p.mesh.visible);
+  if (toastT > 0) { toastT -= dt; if (toastT <= 0) $('toast').classList.add('hide'); }
+  if (tipT > 0) { tipT -= dt; if (tipT <= 0) $('tip').classList.add('hide'); }
+}
+
+// ================= sync visuals =================
+let hoverCol = -1, ctrlPos = [], shadowsDirty = true;
+const _glintObj = new THREE.Object3D();
+const _m4 = new THREE.Matrix4(), _q = new THREE.Quaternion(), _ballScale = V3(BALL_R, BALL_R, BALL_R), _proj = new THREE.Vector3();
+// Rebuild the resting-ball instances only when the counts (or a bin shake) changed.
+function syncBallInstances() {
+  let key = li + '|' + vis.rem + '|' + vis.pend + '|' + vis.got;
+  const shake = binFx.map(f => (f.shake > 0 ? Math.sin(time * 50) * 0.06 * f.shake : 0));
+  if (shake.some(Boolean)) key += '|' + shake;
+  if (key === ballKey) return false;
+  ballKey = key;
+  let i = 0;
+  const put = (p, color) => { _m4.compose(p, _q, _ballScale); ballInst.setMatrixAt(i, _m4); ballInst.setColorAt(i, BALL_MAT[color].color); i++; };
+  for (let s = 0; s < NC; s++) {
+    const c = L.src[s];
+    for (let k = 0; k < Math.min(BALL_CAPACITY, vis.rem[s]); k++) put(containerSlot(s, k), c);
+    for (let k = 0; k < Math.min(4, vis.pend[s]); k++) put(chamberSlot(s, k), c);
+  }
+  for (let b = 0; b < NC; b++) {
+    const dx = binX(b) + shake[b];
+    for (let k = 0; k < Math.min(BALL_CAPACITY, vis.got[b]); k++) { const p = binSlot(b, k); p.x += dx; put(p, L.bins[b]); }
+  }
+  ballInst.count = i;
+  ballInst.instanceMatrix.needsUpdate = true; ballInst.instanceColor.needsUpdate = true;
+  return true;
+}
+function sync() {
+  layoutReels();
+  const settled = reelsSettled();
+  syncTutorial(settled);
+  // shadows only need re-rendering while a caster moves
+  if (!settled || balls.length || hintSrc != null || dropPress.some(v => v > 0) || binFx.some(f => f.shake > 0)) shadowsDirty = true;
+  if (syncBallInstances()) shadowsDirty = true;
+  if (shadowsDirty) { renderer.shadowMap.needsUpdate = true; shadowsDirty = false; }
+  // grab highlight
+  for (let c = 0; c < NC; c++) {
+    const active = drag && drag.c === c, hov = !drag && hoverCol === c && canDrag(c);
+    grabFrames[c].material.opacity = active ? 0.16 : hov ? 0.07 : 0;
+  }
+  // glints
+  // glints: joints only change when a reel lands, so the instances are rebuilt only then
+  const gKey = settled ? li + '|' + reels.map(r => Math.round(r.p)).join() : '';
+  if (gKey !== glintKey) {
+    glintKey = gKey;
+    let gi = 0;
+    const put = (x, y, rx, ry) => { _glintObj.position.set(x, y, 0); _glintObj.rotation.set(rx, ry, 0); _glintObj.updateMatrix(); glints.setMatrixAt(gi++, _glintObj.matrix); };
+    if (settled) {
+      const seg = (r, c) => segCols[c][Core.mod(Math.round(reels[c].p) + r, segCols[c].length)];
+      for (let c = 0; c < NC; c++) for (let r = 0; r < ROWS; r++) {
+        const a = seg(r, c);
+        if (r < ROWS - 1 && a.ports.includes('B') && seg(r + 1, c).ports.includes('T')) put(colX(c), rowY(r) - CH / 2, Math.PI / 2, 0);
+        if (c < NC - 1 && a.ports.includes('R') && seg(r, c + 1).ports.includes('L')) put(colX(c) + CW / 2, rowY(r), 0, Math.PI / 2);
+      }
+    }
+    glints.count = gi; glints.instanceMatrix.needsUpdate = true;
+  }
+  if (settled) glintMat.opacity = 0.65 + 0.3 * Math.sin(time * 4);
+  for (let s = 0; s < NC; s++) {
+    const open = settled && segCols[s][Core.mod(Math.round(reels[s].p), segCols[s].length)].ports.includes('T');
+    inletMats[s].emissiveIntensity = open ? 0.55 + 0.2 * Math.sin(time * 5) : 0;
+  }
+  // bottles + drop buttons
+  for (let s = 0; s < NC; s++) {
+    const bt = bottles[s];
+    bt.warn.material.opacity = vis.pend[s] ? 0.22 + 0.12 * Math.sin(time * 6) : 0;
+    const en = canDrop(s), empty = logic.rem[s] === 0 && logic.pend[s] === 0;
+    const quickDrop = $('quick-drops').children[s];
+    if (quickDrop) {
+      quickDrop.disabled = !en;
+      quickDrop.classList.toggle('hinted', hintSrc === s && !empty);
+      const remaining = vis.rem[s] + vis.pend[s];
+      const count = quickDrop.querySelector('.drop-remaining');
+      if (count && count.textContent !== String(remaining)) count.textContent = remaining;
+      quickDrop.classList.toggle('empty', empty);
+      if (quickDrop.dataset.remaining !== String(remaining)) {
+        quickDrop.dataset.remaining = remaining;
+        quickDrop.setAttribute('aria-label', 'Release ' + NAME[L.src[s]] + ', ' + remaining + ' balls left');
+      }
+    }
+    if (bt.control) {
+      bt.control.disabled = !en;
+      bt.control.classList.toggle('hinted', hintSrc === s && !empty);
+      // DOM writes only when the projected position actually changed (avoids per-frame style recalcs)
+      const p = bt.btn.getWorldPosition(_proj).project(camera);
+      const left = ((p.x + 1) * 50).toFixed(2) + '%', top = ((1 - p.y) * 50).toFixed(2) + '%';
+      const last = ctrlPos[s];
+      if (!last || last[0] !== left || last[1] !== top) {
+        ctrlPos[s] = [left, top];
+        bt.control.style.left = left; bt.control.style.top = top;
+        if (NC <= 3) { bt.control.style.width = '48px'; bt.control.style.height = '48px'; }
+      }
+    }
+    bt.bmat.color.setHex(empty ? 0xaaa0bb : HEX[L.src[s]]); bt.bmat.opacity = en ? 1 : 0.65; bt.bmat.transparent = !en;
+    const hinted = hintSrc === s && en;
+    bt.bmat.emissiveIntensity = hinted ? 0.25 + 0.2 * Math.sin(time * 8) : 0;
+    const k = 1 - dropPress[s] * 0.12 + (hinted ? Math.sin(time * 8) * 0.05 : 0);
+    bt.btn.scale.setScalar(k); bt.btn.position.z = 0.79 - dropPress[s] * 0.08;
+    // The colored cap medallion is also the drop control.
+  }
+  // bins
+  for (let b = 0; b < NC; b++) {
+    const bn = bins[b], fx = binFx[b], colr = L.bins[b];
+    bn.body.position.x = Math.sin(time * 50) * 0.06 * fx.shake;
+    bn.mat.emissive.setHex(fx.shake > 0 ? 0xff0000 : HEX[colr]);
+    bn.mat.emissiveIntensity = fx.shake > 0 ? 0.35 * fx.shake : 0.45 * Math.min(1, fx.glow);
+  }
+  // danger frame
+  const cap = L.cap ?? 4, maxErr = L.maxErr ?? 3, tp = vis.pend.reduce((a, v) => a + v, 0), full = tp >= cap;
+  const danger = !L.noLose && (full || vis.err >= maxErr - 1);
+  M.gold.emissive.setHex(0xff2200); M.gold.emissiveIntensity = danger ? Math.max(0, Math.sin(time * 9)) * 0.45 : 0;
+  $('spin').disabled = !canShuffle();
+  const spinStatus = auto ? 'Connecting and releasing…' : dropActive ? 'Balls are moving…' : 'Connect + release all balls';
+  if ($('spin-status').textContent !== spinStatus) $('spin-status').textContent = spinStatus;
+  $('bulb').disabled = !!tutorial || state !== 'idle' || !!overlay || !!auto || gridBusy() || !reelsSettled() || !hasBalls();
+  $('palette').disabled = !settled || state !== 'idle' || !!auto;
+}
+
+// The coach follows real route validation and the same camera projection as the drop buttons.
+function syncTutorial(settled) {
+  if (!tutorial) { window.SlotUI.tutorial(null); return; }
+  if (settled) tutorial.step = tutorialRouteReady() ? 'drop' : 'drag';
+  const dropping = tutorial.step === 'drop';
+  const point = dropping ? bottles[0].btn.getWorldPosition(new THREE.Vector3()) : rig.localToWorld(V3(colX(0), 0, 0.7));
+  const p = point.project(camera);
+  const top = rig.localToWorld(V3(0, WT, 0.7)).project(camera);
+  const bottom = rig.localToWorld(V3(0, WB, 0.7)).project(camera);
+  const focusHeight = Math.max(70, (top.y - bottom.y) * sizedH / 2 + 10);
+  let direction = -1;
+  if (!dropping && settled) {
+    const route = Core.nearestRoute(L, logic.pos, 0);
+    if (route) { const n = L.reels[0].length; let d = Core.mod(route.pos[0] - logic.pos[0], n); if (d > n / 2) d -= n; direction = d > 0 ? -1 : 1; }
+  }
+  window.SlotUI.tutorial({ step: tutorial.step, x: (p.x + 1) * 50, y: (1 - p.y) * 50, direction, focusHeight, cueVisible: !overlay && !drag && settled });
+}
+$('tutorial-skip').onclick = () => { tutorial = null; window.SlotUI.tutorial(null); };
+
+// ================= overlays =================
+async function exportModel() {
+  try {
+    const { GLTFExporter } = await import('three/addons/exporters/GLTFExporter.js');
+    const model = rig.clone(true);
+    model.name = 'Slot Sorting - Tropical Toy 3D';
+    model.position.set(0,0,0); model.scale.setScalar(1);
+    const prune = node => {
+      for (const child of [...node.children]) {
+        if (child.isInstancedMesh) { // export resting balls as plain meshes
+          for (let i = 0; i < child.count; i++) {
+            const m = new THREE.Mesh(child.geometry, child.material.clone());
+            child.getMatrixAt(i, m.matrix); m.matrix.decompose(m.position, m.quaternion, m.scale);
+            child.getColorAt(i, m.material.color); node.add(m);
+          }
+          node.remove(child); continue;
+        }
+        const invisible = child.isMesh && [].concat(child.material).every(m => m.transparent && m.opacity === 0);
+        if (!child.visible || child.isSprite || invisible) node.remove(child);
+        else prune(child);
+      }
+    };
+    prune(model); model.updateMatrixWorld(true);
+    const data = await new GLTFExporter().parseAsync(model, { binary: true, onlyVisible: true });
+    const url = URL.createObjectURL(new Blob([data], { type: 'model/gltf-binary' }));
+    const a = document.createElement('a'); a.href = url; a.download = 'slot-machine-tropical-3d.glb'; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+  } catch (error) { console.error(error); showToast('Could not export the 3D model. Please try again.', 3); }
+}
+function refreshHUD() { window.SlotUI.refresh(L, li, vis); }
+function closeOverlay() { overlay = null; window.SlotUI.close(); }
+function openOverlay(kind) { overlay = kind; window.SlotUI.open(kind); }
+window.SlotUI.attach({
+  snapshot: () => ({ level: L, index: li, vis, done, levels: LEVELS, soundOn, loseReason, canDrop, phase:state,
+    hasProgress: !!auto || dropActive || !reelsSettled() || logic.err > 0 || logic.pend.some(n => n > 0) || logic.rem.some((n,c) => n !== L.balls[c]) || logic.pos.some((n,c) => Core.mod(n,L.reels[c].length) !== Core.mod(L.start[c],L.reels[c].length)) }),
+  open: openOverlay, close: closeOverlay, load: loadLevel, hint, spin: shuffleReels, drop: dropFrom,
+  tap: () => { ensureAudio(); SFX.tap(); }, sound: value => { soundOn = value; try { localStorage.setItem('slotsort_sound', String(value)); } catch(e) {} }, exportModel,
+});
+
+// ================= input =================
+const cv = renderer.domElement, ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+const dragPlane = new THREE.Plane(V3(0, 0, 1), 0), hitPt = new THREE.Vector3();
+function setRay(e) {
+  const r = cv.getBoundingClientRect();
+  ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+  ray.setFromCamera(ndc, camera);
+}
+function worldY(e) { setRay(e); return ray.ray.intersectPlane(dragPlane, hitPt) ? hitPt.y : null; }
+cv.addEventListener('pointerdown', e => {
+  ensureAudio();
+  if (overlay) return;
+  setRay(e);
+  const d = ray.intersectObjects(dropTargets, false)[0];
+  if (d) { SFX.tap(); dropFrom(d.object.userData.drop); return; }
+  const h = ray.intersectObjects(hitPlanes, false)[0];
+  if (!h) return;
+  const c = h.object.userData.col;
+  if (!canDrag(c)) { if (isFixed(c)) { showToast('This column is locked and cannot be moved'); SFX.deny(); } return; }
+  const y = worldY(e); if (y == null) return;
+  const rl = reels[c]; rl.anim = null; hintSrc = null;
+  drag = { c, id: e.pointerId, y0: y, p0: rl.p, lastY: y, lastT: performance.now(), v: 0 };
+  try { cv.setPointerCapture(e.pointerId); } catch (err) { }
+});
+cv.addEventListener('pointermove', e => {
+  if (!drag) {
+    setRay(e);
+    const overBtn = ray.intersectObjects(dropTargets, false).length > 0;
+    const h = ray.intersectObjects(hitPlanes, false)[0];
+    hoverCol = h ? h.object.userData.col : -1;
+    cv.style.cursor = overBtn ? 'pointer' : (!overlay && hoverCol >= 0 && canDrag(hoverCol)) ? 'grab' : 'default';
+    return;
+  }
+  if (e.pointerId !== drag.id) return;
+  const y = worldY(e); if (y == null) return;
+  cv.style.cursor = 'grabbing';
+  const now = performance.now(), dtm = Math.max(1, now - drag.lastT);
+  reels[drag.c].p = drag.p0 + (y - drag.y0) / (CH * rigK);          // pipes follow the finger
+  drag.v = lerp(drag.v, ((y - drag.lastY) / (CH * rigK)) / (dtm / 1000), 0.4);
+  drag.lastY = y; drag.lastT = now;
+});
+function endDrag(e) {
+  if (!drag || (e && e.pointerId !== drag.id)) return;
+  const c = drag.c, rl = reels[c];
+  const v = performance.now() - drag.lastT > 90 ? 0 : drag.v;
+  const target = Math.round(rl.p + clamp(v * 0.05, -1, 1));
+  drag = null; cv.style.cursor = 'grab';
+  snapReel(c, target);
+}
+cv.addEventListener('pointerup', endDrag);
+cv.addEventListener('pointercancel', endDrag);
+cv.addEventListener('wheel', e => {
+  e.preventDefault();
+  setRay(e); const h = ray.intersectObjects(hitPlanes, false)[0];
+  if (h && !drag && !overlay) nudgeReel(h.object.userData.col, e.deltaY > 0 ? -1 : 1);
+}, { passive: false });
+function toggleInspection() {
+  inspectionMode = !inspectionMode; poseCamera();
+  $('inspect').setAttribute('aria-pressed', String(inspectionMode));
+}
+$('inspect').setAttribute('aria-pressed', String(inspectionMode));
+$('inspect').addEventListener('click', toggleInspection);
+window.addEventListener('keydown', e => {
+  if (e.target.closest?.('button, input, select') && e.key !== 'Escape') return;
+  ensureAudio();
+  const k = e.key.toLowerCase();
+  if (k >= '1' && k <= '9' && k.length === 1) { if (+k <= NC) dropFrom(+k - 1); }
+  else if ('qwe'.includes(k) && k && 'qwe'.indexOf(k) < NC) nudgeReel('qwe'.indexOf(k), 1);
+  else if ('asd'.includes(k) && k && 'asd'.indexOf(k) < NC) nudgeReel('asd'.indexOf(k), -1);
+  else if (k === ' ') { e.preventDefault(); shuffleReels(); }
+  else if (k === 'r') window.SlotUI.requestRestart();
+  else if (k === 'h') hint();
+  else if (e.key === 'Escape') overlay ? closeOverlay() : openOverlay('menu');
+});
+
+// ================= loop =================
+loadLevel(window.SLOT_RESUME);
+let last = performance.now(), frameNo = 0;
+// Adaptive resolution: if the device cannot hold ~40 fps, step the pixel ratio down (never up).
+const dprSteps = [2, 1.5, 1.25, 1].filter(r => r < Math.min(window.devicePixelRatio || 1, 2));
+let slowFrames = 0, sampledFrames = 0;
+function adaptQuality(raw) {
+  if (!dprSteps.length || raw > 0.25 || document.visibilityState !== 'visible') return; // ignore stalls / background
+  sampledFrames++; if (raw > 1 / 40) slowFrames++;
+  if (sampledFrames < 120) return;
+  if (slowFrames > 60) { renderer.setPixelRatio(dprSteps.shift()); resize(); shadowsDirty = true; }
+  sampledFrames = slowFrames = 0;
+}
+function frameLoop(now) {
+  const raw = (now - last) / 1000, dt = Math.min(0.05, raw); last = now;
+  // catch size changes no resize event reported (e.g. a stage that started at zero size);
+  // checked sparingly because reading layout right after sync()'s DOM writes forces a reflow
+  if (++frameNo % 30 === 0) {
+    const st = document.getElementById('stage');
+    if (st.clientWidth !== sizedW || st.clientHeight !== sizedH) resize();
+  }
+  if (frameNo > 60) adaptQuality(raw);
+  update(dt); sync(); renderer.render(scene, camera);
+  requestAnimationFrame(frameLoop);
+}
+sync(); renderer.render(scene, camera); window.SlotUI.ready();
+requestAnimationFrame(frameLoop);
+window.__game = {
+  get state() { return state; }, get logic() { return logic; }, get vis() { return vis; }, get reels() { return reels; },
+  loadLevel, dropFrom, nudgeReel, hint, shuffleReels, toggleInspection, renderer, scene, camera,
+  // profiling: { update, sync, render } ms averaged over `frames` simulated frames
+  profile(frames = 60) {
+    const t = { update: 0, sync: 0, render: 0 }, gl = renderer.getContext();
+    for (let i = 0; i < frames; i++) {
+      let a = performance.now(); update(1 / 60); t.update += performance.now() - a;
+      a = performance.now(); sync(); t.sync += performance.now() - a;
+      a = performance.now(); renderer.render(scene, camera); gl.finish(); t.render += performance.now() - a;
+    }
+    for (const k in t) t[k] = +(t[k] / frames).toFixed(2);
+    return { ...t, calls: renderer.info.render.calls, tris: renderer.info.render.triangles, programs: renderer.info.programs.length, geometries: renderer.info.memory.geometries };
+  },
+  tick(sec) { for (let t = 0; t < sec; t += 1 / 60) update(1 / 60); sync(); renderer.render(scene, camera); },
+};
+} catch (error) {
+  console.error('Slot Sorting could not start:', error);
+  if (window.SlotUI) window.SlotUI.bootError();
+  else {
+    const loading = document.getElementById('loading');
+    loading.textContent = 'Could not load the interface. Please reload the page.';
+    const retry = document.createElement('button'); retry.textContent = 'Reload'; retry.onclick = () => location.reload(); loading.append(retry);
+  }
+}
+</script>
+</body>
+</html>
