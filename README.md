@@ -25,7 +25,7 @@ Trang chủ tự tạo thẻ và đếm số game từ các thư mục trong `ga
 
 Nút **Dark mode** trên thanh điều hướng chuyển giao diện sáng/tối. Trang mặc định theo chế độ của hệ thống; lựa chọn thủ công được lưu riêng cho homepage bằng khóa `prototype-theme` trong localStorage. Logic khởi tạo nằm trong `site/theme.js`, chạy trước CSS để tránh chớp nền sáng khi mở lại trang ở chế độ tối. Theme của từng game không bị ảnh hưởng.
 
-Trường `demo` tùy chọn là tên video `.mp4` hoặc `.webm` trong `site/assets/demos/`. Ba clip hiện tại được quay trực tiếp từ gameplay prototype, không có âm thanh. Rê chuột hoặc dùng Tab tới thẻ để xem; rời thẻ hoặc nhấn Escape để dừng và trở về ảnh. Video chỉ tải khi bắt đầu xem, dừng khi ra khỏi màn hình hoặc chuyển tab, và không tự chạy khi bật giảm chuyển động. Trên thiết bị cảm ứng, chạm thẻ vẫn mở game trực tiếp.
+Trường `demo` tùy chọn là tên video `.mp4` hoặc `.webm` trong `site/assets/demos/`. Các clip được quay trực tiếp từ gameplay prototype, không có âm thanh. Rê chuột hoặc dùng Tab tới thẻ để xem; rời thẻ hoặc nhấn Escape để dừng và trở về ảnh. Video chỉ tải khi bắt đầu xem, dừng khi ra khỏi màn hình hoặc chuyển tab, và không tự chạy khi bật giảm chuyển động. Trên thiết bị cảm ứng, chạm thẻ vẫn mở game trực tiếp.
 
 ## Xem thử trên máy
 

@@ -17,7 +17,8 @@
     "title": "Slot Sorting",
     "category": "Sorting · Puzzle",
     "description": "Slide the pipes, connect each colorful path, and guide every ball into its matching bin across 16 tropical puzzles.",
-    "art": "prototype.svg"
+    "art": "prototype.svg",
+    "demo": "slot-sorting.webm"
   },
   "Letter_Press": {
     "title": "Letter Press",
