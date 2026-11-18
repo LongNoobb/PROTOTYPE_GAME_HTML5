@@ -26,5 +26,11 @@
     "description": "A playful twist on word puzzles. Pick your letters and press them into place.",
     "art": "letter-press.svg",
     "demo": "letter-press.webm"
+  },
+  "Ironroot_Convoy": {
+    "title": "Ironroot Convoy",
+    "category": "Tower Defense · Roguelite",
+    "description": "Ride a pixel war-wagon from station to station. Pick weapons, carriages and heroes, then hold the line against waves and bosses.",
+    "art": "prototype.svg"
   }
 }
