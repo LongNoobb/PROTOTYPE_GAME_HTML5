@@ -52,6 +52,7 @@
     "title": "Cable Grid Sort",
     "category": "Sorting · Puzzle",
     "description": "Untangle a messy server rack. Unplug and replug each cable into its matching ports without crossings, working around broken sockets across 12 levels.",
-    "art": "cable-grid-sort.svg"
+    "art": "cable-grid-sort.svg",
+    "demo": "cable-grid-sort.webm"
   }
 }
