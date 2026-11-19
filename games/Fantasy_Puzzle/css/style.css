@@ -308,6 +308,10 @@ button { font-family: inherit; color: inherit; cursor: pointer; }
 /* ---- tutorial ---- */
 .tut-glow { position: relative; z-index: 3; outline: 2px solid var(--cyan); outline-offset: 2px; animation: tutGlow 1s ease-in-out infinite; }
 @keyframes tutGlow { 0%, 100% { box-shadow: 0 0 0 0 #3fe3ff00; } 50% { box-shadow: 0 0 14px 4px #3fe3ffaa; } }
+.tut-hand { position: absolute; left: 0; top: 0; width: 52px; height: 60px; z-index: 40; pointer-events: none; transform-origin: 21px 2px; will-change: transform, opacity; }
+.tut-hand svg { width: 52px; height: 60px; display: block; filter: drop-shadow(0 4px 4px #000a); }
+.tut-hand.hidden { display: none; }
+.tut-ripple { position: absolute; left: 21px; top: 2px; width: 44px; height: 44px; border-radius: 50%; border: 3px solid #ffd65a; background: #ffd65a33; opacity: 0; }
 .tut-n { display: inline-block; margin-right: 6px; padding: 0 6px; border-radius: 8px; background: var(--cyan); color: #06201f; font-weight: 800; font-size: 11px; }
 .tut-intro { text-align: left; font-size: 13px; line-height: 1.45; }
 .tut-intro p { margin: 6px 0; }

@@ -287,6 +287,7 @@
       for (const t of G.tut.cells) { const p = cellXY(t[0], t[1], t[2]); ctx.strokeRect(p.x + 2, p.y + 2, cell - 4, cell - 4); }
       ctx.setLineDash([]);
     }
+    if (G.mode === 'plan') drawHandGuide(ctx);
   }
   // Column letters / row numbers for both grids. Drawn after sprites & aim lines so nothing covers them,
   // and the font is set here every time (other drawing changes ctx.font).
@@ -528,7 +529,10 @@
       if (f.type === 'sprite') {
         const sh = fxSheet(f.fx); if (!sh) continue;
         const fr = Math.min(sh.frames - 1, Math.floor(k * sh.frames));
-        spr(ctx, sh, fr, f.x, f.y, f.sc || GEO.sc, f.flip, 1, f.tint, dpr);
+        const s = f.sc || GEO.sc, bx = sh.box || [40, 40, 60, 57];
+        // centred fx: f.y is the body centre -> convert to the foot line spr() anchors on
+        const fy = f.center ? f.y + (bx[3] - bx[1] + 1) / 2 * s / dpr : f.y;
+        spr(ctx, sh, fr, f.x, fy, s, f.flip, 1, f.tint, dpr);
       } else if (f.type === 'proj') {
         const sh = fxSheet(f.fx); if (!sh) continue;
         const x = f.x1 + (f.x2 - f.x1) * k, y = f.y1 + (f.y2 - f.y1) * k - Math.sin(k * Math.PI) * (f.arc || 0);
@@ -543,7 +547,14 @@
       } else if (f.type === 'beam') {
         const sh = fxSheet(f.fx); if (!sh) continue;
         const fr = Math.min(sh.frames - 1, Math.floor(k * sh.frames));
-        for (let i = 0; i < f.cells.length; i++) { const c = f.cells[i]; spr(ctx, sh, fr, c.x, c.y + cell * 0.12, GEO.sc, false, 1, f.tint, dpr); }
+        const s = GEO.sc, bx = sh.box || [40, 40, 60, 57];
+        for (let i = 0; i < f.cells.length; i++) {
+          const c = f.cells[i];
+          if (f.center) { // c = body centre: put the beam's right tip on it, line vertically centred
+            const x = c.x - ((bx[2] + 1) - (bx[0] + bx[2] + 1) / 2) * s / dpr + cell * 0.12;
+            spr(ctx, sh, fr, x, c.y + (bx[3] - bx[1] + 1) / 2 * s / dpr, s, false, 1, f.tint, dpr);
+          } else spr(ctx, sh, fr, c.x, c.y + cell * 0.12, s, false, 1, f.tint, dpr);
+        }
       }
     }
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -995,6 +1006,17 @@
     const from = cellCenter('ally', pos[0], pos[1]);
     const t = cellCenter('enemy', step.target.c, step.target.r);
     const cells = (step.cells || []).map(([c, r]) => cellCenter('enemy', c, r));
+    // oversized sprites (e.g. the 2.5-cell fire pillar) are drawn smaller so they fit one cell
+    const FX_SCALE = { 'Black Knight_C_Beam': 0.5 };
+    const fxSc = n => FX_SCALE[n] ? Math.max(1, Math.round(GEO.sc * FX_SCALE[n] * 2) / 2) : undefined;
+    // body centre of the enemy standing on a cell (same anchoring as drawEnemy), for centred bursts
+    const bodyAt = p => {
+      const c = Math.floor((p.x - GEO.ex) / GEO.cell), r = Math.floor((p.y - GEO.top) / GEO.cell);
+      const a = Object.values(ENEMY_ACT).find(e => !e.dead && Math.round(e.x) === c && Math.round(e.y) === r);
+      const box = (a && D.META.chars[a.sprite].box) || [40, 40, 60, 57];
+      const s = a && a.kind === 'boss' ? Math.round(GEO.sc * 1.15 * 2) / 2 : GEO.sc;
+      return { x: p.x, y: p.y + GEO.cell * 0.36 - (box[3] - box[1] + 1) / 2 * s / GEO.dpr };
+    };
     const sp = speedMul();
     if (fx.kind === 'proj') {
       AUDIO.play('shoot');
@@ -1007,13 +1029,19 @@
       await wait(320 + cells.length * 30);
     } else if (fx.kind === 'beam') {
       AUDIO.play('magic');
-      FX.push({ type: 'beam', fx: fx.fx, cells, t0: now(), dur: 420 / sp, tint: fx.tint });
-      if (fx.fx2) FX.push({ type: 'beam', fx: fx.fx2, cells, t0: now() + 120 / sp, dur: 420 / sp });
+      // push: the step's cells are the post-push cell, so aim at the (pre-push) target instead
+      // centred: a single beam whose tip ends on the last cell hit, at the target's body height
+      const aim = step.skill.cat === 'push' || !cells.length ? [t] : cells;
+      const bcells = fx.center ? [{ x: aim[aim.length - 1].x, y: bodyAt(t).y }] : cells;
+      FX.push({ type: 'beam', fx: fx.fx, cells: bcells, center: !!fx.center, t0: now(), dur: 420 / sp, tint: fx.tint });
+      // fx2 = ground effect on every cell hit, anchored at the feet like 'cells'
+      if (fx.fx2) cells.forEach((c, i) => FX.push({ type: 'sprite', fx: fx.fx2, sc: fxSc(fx.fx2), x: c.x, y: c.y + GEO.cell * 0.36, t0: now() + (120 + i * 40) / sp, dur: 480 / sp }));
       await wait(300);
     } else if (fx.kind === 'cells') {
       AUDIO.play('magic');
       const list = step.skill.cat === 'push' ? [t] : cells;
-      list.forEach((c, i) => FX.push({ type: 'sprite', fx: fx.fx, x: c.x, y: c.y + GEO.cell * 0.36, t0: now() + i * 25 / sp, dur: 480 / sp, tint: fx.tint }));
+      list.forEach((c, i) => { const p = fx.center ? bodyAt(c) : { x: c.x, y: c.y + GEO.cell * 0.36 };
+        FX.push({ type: 'sprite', fx: fx.fx, sc: fxSc(fx.fx), x: p.x, y: p.y, center: !!fx.center, t0: now() + i * 25 / sp, dur: 480 / sp, tint: fx.tint }); });
       if (fx.fx2) list.forEach(c => FX.push({ type: 'sprite', fx: fx.fx2, x: c.x, y: c.y + GEO.cell * 0.36, t0: now() + 160 / sp, dur: 480 / sp }));
       await wait(320);
     } else if (fx.kind === 'wave') {
@@ -1022,7 +1050,8 @@
       await wait(180);
     } else {
       AUDIO.play('slash');
-      (cells.length ? cells : [t]).forEach(c => FX.push({ type: 'slash', color: fx.color, x: c.x, y: c.y, t0: now(), dur: 300 / sp }));
+      // push: the step's cells are the post-push cell, so strike the (pre-push) target; aim at the body
+      (step.skill.cat === 'push' || !cells.length ? [t] : cells).map(bodyAt).forEach(c => FX.push({ type: 'slash', color: fx.color, x: c.x, y: c.y, t0: now(), dur: 300 / sp }));
       await wait(180);
     }
     if (step.skill.cat === 'rage' && !SAVE.settings.reduce) SHAKE = 6;
@@ -1132,7 +1161,7 @@
   // Each entry: intro = lesson card shown when the level opens; steps = guided banner.
   // step: { txt, done() | next:true, cells: [[side,c,r]...] highlighted on the board, el: CSS selector that glows }
   const P = h => G.placement[h], A = h => G.actions[h].cat;
-  const ATTACK = { txt: 'Mọi thứ đã sẵn sàng. Bấm <b>TẤN CÔNG</b> để cả đội ra tay.', el: '[data-act=attack]', done: () => G.mode === 'exec' };
+  const ATTACK = { txt: 'Mọi thứ đã sẵn sàng. Bấm <b>TẤN CÔNG</b> để cả đội ra tay.', el: '[data-act=attack]', hand: [{tap:'[data-act=attack]'}], done: () => G.mode === 'exec' };
   const skillCard = id => { const sk = S.SKILLS[id]; return `<div class="tut-sk">${miniAoe(sk)}<div><b>${sk.name}</b> · ${D.CAT_TXT[sk.cat]}<br><small>${sk.cat === 'push' ? `Đẩy 1 ô ${S.DIRS[sk.dir].arrow} + ${sk.damage} sát thương` : `${sk.damage} sát thương · ${D.AOE_TXT[sk.aoe]}`}${sk.ignoresArmor ? ' · bỏ qua giáp' : ''}</small></div></div>`; };
   const TUTS = {
     1: {
@@ -1140,7 +1169,7 @@
         <ol class="tut-ol"><li><b>Đặt vị trí</b> nhân vật ở sân xanh (bên trái).</li><li><b>Chọn kỹ năng</b> cho từng nhân vật.</li><li><b>Xếp thứ tự</b> ra tay.</li><li>Bấm <b>TẤN CÔNG</b> — mỗi nhân vật hành động 1 lần.</li></ol>
         <p>Bảng luôn <b>xem trước</b> kết quả, nên cứ thử thoải mái.</p>` },
       steps: [
-        { txt: 'Quái đứng ở <b>B2</b> sân địch. Nhân vật chỉ đánh quái <b>cùng hàng</b> với mình. Kéo Kiếm Sĩ lên <b>hàng 2</b>.', cells: [['ally', 1, 1], ['enemy', 1, 1]], done: () => P('sword')[1] === 1 },
+        { txt: 'Quái đứng ở <b>B2</b> sân địch. Nhân vật chỉ đánh quái <b>cùng hàng</b> với mình. Kéo Kiếm Sĩ lên <b>hàng 2</b>.', cells: [['ally', 1, 1], ['enemy', 1, 1]], hand: [{row:['sword',1]}], done: () => P('sword')[1] === 1 },
         { txt: 'Ô vàng bên sân địch là ô sẽ bị đánh. <b>Đánh thường</b> trúng đúng 1 ô, gây 2 sát thương — vừa đủ hạ quái 2 máu.', cells: [['enemy', 1, 1]], next: true },
         { txt: 'Cột không quan trọng: đứng ô nào trong hàng 2 cũng đánh tới. <b>Chỉ hàng quyết định mục tiêu.</b>', next: true },
         ATTACK,
@@ -1150,8 +1179,8 @@
       intro: { icon: 'swords', title: 'THỨ TỰ HÀNH ĐỘNG', body: `<p>Kiếm Sĩ và Pháp Sư đều đánh <b>Hàng đầu</b>: con quái <b>gần nhất</b> trong hàng.</p>
         <p>Thẻ nhân vật đánh số <b>1, 2…</b> là thứ tự ra tay. Kéo thẻ để đổi thứ tự.</p>` + skillCard('mg_n') },
       steps: [
-        { txt: 'Hàng 1 có 2 quái. Đặt <b>cả hai nhân vật vào hàng 1</b>.', cells: [['enemy', 0, 0], ['enemy', 3, 0]], done: () => P('sword')[1] === 0 && P('mage')[1] === 0 },
-        { txt: 'Người số 1 hạ quái <b>A1</b>, nên người số 2 đánh con kế tiếp là <b>D1</b>. Chạm từng thẻ để xem trước mục tiêu của mỗi bước.', el: '#cards', next: true },
+        { txt: 'Hàng 1 có 2 quái. Đặt <b>cả hai nhân vật vào hàng 1</b>.', cells: [['enemy', 0, 0], ['enemy', 3, 0]], hand: [{row:['sword',0]}, {row:['mage',0]}], done: () => P('sword')[1] === 0 && P('mage')[1] === 0 },
+        { txt: 'Người số 1 hạ quái <b>A1</b>, nên người số 2 đánh con kế tiếp là <b>D1</b>. Chạm từng thẻ để xem trước mục tiêu của mỗi bước.', el: '#cards', hand: [{tap:'#cards .card:nth-child(2)'}], next: true },
         ATTACK,
       ],
     },
@@ -1159,7 +1188,7 @@
       intro: { icon: 'eye', title: 'BỎ QUA 1 QUÁI', body: `<p><b>Cung Thủ</b> bỏ qua con quái đầu tiên và bắn <b>con thứ hai</b> trong hàng. Ô trống không tính, chỉ đếm quái.</p>
         <p>Nếu hàng chỉ còn 1 quái, Cung Thủ bắn luôn con đó.</p>` + skillCard('ar_n') },
       steps: [
-        { txt: 'Đặt <b>cả hai nhân vật vào hàng 2</b>.', cells: [['enemy', 0, 1], ['enemy', 3, 1]], done: () => P('archer')[1] === 1 && P('sword')[1] === 1 },
+        { txt: 'Đặt <b>cả hai nhân vật vào hàng 2</b>.', cells: [['enemy', 0, 1], ['enemy', 3, 1]], hand: [{row:['archer',1]}, {row:['sword',1]}], done: () => P('archer')[1] === 1 && P('sword')[1] === 1 },
         { txt: 'Cung Thủ bắn qua đầu <b>A2</b> trúng <b>D2</b>; Kiếm Sĩ đánh <b>A2</b>. Mỗi người một con.', cells: [['enemy', 3, 1]], next: true },
         ATTACK,
       ],
@@ -1168,8 +1197,8 @@
       intro: { icon: 'rage', title: 'CHIÊU NỘ', body: `<p><b>Chiêu nộ</b> là đòn duy nhất <b>đánh vùng</b> và mạnh hơn đánh thường.</p>
         <p>Mỗi Chiêu nộ tốn <b>1 điểm Nộ</b>; số điểm của màn hiện ở dòng <b>Nộ</b> dưới bảng. Dùng không quá mức chuẩn để được 2${STAR}.</p>` + skillCard('mg_r') },
       steps: [
-        { txt: 'Đặt <b>cả hai nhân vật vào hàng 2</b>.', done: () => P('sword')[1] === 1 && P('mage')[1] === 1 },
-        { txt: 'Chạm thẻ <b>Pháp Sư</b>, rồi chọn <b>Chiêu nộ</b>.', el: '#skills [data-cat=rage]', done: () => A('mage') === 'rage' },
+        { txt: 'Đặt <b>cả hai nhân vật vào hàng 2</b>.', hand: [{row:['sword',1]}, {row:['mage',1]}], done: () => P('sword')[1] === 1 && P('mage')[1] === 1 },
+        { txt: 'Chạm thẻ <b>Pháp Sư</b>, rồi chọn <b>Chiêu nộ</b>.', el: '#skills [data-cat=rage]', hand: [{skill:['mage','rage']}], done: () => A('mage') === 'rage' },
         { txt: 'Kiếm Sĩ (số 1) hạ <b>A2</b> trước, nên nộ của Pháp Sư nhắm <b>C2</b> và nổ trúng cả <b>C2, D2</b>. Nếu Pháp Sư đi trước, vụ nổ chỉ trúng A2!', cells: [['enemy', 2, 1], ['enemy', 3, 1]], el: '#cards', next: true },
         ATTACK,
       ],
@@ -1179,10 +1208,10 @@
         <p>Bị biên, tường hoặc quái khác chặn thì quái đứng yên (vẫn mất 1 máu).</p>
         <p>Dùng Đẩy để <b>gom quái vào vùng Chiêu nộ</b>.</p>` + skillCard('ar_p') },
       steps: [
-        { txt: 'Chạm thẻ <b>Cung Thủ</b> rồi chọn <b>Đẩy</b>. Cung Thủ luôn đẩy <b>↓ xuống</b>.', el: '#skills [data-cat=push]', done: () => A('archer') === 'push' },
-        { txt: 'Đặt Cung Thủ ở <b>hàng 1</b>: quái <b>A1</b> bị đẩy xuống <b>A2</b>.', cells: [['enemy', 0, 0], ['enemy', 0, 1]], done: () => P('archer')[1] === 0 },
-        { txt: 'Kiếm Sĩ: chọn <b>Chiêu nộ</b> (quét dọc 3 ô) và đứng ở <b>hàng 3</b> — trúng A2, A3, A4.', cells: [['enemy', 0, 1], ['enemy', 0, 2], ['enemy', 0, 3]], done: () => A('sword') === 'rage' && P('sword')[1] === 2 },
-        { txt: 'Cung Thủ phải ra tay <b>trước</b> (thẻ số 1) để quái kịp vào vùng nộ.', el: '#cards', done: () => G.order[0] === 'archer' },
+        { txt: 'Chạm thẻ <b>Cung Thủ</b> rồi chọn <b>Đẩy</b>. Cung Thủ luôn đẩy <b>↓ xuống</b>.', el: '#skills [data-cat=push]', hand: [{skill:['archer','push']}], done: () => A('archer') === 'push' },
+        { txt: 'Đặt Cung Thủ ở <b>hàng 1</b>: quái <b>A1</b> bị đẩy xuống <b>A2</b>.', cells: [['enemy', 0, 0], ['enemy', 0, 1]], hand: [{row:['archer',0]}], done: () => P('archer')[1] === 0 },
+        { txt: 'Kiếm Sĩ: chọn <b>Chiêu nộ</b> (quét dọc 3 ô) và đứng ở <b>hàng 3</b> — trúng A2, A3, A4.', cells: [['enemy', 0, 1], ['enemy', 0, 2], ['enemy', 0, 3]], hand: [{skill:['sword','rage']}, {row:['sword',2]}], done: () => A('sword') === 'rage' && P('sword')[1] === 2 },
+        { txt: 'Cung Thủ phải ra tay <b>trước</b> (thẻ số 1) để quái kịp vào vùng nộ.', el: '#cards', hand: [{first:'archer'}], done: () => G.order[0] === 'archer' },
         ATTACK,
       ],
     },
@@ -1191,17 +1220,17 @@
         <p class="tut-dirs">Kiếm Sĩ <b>→</b> · Cung Thủ <b>↓</b> · Pháp Sư <b>↑</b><br>Thương Binh <b>←</b> · Sát Thủ <b>↗</b> · Phù Thủy Băng <b>↘</b></p>
         <p>Đẩy có thể đưa quái <b>sang hàng khác</b>.</p>` + skillCard('mg_p') },
       steps: [
-        { txt: 'Quái <b>A4</b> nằm ngoài tầm nộ. Pháp Sư chọn <b>Đẩy</b> và đứng ở <b>hàng 4</b> để đẩy nó lên <b>A3</b>.', cells: [['enemy', 0, 3], ['enemy', 0, 2]], done: () => A('mage') === 'push' && P('mage')[1] === 3 },
-        { txt: 'Kiếm Sĩ dùng <b>Chiêu nộ</b> ở <b>hàng 2</b>: quét A1, A2, A3.', done: () => A('sword') === 'rage' && P('sword')[1] === 1 },
+        { txt: 'Quái <b>A4</b> nằm ngoài tầm nộ. Pháp Sư chọn <b>Đẩy</b> và đứng ở <b>hàng 4</b> để đẩy nó lên <b>A3</b>.', cells: [['enemy', 0, 3], ['enemy', 0, 2]], hand: [{skill:['mage','push']}, {row:['mage',3]}], done: () => A('mage') === 'push' && P('mage')[1] === 3 },
+        { txt: 'Kiếm Sĩ dùng <b>Chiêu nộ</b> ở <b>hàng 2</b>: quét A1, A2, A3.', hand: [{skill:['sword','rage']}, {row:['sword',1]}], done: () => A('sword') === 'rage' && P('sword')[1] === 1 },
         ATTACK,
       ],
     },
     7: {
       intro: { icon: 'swords', title: 'NHÂN VẬT MỚI: THƯƠNG BINH', body: `<p>Thương Binh đánh Hàng đầu, đẩy <b>← sang trái</b>.</p><p>Chiêu nộ <b>xuyên cả hàng</b> 4 ô (dừng lại khi gặp tường).</p>` + skillCard('ln_r') },
       steps: [
-        { txt: 'Pháp Sư chọn <b>Đẩy</b> ở <b>hàng 2</b>: quái <b>B2</b> bị đẩy lên <b>B1</b>.', cells: [['enemy', 1, 1], ['enemy', 1, 0]], done: () => A('mage') === 'push' && P('mage')[1] === 1 },
-        { txt: 'Thương Binh dùng <b>Chiêu nộ</b> ở <b>hàng 1</b>: xuyên A1 → D1.', cells: [['enemy', 0, 0], ['enemy', 3, 0]], done: () => A('lancer') === 'rage' && P('lancer')[1] === 0 },
-        { txt: '<b>Kéo thẻ Pháp Sư lên vị trí số 1</b>: phải đẩy trước rồi mới xuyên.', el: '#cards', done: () => G.order[0] === 'mage' },
+        { txt: 'Pháp Sư chọn <b>Đẩy</b> ở <b>hàng 2</b>: quái <b>B2</b> bị đẩy lên <b>B1</b>.', cells: [['enemy', 1, 1], ['enemy', 1, 0]], hand: [{skill:['mage','push']}, {row:['mage',1]}], done: () => A('mage') === 'push' && P('mage')[1] === 1 },
+        { txt: 'Thương Binh dùng <b>Chiêu nộ</b> ở <b>hàng 1</b>: xuyên A1 → D1.', cells: [['enemy', 0, 0], ['enemy', 3, 0]], hand: [{skill:['lancer','rage']}, {row:['lancer',0]}], done: () => A('lancer') === 'rage' && P('lancer')[1] === 0 },
+        { txt: '<b>Kéo thẻ Pháp Sư lên vị trí số 1</b>: phải đẩy trước rồi mới xuyên.', el: '#cards', hand: [{first:'mage'}], done: () => G.order[0] === 'mage' },
         ATTACK,
       ],
     },
@@ -1209,17 +1238,17 @@
       intro: { icon: 'eye', title: 'NHÂN VẬT MỚI: SÁT THỦ', body: `<p>Sát Thủ <b>Bỏ qua 1 quái</b> như Cung Thủ, đánh thường <b>4 sát thương</b>.</p>
         <p>Đẩy <b>chéo ↗</b>: chỉ xét ô đến — ô đó trống là quái đi được, kể cả khi bên cạnh có tường hay quái.</p>` + skillCard('as_p') },
       steps: [
-        { txt: 'Sát Thủ chọn <b>Đẩy</b> ở <b>hàng 4</b>: quái <b>A4</b> (4 máu) bị đẩy chéo lên <b>B3</b>.', cells: [['enemy', 0, 3], ['enemy', 1, 2]], done: () => A('assassin') === 'push' && P('assassin')[1] === 3 },
-        { txt: 'Pháp Sư dùng <b>Chiêu nộ</b> ở <b>hàng 3</b>: nổ 3×3 quanh B3 — trúng cả 4 quái.', done: () => A('mage') === 'rage' && P('mage')[1] === 2 },
+        { txt: 'Sát Thủ chọn <b>Đẩy</b> ở <b>hàng 4</b>: quái <b>A4</b> (4 máu) bị đẩy chéo lên <b>B3</b>.', cells: [['enemy', 0, 3], ['enemy', 1, 2]], hand: [{skill:['assassin','push']}, {row:['assassin',3]}], done: () => A('assassin') === 'push' && P('assassin')[1] === 3 },
+        { txt: 'Pháp Sư dùng <b>Chiêu nộ</b> ở <b>hàng 3</b>: nổ 3×3 quanh B3 — trúng cả 4 quái.', hand: [{skill:['mage','rage']}, {row:['mage',2]}], done: () => A('mage') === 'rage' && P('mage')[1] === 2 },
         ATTACK,
       ],
     },
     9: {
       intro: { icon: 'rage', title: 'NHÂN VẬT MỚI: PHÙ THỦY BĂNG', body: `<p>Phù Thủy Băng đánh Hàng đầu, đẩy <b>chéo ↘</b>.</p><p>Chiêu nộ nổ <b>hình chữ thập</b> 5 ô và <b>bỏ qua giáp</b>.</p>` + skillCard('ic_r') },
       steps: [
-        { txt: 'Cung Thủ chọn <b>Đẩy</b> ở <b>hàng 2</b>: quái <b>B2</b> xuống <b>B3</b>.', cells: [['enemy', 1, 1], ['enemy', 1, 2]], done: () => A('archer') === 'push' && P('archer')[1] === 1 },
-        { txt: 'Phù Thủy Băng dùng <b>Chiêu nộ</b> ở <b>hàng 3</b>: chữ thập quanh B3 trúng B3, C3, B4.', cells: [['enemy', 1, 2], ['enemy', 2, 2], ['enemy', 1, 3]], done: () => A('ice') === 'rage' && P('ice')[1] === 2 },
-        { txt: '<b>Kéo thẻ Cung Thủ lên vị trí số 1</b>.', el: '#cards', done: () => G.order[0] === 'archer' },
+        { txt: 'Cung Thủ chọn <b>Đẩy</b> ở <b>hàng 2</b>: quái <b>B2</b> xuống <b>B3</b>.', cells: [['enemy', 1, 1], ['enemy', 1, 2]], hand: [{skill:['archer','push']}, {row:['archer',1]}], done: () => A('archer') === 'push' && P('archer')[1] === 1 },
+        { txt: 'Phù Thủy Băng dùng <b>Chiêu nộ</b> ở <b>hàng 3</b>: chữ thập quanh B3 trúng B3, C3, B4.', cells: [['enemy', 1, 2], ['enemy', 2, 2], ['enemy', 1, 3]], hand: [{skill:['ice','rage']}, {row:['ice',2]}], done: () => A('ice') === 'rage' && P('ice')[1] === 2 },
+        { txt: '<b>Kéo thẻ Cung Thủ lên vị trí số 1</b>.', el: '#cards', hand: [{first:'archer'}], done: () => G.order[0] === 'archer' },
         ATTACK,
       ],
     },
@@ -1269,6 +1298,108 @@
   }
   $('#tut-next').onclick = () => { if (!G.tut) return; if (G.tut.next) { G.tutStep++; showTutStep(); } else { G.tutStep = G.tutList.length; showTutStep(); } AUDIO.play('tap'); };
   function tutCheck() { if (G.tut && G.tut.done && G.tut.done()) { G.tutStep++; AUDIO.play('select'); showTutStep(); } }
+
+  // ---- tutorial pointing hand ----
+  // Each step's `hand` is a list of sub-goals; the hand demonstrates the first one not yet met:
+  //   {row:[hero,r]}  drag the hero on the board into row r
+  //   {skill:[hero,cat]}  tap the hero's card, then the skill button
+  //   {first:hero}  drag the hero's card to slot 1
+  //   {tap:selector}  tap a UI element
+  // Steps without `hand` point at their first highlighted cell, or at the "Tiếp" button.
+  const HAND = document.createElement('div'); HAND.id = 'tut-hand'; HAND.className = 'tut-hand hidden';
+  HAND.innerHTML = `<i class="tut-ripple"></i><svg viewBox="0 0 64 74" aria-hidden="true"><path d="M20 36V9a6.5 6.5 0 0 1 13 0v22a5.5 5.5 0 0 1 11 0v2a5.5 5.5 0 0 1 11 0v3a5 5 0 0 1 10 0v15c0 12-8 20-20 20h-6c-8 0-12-3-16-9L5 48a6 6 0 0 1 9-8z" fill="#fff" stroke="#16202a" stroke-width="3.5" stroke-linejoin="round"/><path d="M33 31v9M44 33v7M55 36v6" fill="none" stroke="#16202a" stroke-width="2.5" stroke-linecap="round"/><path d="M22 9a4.5 4.5 0 0 1 9 0" fill="none" stroke="#c9d6e0" stroke-width="2.5" stroke-linecap="round"/></svg>`;
+  $('#app').appendChild(HAND);
+  const HAND_TIP = { x: 26.5, y: 3 }; // fingertip inside the 64-wide svg (drawn at 52px)
+  const elCenter = el => { const r = el.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2, vis: r.width > 0 && r.height > 0 }; };
+  function boardPagePt(c, r) { const b = board.getBoundingClientRect(); const p = cellCenter('ally', c, r); return { x: b.left + p.x, y: b.top + p.y }; }
+  function rowTargetCol(h, r) {
+    const cur = G.placement[h][0]; const ok = c => !isLocked(c, r) && !heroAt(c, r);
+    const cols = [0, 1, 2, 3].sort((a, b) => Math.abs(a - cur) - Math.abs(b - cur));
+    return cols.find(ok) ?? cols.find(c => !isLocked(c, r)) ?? cur;
+  }
+  function tutGesture() {
+    const s = G.tut; if (!s || !GEO) return null;
+    const goals = s.hand || [];
+    for (const g of goals) {
+      if (g.row) {
+        const [h, r] = g.row; if (G.placement[h][1] === r) continue;
+        const [c0, r0] = G.placement[h]; const c1 = rowTargetCol(h, r);
+        return { kind: 'drag', a: boardPagePt(c0, r0), b: boardPagePt(c1, r), board: { from: [c0, r0], to: [c1, r] } };
+      }
+      if (g.skill) {
+        const [h, cat] = g.skill; if (G.actions[h].cat === cat) continue;
+        const el = G.sel === h ? $(`#skills [data-cat=${cat}]`) : $(`#cards .card[data-hero=${h}]`);
+        return el && { kind: 'tap', el };
+      }
+      if (g.first) {
+        if (G.order[0] === g.first) continue;
+        const el = $(`#cards .card[data-hero=${g.first}]`), first = $('#cards').firstElementChild;
+        return el && first && { kind: 'drag', el, a: elCenter(el), b: elCenter(first) };
+      }
+      if (g.tap) { const el = $(g.tap); return el && { kind: 'tap', el }; }
+    }
+    if (goals.length) return null;
+    if (s.cells && s.cells.length) {
+      const [side, c, r] = s.cells[0]; const b = board.getBoundingClientRect(); const p = cellCenter(side, c, r);
+      return { kind: 'point', a: { x: b.left + p.x, y: b.top + p.y } };
+    }
+    return { kind: 'tap', el: $('#tut-next') };
+  }
+  const ease = t => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+  let handKey = '', handT0 = 0;
+  function updateHand() {
+    const show = screen === 'game' && G.tut && G.mode === 'plan' && !G.drag && !G.cardDrag && !G.chipDrag && $('#modal').classList.contains('hidden');
+    const g = show ? tutGesture() : null;
+    G.tutGest = g;
+    if (!g) { HAND.classList.add('hidden'); handKey = ''; return; }
+    if (g.el) { const c = elCenter(g.el); if (!c.vis) { HAND.classList.add('hidden'); return; } if (!g.a) g.a = c; }
+    const key = g.kind + (g.el ? g.el.dataset.hero || g.el.dataset.cat || g.el.id || g.el.className : '') + (g.board ? g.board.from + '>' + g.board.to : '');
+    if (key !== handKey) { // new gesture: restart the animation and bring off-screen targets into view
+      handKey = key; handT0 = now();
+      if (g.el && g.el.closest('#g-scroll')) g.el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+    const app = $('#app').getBoundingClientRect();
+    let x = g.a.x, y = g.a.y, press = 0, alpha = 1, ripple = -1;
+    if (g.kind === 'drag') {
+      const T = 2200, t = ((now() - handT0) % T) / T;
+      if (t < 0.12) { alpha = t / 0.12; y += 10 * (1 - t / 0.12); }
+      else if (t < 0.22) { press = (t - 0.12) / 0.1; if (t > 0.17) ripple = (t - 0.17) / 0.25; }
+      else if (t < 0.72) { const k = ease((t - 0.22) / 0.5); x += (g.b.x - g.a.x) * k; y += (g.b.y - g.a.y) * k; press = 1; }
+      else { x = g.b.x; y = g.b.y; press = Math.max(0, 1 - (t - 0.72) / 0.08); alpha = t < 0.85 ? 1 : 1 - (t - 0.85) / 0.15; }
+      g.k = t < 0.22 ? 0 : t < 0.72 ? ease((t - 0.22) / 0.5) : 1;
+    } else if (g.kind === 'tap') {
+      const T = 1300, t = ((now() - handT0) % T) / T;
+      if (t < 0.45) y += 14 * ease(1 - t / 0.45);
+      else if (t < 0.6) press = (t - 0.45) / 0.15;
+      else { press = 1 - (t - 0.6) / 0.4; y += 14 * ease((t - 0.6) / 0.4); }
+      if (t > 0.55) ripple = (t - 0.55) / 0.45;
+    } else { y += 6 + 6 * Math.sin(now() / 220); } // point: gentle bob
+    HAND.classList.remove('hidden');
+    HAND.style.opacity = alpha;
+    HAND.style.transform = `translate(${x - app.left - HAND_TIP.x * 52 / 64}px, ${y - app.top - HAND_TIP.y * 52 / 64}px) rotate(-12deg) scale(${1 - press * 0.12})`;
+    const rp = HAND.firstElementChild;
+    rp.style.opacity = ripple < 0 || ripple > 1 ? 0 : 1 - ripple;
+    rp.style.transform = `translate(-50%, -50%) scale(${0.3 + Math.max(0, ripple) * 1.2})`;
+  }
+  // board overlay for a hero-drag demo: dashed arrow + target cell
+  function drawHandGuide(ctx) {
+    const g = G.tutGest; if (!g || !g.board) return;
+    const { cell } = GEO; const a = cellCenter('ally', ...g.board.from), b = cellCenter('ally', ...g.board.to), t = cellXY('ally', ...g.board.to);
+    const pulse = 0.5 + 0.5 * Math.sin(now() / 180);
+    ctx.fillStyle = `rgba(255,214,90,${0.12 + pulse * 0.14})`; ctx.fillRect(t.x + 2, t.y + 2, cell - 4, cell - 4);
+    ctx.strokeStyle = '#ffd65a'; ctx.lineWidth = 2.5; ctx.setLineDash([6, 5]); ctx.lineDashOffset = -now() / 40;
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+    ctx.setLineDash([]); ctx.lineDashOffset = 0;
+    const ang = Math.atan2(b.y - a.y, b.x - a.x), L = 10;
+    ctx.fillStyle = '#ffd65a'; ctx.beginPath(); ctx.moveTo(b.x, b.y);
+    ctx.lineTo(b.x - L * Math.cos(ang - 0.45), b.y - L * Math.sin(ang - 0.45)); ctx.lineTo(b.x - L * Math.cos(ang + 0.45), b.y - L * Math.sin(ang + 0.45)); ctx.fill();
+    // ghost of the hero travelling with the finger
+    if (g.k > 0 && g.k < 1) {
+      const h = heroAt(...g.board.from); if (!h) return; const sk = skinOf(h); const sh = sheet(sk.sprite, idleOf(sk.sprite));
+      spr(ctx, sh, 0, a.x + (b.x - a.x) * g.k, a.y + (b.y - a.y) * g.k + cell * 0.35, GEO.sc, false, 0.55, sk.filter, GEO.dpr);
+      ctx.setTransform(GEO.dpr, 0, 0, GEO.dpr, 0, 0);
+    }
+  }
 
   // ================= LEVEL SELECT =================
   let curChap = 1;
@@ -1450,6 +1581,7 @@
         }
       } else if (screen === 'home') drawParade();
       else if (screen === 'collection' && now() - lastSlow > 90) { lastSlow = now(); drawCollection(); }
+      updateHand();
     } catch (err) { console.error(err); }
     requestAnimationFrame(loop);
   }

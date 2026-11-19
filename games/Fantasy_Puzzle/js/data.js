@@ -29,7 +29,7 @@
   // melee heroes dash to the target, strike, then run back to their cell
   const MELEE = { sword: true, lancer: true, assassin: true };
   function walkOf(sprite) { const a = META.chars[sprite].anims; return ['Walk', 'Walk01', 'Walk02'].find(x => a[x]) || 'Idle'; }
-  // VFX per skill: kind = 'proj' (flies along row) | 'cells' (plays on every AoE cell) | 'beam' (across pierce cells) | 'rain'
+  // VFX per skill (center: true = burst centred on the enemy's body, otherwise anchored at its feet): kind = 'proj' (flies along row) | 'cells' (plays on every AoE cell) | 'beam' (across pierce cells) | 'rain'
   const SKILL_FX = {
     sw_n: { kind: 'slash', color: '#ffe08a' },
     sw_p: { kind: 'wave', color: '#cfe8ff' },
@@ -37,17 +37,17 @@
     ar_n: { kind: 'proj', fx: 'Arrow01' },
     ar_p: { kind: 'proj', fx: 'Arrow02' },
     ar_r: { kind: 'rain', fx: 'Arrow03', fx2: 'Arrow_Demon_B_Attack01' },
-    mg_n: { kind: 'cells', fx: 'Wizard_Attack01_Effect' },
+    mg_n: { kind: 'cells', fx: 'Wizard_Attack01_Effect', center: true },
     mg_p: { kind: 'cells', fx: 'Necromancer_Attack02_Effect' },
-    mg_r: { kind: 'cells', fx: 'Wizard_Attack02_Effect', fx2: 'Warlock_Attack02_Effect' },
-    ln_n: { kind: 'beam', fx: 'Black Knight_C_Beam' },
+    mg_r: { kind: 'cells', fx: 'Wizard_Attack02_Effect', center: true, fx2: 'Warlock_Attack02_Effect' },
+    ln_n: { kind: 'cells', fx: 'Black Knight_C_Beam' }, // fire pillar rising from the target's feet
     ln_p: { kind: 'wave', color: '#ffd28a' },
-    ln_r: { kind: 'beam', fx: 'Ghostfire_Beam', fx2: 'Black Knight_C_Beam' },
+    ln_r: { kind: 'beam', fx: 'Ghostfire_Beam', center: true, fx2: 'Black Knight_C_Beam' }, // one beam through the row + pillar on each cell
     as_n: { kind: 'proj', fx: 'Arrow_Demon_B_Attack01' },
     as_p: { kind: 'proj', fx: 'Cannonball_Black Knight_B_Attack03' },
     as_r: { kind: 'cells', fx: 'Necromancer_Sumon_Effect' },
     ic_n: { kind: 'cells', fx: 'Priest_Attack_effect', tint: 'hue-rotate(170deg) saturate(1.5)' },
-    ic_p: { kind: 'beam', fx: 'Eyeball Monster_Beam', tint: 'hue-rotate(160deg)' },
+    ic_p: { kind: 'beam', fx: 'Eyeball Monster_Beam', tint: 'hue-rotate(160deg)', center: true }, // shot from the left, tip on the target's body
     ic_r: { kind: 'cells', fx: 'Priest_Heal_effect', tint: 'hue-rotate(170deg) saturate(1.6)' },
   };
   const BUMP_FX = 'Lava Slime_Spike';
