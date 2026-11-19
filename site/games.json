@@ -45,6 +45,7 @@
     "title": "Thread & Thunder",
     "category": "Physics · Puzzle",
     "description": "Swipe through a tangle of threads to set the cloud puffs free, but keep every storm cloud tied down across 40 levels.",
-    "art": "thread-thunder.svg"
+    "art": "thread-thunder.svg",
+    "demo": "thread-thunder.webm"
   }
 }
