@@ -40,7 +40,7 @@ button { font-family: inherit; color: inherit; cursor: pointer; }
 .bar { height: 10px; border: 2px solid var(--edge); border-radius: 6px; margin: 20px 0 10px; overflow: hidden; background: #0008; }
 .bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--green), var(--gold)); transition: width .2s; }
 #load-txt { color: var(--mut); font-size: 13px; }
-.home-bg { position: absolute; inset: 0; background: url('../assets/concept/fantasy-puzzle-two-grids-demo.png') center/cover no-repeat;
+.home-bg { position: absolute; inset: 0; background: url('../assets/concept/fantasy-puzzle-two-grids-demo.webp') center/cover no-repeat;
   filter: blur(3px) brightness(.35) saturate(1.1); transform: scale(1.06); }
 .home-inner { position: relative; margin: auto; width: min(340px, 88%); text-align: center; display: flex; flex-direction: column; gap: 12px; align-items: center; }
 .tagline { margin: 0; color: var(--txt); font-size: 15px; }

@@ -71,10 +71,10 @@
   const FAIL_TXT = { no_target: 'Không có mục tiêu', blocked: 'Bị tường chặn', no_rage: 'Hết nộ' };
 
   const CONCEPT = [
-    ['assets/concept/fantasy-puzzle-portrait-skills-demo.png', 'Bố cục màn dọc & bảng kỹ năng (tham khảo art direction).'],
-    ['assets/concept/fantasy-puzzle-two-grids-demo.png', 'Hai sân 4×4 song song.'],
-    ['assets/concept/fantasy-puzzle-grid-4x4-demo.png', 'Nghiên cứu lưới 4×4.'],
-    ['assets/concept/fantasy-puzzle-skills-push-8-directions-demo.png', 'Nghiên cứu bộ chọn hướng đẩy (bản game dùng hướng cố định theo nhân vật).'],
+    ['assets/concept/fantasy-puzzle-portrait-skills-demo.webp', 'Bố cục màn dọc & bảng kỹ năng (tham khảo art direction).'],
+    ['assets/concept/fantasy-puzzle-two-grids-demo.webp', 'Hai sân 4×4 song song.'],
+    ['assets/concept/fantasy-puzzle-grid-4x4-demo.webp', 'Nghiên cứu lưới 4×4.'],
+    ['assets/concept/fantasy-puzzle-skills-push-8-directions-demo.webp', 'Nghiên cứu bộ chọn hướng đẩy (bản game dùng hướng cố định theo nhân vật).'],
   ];
 
   window.DATA = { META, charPath, fxPath, SKINS, heroAnim, MELEE, walkOf, SKILL_FX, BUMP_FX, KIND_INFO, POLICY_TXT, AOE_TXT, CAT_TXT, FAIL_TXT, CONCEPT };
