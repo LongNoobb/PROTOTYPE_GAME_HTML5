@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" fill="none">
+  <defs>
+    <linearGradient id="sky" x2="0" y2="1"><stop stop-color="#7cc8f5"/><stop offset="1" stop-color="#d9f1ff"/></linearGradient>
+    <filter id="sh" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="0" dy="6" stdDeviation="5" flood-color="#2a0d5c" flood-opacity=".25"/></filter>
+    <g id="puff"><path d="M-30 22a22 22 0 0 1-4-43.6A29 29 0 0 1 21-38 24 24 0 0 1 32 22z" stroke="#2a0d5c" stroke-width="6" stroke-linejoin="round"/><circle cx="-10" cy="-2" r="4" fill="#2a0d5c"/><circle cx="12" cy="-2" r="4" fill="#2a0d5c"/><path d="M-4 8q5 5 10 0" stroke="#2a0d5c" stroke-width="3.5" stroke-linecap="round"/><circle cx="-20" cy="7" r="4.5" fill="#ffadc6"/><circle cx="22" cy="7" r="4.5" fill="#ffadc6"/></g>
+    <g id="storm"><path d="M-36 24a26 26 0 0 1-4-51.6A35 35 0 0 1 25-46 28 28 0 0 1 38 24z" fill="#5f5888" stroke="#2a0d5c" stroke-width="6" stroke-linejoin="round"/><path d="M-18-8l11 4M18-8l-11 4" stroke="#fff" stroke-width="4" stroke-linecap="round"/><circle cx="-11" cy="2" r="4" fill="#ffd23f"/><circle cx="11" cy="2" r="4" fill="#ffd23f"/><path d="M6 20l-14 22h11l-6 18 20-27H6l6-13z" fill="#ffd23f" stroke="#2a0d5c" stroke-width="3.5" stroke-linejoin="round"/></g>
+  </defs>
+  <path fill="url(#sky)" d="M0 0h800v500H0z"/>
+  <circle cx="670" cy="90" r="58" fill="#fff3a6" opacity=".9"/>
+  <path d="M0 400q120-40 240 0t260 0 300-10V500H0z" fill="#9fe08a"/>
+  <path d="M0 430h800v70H0z" fill="#7fcf6a"/>
+  <!-- tangled threads -->
+  <g stroke="#9a6b3f" stroke-width="5" stroke-linecap="round">
+    <path d="M120 440 520 140M210 440 300 120M330 440 140 230M450 440 640 220M560 440 260 300M680 440 420 250M210 440 520 140M330 440 640 220M300 120 420 250M140 230 260 300M640 220 520 140M260 300 420 250M300 120 140 230"/>
+  </g>
+  <g stroke="#cfd4ea" stroke-width="7" stroke-linecap="round" stroke-dasharray="10 6"><path d="M520 140 640 220"/></g>
+  <g fill="#8a5a33" stroke="#2a0d5c" stroke-width="4"><rect x="111" y="430" width="18" height="44" rx="6"/><rect x="201" y="430" width="18" height="44" rx="6"/><rect x="321" y="430" width="18" height="44" rx="6"/><rect x="441" y="430" width="18" height="44" rx="6"/><rect x="551" y="430" width="18" height="44" rx="6"/><rect x="671" y="430" width="18" height="44" rx="6"/></g>
+  <g filter="url(#sh)">
+    <use href="#storm" x="420" y="250"/>
+    <use href="#storm" x="140" y="230"/>
+    <use href="#puff" x="300" y="120" fill="#ffd3e6"/>
+    <use href="#puff" x="520" y="140" fill="#cfe9ff"/>
+    <use href="#puff" x="640" y="220" fill="#fff1b8"/>
+    <use href="#puff" x="260" y="300" fill="#d6f5d0"/>
+  </g>
+  <!-- scissors snipping -->
+  <g transform="translate(560 330) rotate(-25)" stroke="#2a0d5c" stroke-width="4" stroke-linejoin="round">
+    <path d="M0-8 70-40l-4 14-56 26z" fill="#eef0ff"/><path d="M0 8 70 40l-4-14-56-26z" fill="#d6d9f0"/>
+    <circle cx="-16" cy="-14" r="14" fill="#ff6b9a"/><circle cx="-16" cy="14" r="14" fill="#ff6b9a"/>
+    <circle cx="-16" cy="-14" r="5" fill="#fff"/><circle cx="-16" cy="14" r="5" fill="#fff"/>
+  </g>
+  <path d="M470 380q60-30 160-110" stroke="#fff" stroke-width="6" stroke-linecap="round" opacity=".7" stroke-dasharray="2 14"/>
+</svg>

@@ -1,0 +1,1369 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#6a1fd0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Thread &amp; Thunder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* Smashfest-inspired toy UI: purple frame, lavender content, plastic buttons. Values are estimates read from the Figma canvas, not exported tokens. */
+  :root{
+    --p1:#b67dff;--p2:#8b3ff0;--p3:#5d20b4;--pd:#2a0d5c;--ink:#3a1f66;--ink2:#6f5794;
+    --lav:#faf6ff;--lav2:#e9dcfc;--inset:#ddcdf6;
+    --g1:#c4f76a;--g2:#5ec71f;--gE:#2f8312;
+    --y1:#ffec70;--y2:#ffb51f;--yE:#b86a00;
+    --r1:#ff7d98;--r2:#e3264f;--rE:#99102f;
+    --c1:#8ff3ff;--c2:#2bb5f2;--cE:#1166b0;
+    --gold:#ffd23f;
+    --disp:"Baloo 2","Trebuchet MS",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+  html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;-webkit-touch-callout:none;-webkit-text-size-adjust:100%;background:#9fd8ff;font-family:var(--disp);font-weight:600;color:var(--ink)}
+  canvas{position:fixed;inset:0;width:100%;height:100%;touch-action:none;display:block}
+  svg{display:block}
+  .layer{position:fixed;inset:0;display:none;align-items:center;flex-direction:column;z-index:5;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;touch-action:pan-y;
+    padding:calc(env(safe-area-inset-top) + 20px) calc(env(safe-area-inset-right) + 16px) calc(env(safe-area-inset-bottom) + 20px) calc(env(safe-area-inset-left) + 16px)}
+  .layer>:first-child{margin-top:auto} .layer>:last-child{margin-bottom:auto}
+  .layer.on{display:flex;animation:fadeIn .18s ease-out}
+  .layer.dim{background:rgba(37,11,73,.6)}
+  @keyframes fadeIn{from{opacity:0}}
+  @keyframes popIn{from{transform:scale(.88);opacity:0}}
+
+  /* outlined chunky text */
+  .olP{color:#fff;text-shadow:0 3px 0 var(--pd),2px 0 0 var(--pd),-2px 0 0 var(--pd),0 2px 0 var(--pd),0 -2px 0 var(--pd),1.5px 1.5px 0 var(--pd),-1.5px 1.5px 0 var(--pd),1.5px -1.5px 0 var(--pd),-1.5px -1.5px 0 var(--pd)}
+
+  /* ---- popup panel ---- */
+  .card{position:relative;width:min(344px,100%);margin-top:18px;padding:88px 18px 20px;text-align:center;border-radius:24px;
+    background:linear-gradient(#fff 0 46px,var(--lav) 46px,var(--lav2));
+    border:4px solid var(--p2);
+    box-shadow:0 0 0 2px #efe2ff,inset 0 -5px 0 #d5c2f2,0 7px 0 var(--p3),0 7px 0 2px #efe2ff,0 18px 30px rgba(30,5,70,.45);
+    animation:popIn .2s ease-out}
+  .banner{position:absolute;left:-16px;right:-16px;top:16px;height:58px;filter:drop-shadow(0 4px 0 var(--p3))}
+  .banner::before,.banner::after{content:"";position:absolute;inset:0;clip-path:polygon(4% 0,100% 0,96% 100%,0 100%)}
+  .banner::before{background:#e7d2ff}
+  .banner::after{inset:3px;background:linear-gradient(#c38cff,var(--p2) 55%,#7330dc)}
+  .banner span{position:absolute;inset:0;z-index:1;display:flex;align-items:center;justify-content:center;font-size:29px;font-weight:800;letter-spacing:.5px;line-height:1;text-transform:uppercase;padding:0 26px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .inset{background:var(--inset);border-radius:16px;box-shadow:inset 0 3px 0 rgba(93,32,180,.16);padding:12px}
+
+  /* ---- buttons ---- */
+  .btn{--t:var(--g1);--b:var(--g2);--e:var(--gE);
+    position:relative;display:block;width:min(270px,100%);margin:12px auto;padding:12px 16px 13px;min-height:54px;
+    font:inherit;font-size:21px;font-weight:800;line-height:1.1;letter-spacing:.3px;text-transform:uppercase;color:#fff;cursor:pointer;
+    background:linear-gradient(var(--t),var(--b) 62%);border:2px solid var(--e);border-radius:17px;
+    box-shadow:0 0 0 2px rgba(255,255,255,.75),inset 0 -4px 0 rgba(0,0,0,.12),0 5px 0 var(--e),0 5px 0 2px rgba(255,255,255,.55),0 9px 12px rgba(30,5,70,.3);
+    text-shadow:0 2px 0 var(--e),1.5px 0 0 var(--e),-1.5px 0 0 var(--e),0 -1.5px 0 var(--e),1px 1px 0 var(--e),-1px 1px 0 var(--e);
+    transition:transform .1s,box-shadow .1s}
+  .btn::before{content:"";position:absolute;left:7px;right:7px;top:3px;height:42%;border-radius:12px 12px 8px 8px;background:linear-gradient(rgba(255,255,255,.6),rgba(255,255,255,.08));pointer-events:none}
+  .btn:active{transform:translateY(4px);box-shadow:0 0 0 2px rgba(255,255,255,.75),inset 0 -4px 0 rgba(0,0,0,.12),0 1px 0 var(--e),0 1px 0 2px rgba(255,255,255,.55),0 3px 6px rgba(30,5,70,.3)}
+  .btn:focus-visible,.hb:focus-visible,.lv:focus-visible,.xbtn:focus-visible{outline:3px solid var(--c1);outline-offset:3px}
+  .btn.yellow{--t:var(--y1);--b:var(--y2);--e:var(--yE)}
+  .btn.purple{--t:var(--p1);--b:var(--p2);--e:var(--p3)}
+  .btn.cyan{--t:var(--c1);--b:var(--c2);--e:var(--cE)}
+  .btn.big{font-size:26px;min-height:64px;border-radius:20px}
+  .row{display:flex;gap:12px;justify-content:center;margin-top:16px} .row .btn{width:auto;flex:1;margin:0;font-size:18px;padding:11px 8px 12px}
+
+  .xbtn{position:absolute;top:-16px;right:-14px;z-index:2;width:46px;height:46px;padding:0;cursor:pointer;border-radius:50%;
+    background:radial-gradient(circle at 50% 32%,var(--r1),var(--r2) 62%);border:2px solid var(--rE);
+    box-shadow:0 0 0 3px #fff,0 4px 0 2px var(--rE),0 6px 10px rgba(30,5,70,.35);display:flex;align-items:center;justify-content:center}
+  .xbtn svg{width:22px;height:22px}
+  .xbtn:active{transform:translateY(3px)}
+
+  /* ---- menu ---- */
+  #scrMenu{background:linear-gradient(rgba(42,13,92,0) 40%,rgba(42,13,92,.45))}
+  h1{margin:0 0 6px;font-size:52px;font-weight:800;line-height:.92;letter-spacing:.5px;text-align:center;text-transform:uppercase;color:#fff;
+    text-shadow:0 6px 0 var(--pd),3px 0 0 var(--pd),-3px 0 0 var(--pd),0 3px 0 var(--pd),0 -3px 0 var(--pd),2.5px 2.5px 0 var(--pd),-2.5px 2.5px 0 var(--pd),2.5px -2.5px 0 var(--pd),-2.5px -2.5px 0 var(--pd),0 10px 18px rgba(30,5,70,.4)}
+  h1 em{font-style:normal;color:var(--gold);display:block;font-size:.62em;margin:4px 0}
+  .sub{margin:12px auto 18px;max-width:310px;font-size:15px;line-height:1.35;text-align:center;color:var(--ink);background:var(--lav);border-radius:14px;padding:8px 14px;border:3px solid var(--p2);box-shadow:0 4px 0 var(--p3)}
+  .menuBtns{width:min(290px,100%);display:flex;flex-direction:column;align-items:stretch}
+  .menuBtns .btn{width:100%;margin:8px 0}
+  .menuRow{display:flex;gap:12px;margin-top:4px} .menuRow .btn{flex:1;font-size:17px}
+
+  /* ---- level grid ---- */
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .lv{position:relative;aspect-ratio:1;min-width:0;padding:0 0 6px;cursor:pointer;font:inherit;font-weight:800;font-size:24px;line-height:1;color:#fff;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    background:linear-gradient(var(--p1),var(--p2) 60%);border:2px solid var(--p3);border-radius:16px;box-shadow:0 4px 0 var(--p3),0 6px 8px rgba(30,5,70,.25);
+    text-shadow:0 2px 0 var(--pd),1.5px 0 0 var(--pd),-1.5px 0 0 var(--pd),0 -1.5px 0 var(--pd)}
+  .lv::before{content:"";position:absolute;left:5px;right:5px;top:3px;height:38%;border-radius:11px 11px 6px 6px;background:linear-gradient(rgba(255,255,255,.5),rgba(255,255,255,0));pointer-events:none}
+  .lv:active{transform:translateY(3px);box-shadow:0 1px 0 var(--p3)}
+  .lv.cur{background:linear-gradient(var(--g1),var(--g2) 60%);border-color:var(--gE);box-shadow:0 4px 0 var(--gE),0 6px 8px rgba(30,5,70,.25);text-shadow:0 2px 0 var(--gE),1.5px 0 0 var(--gE),-1.5px 0 0 var(--gE),0 -1.5px 0 var(--gE)}
+  .lv.locked{background:#cdbfe6;border-color:#a291c4;box-shadow:0 4px 0 #a291c4;cursor:default}
+  .lv.locked::before{display:none}
+  .lv.locked svg{width:24px;height:24px}
+  .lv .ss{position:absolute;bottom:4px;left:0;right:0;display:flex;justify-content:center;gap:1px}
+  .lv .ss svg{width:15px;height:15px}
+
+  /* ---- how to play ---- */
+  .howList{display:flex;flex-direction:column;gap:8px;text-align:left}
+  .howList p{margin:0;display:flex;gap:10px;align-items:center;font-size:14.5px;line-height:1.35;font-weight:600}
+  .howList p b{color:var(--p2);font-weight:800}
+  .howList .ic{flex:none;width:36px;height:36px;border-radius:11px;background:var(--lav);box-shadow:0 2px 0 #c2acec;display:flex;align-items:center;justify-content:center}
+  .howList .ic svg{width:26px;height:26px}
+
+  /* ---- result ---- */
+  #scrResult.win{background:radial-gradient(120% 70% at 50% 32%,rgba(155,77,255,.9) 0%,rgba(106,31,208,.9) 45%,rgba(59,12,134,.93) 100%)}
+  #scrResult.lose{background:rgba(37,11,73,.78)}
+  .rtitle{font-size:40px;font-weight:800;line-height:1;text-align:center;text-transform:uppercase;max-width:340px;letter-spacing:.5px}
+  #scrResult.win .rtitle{color:var(--y1);text-shadow:0 5px 0 #8a3c00,2.5px 0 0 #8a3c00,-2.5px 0 0 #8a3c00,0 2.5px 0 #8a3c00,0 -2.5px 0 #8a3c00,2px 2px 0 #8a3c00,-2px 2px 0 #8a3c00,2px -2px 0 #8a3c00,-2px -2px 0 #8a3c00,0 0 18px rgba(255,220,120,.55)}
+  #scrResult.lose .rtitle{color:var(--c1);text-shadow:0 5px 0 #0d3f86,2.5px 0 0 #0d3f86,-2.5px 0 0 #0d3f86,0 2.5px 0 #0d3f86,0 -2.5px 0 #0d3f86,2px 2px 0 #0d3f86,-2px 2px 0 #0d3f86,2px -2px 0 #0d3f86,-2px -2px 0 #0d3f86}
+  .rsub{margin-top:8px;font-size:16px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#fff;opacity:.92}
+  .stage{position:relative;width:300px;max-width:100%;height:170px;display:flex;align-items:center;justify-content:center;margin:6px 0 -6px}
+  .rays{position:absolute;left:50%;top:50%;width:420px;height:420px;margin:-210px 0 0 -210px;border-radius:50%;pointer-events:none;
+    background:repeating-conic-gradient(rgba(255,244,200,.38) 0 7deg,rgba(255,244,200,0) 7deg 22deg);
+    -webkit-mask:radial-gradient(circle,#000 0,rgba(0,0,0,.6) 30%,transparent 68%);mask:radial-gradient(circle,#000 0,rgba(0,0,0,.6) 30%,transparent 68%);
+    animation:spin 14s linear infinite}
+  .rays::after{content:"";position:absolute;inset:32%;border-radius:50%;background:radial-gradient(circle,rgba(255,250,215,.9),rgba(255,230,140,0) 70%)}
+  #scrResult.lose .rays{display:none}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .bigStars{position:relative;display:flex;align-items:flex-end;gap:2px}
+  .bigStars svg{width:76px;height:76px;filter:drop-shadow(0 5px 0 rgba(42,13,92,.45))}
+  .bigStars svg:nth-child(2){width:100px;height:100px;margin-bottom:22px}
+  .bigStars svg{animation:starPop .35s cubic-bezier(.3,1.6,.6,1) both}
+  .bigStars svg:nth-child(2){animation-delay:.12s} .bigStars svg:nth-child(3){animation-delay:.24s}
+  @keyframes starPop{from{transform:scale(0) rotate(-30deg)}}
+  .loseIcon{position:relative;width:118px;height:118px;border-radius:50%;background:radial-gradient(circle at 50% 35%,#fff,var(--lav2));border:4px solid var(--p2);box-shadow:0 0 0 3px #efe2ff,0 6px 0 var(--p3);display:flex;align-items:center;justify-content:center}
+  .loseIcon svg{width:78px;height:78px}
+  .rcard{margin-top:16px;padding-top:30px}
+  .stat{display:flex;justify-content:space-around;gap:6px;font-size:13px;font-weight:700;color:var(--ink2);text-transform:uppercase;letter-spacing:.3px}
+  .stat>div{flex:1;min-width:0}
+  .stat b{display:flex;align-items:center;justify-content:center;gap:4px;font-size:26px;font-weight:800;color:var(--ink);line-height:1.1;text-transform:none}
+  .stat b svg{width:22px;height:22px}
+  /* ---- mechanic tutorial ---- */
+  .tutNew{position:absolute;top:-14px;left:50%;transform:translateX(-50%) rotate(-3deg);z-index:2;padding:3px 14px 2px;border-radius:12px;font-size:16px;font-weight:800;letter-spacing:1px;color:#fff;text-transform:uppercase;
+    background:linear-gradient(var(--r1),var(--r2) 62%);border:2px solid var(--rE);box-shadow:0 0 0 2px #fff,0 3px 0 var(--rE);text-shadow:0 2px 0 var(--rE)}
+  .tutIc{width:104px;height:104px;margin:0 auto 14px;border-radius:26px;background:var(--lav);box-shadow:inset 0 -4px 0 #d5c2f2,0 4px 0 #c2acec;display:flex;align-items:center;justify-content:center;animation:tutBob 1.6s ease-in-out infinite}
+  .tutIc svg{width:76px;height:76px}
+  @keyframes tutBob{50%{transform:translateY(-5px) rotate(-3deg)}}
+  .tutText{text-align:left;font-size:15.5px;line-height:1.4} .tutText p{margin:0 0 6px} .tutText p:last-child{margin:0} .tutText b{color:var(--p2);font-weight:800}
+  @media (prefers-reduced-motion:reduce){.tutIc{animation:none}}
+  .reason{font-size:17px;font-weight:800;color:var(--ink);margin:0 0 12px;text-transform:uppercase}
+
+  /* ---- HUD ---- */
+  #hud{position:fixed;left:0;right:0;top:0;display:none;z-index:4;pointer-events:none;
+    padding:calc(env(safe-area-inset-top) + 8px) calc(env(safe-area-inset-right) + 12px) 0 calc(env(safe-area-inset-left) + 12px)}
+  #hud.on{display:block}
+  .hudrow{display:flex;align-items:center;gap:8px;max-width:440px;margin:0 auto}
+  .hb{pointer-events:auto;position:relative;width:42px;height:42px;flex:none;padding:0;cursor:pointer;display:flex;align-items:center;justify-content:center;
+    font:inherit;font-size:18px;font-weight:800;color:#fff;
+    background:linear-gradient(var(--p1),var(--p2) 60%);border:2px solid var(--p3);border-radius:13px;
+    box-shadow:0 0 0 2px rgba(255,255,255,.8),0 4px 0 var(--p3),0 4px 0 2px rgba(255,255,255,.6),0 7px 10px rgba(30,5,70,.3);
+    text-shadow:0 2px 0 var(--pd),1.5px 0 0 var(--pd),-1.5px 0 0 var(--pd),0 -1.5px 0 var(--pd)}
+  .hb::before{content:"";position:absolute;left:5px;right:5px;top:3px;height:40%;border-radius:10px 10px 6px 6px;background:linear-gradient(rgba(255,255,255,.55),rgba(255,255,255,0));pointer-events:none}
+  .hb svg{width:21px;height:21px;position:relative}
+  .hb:active{transform:translateY(3px);box-shadow:0 0 0 2px rgba(255,255,255,.8),0 1px 0 var(--p3)}
+  #lvname{flex:1;min-width:0;text-align:center;font-size:18px;font-weight:800;line-height:1;text-transform:uppercase;letter-spacing:.4px;color:#fff;
+    height:42px;box-sizing:border-box;padding:11px 10px 0;border-radius:13px;border:2px solid var(--yE);background:linear-gradient(var(--y1),var(--y2) 62%);
+    box-shadow:0 0 0 2px rgba(255,255,255,.8),0 4px 0 var(--yE),0 7px 10px rgba(30,5,70,.25);
+    text-shadow:0 2px 0 var(--yE),1.5px 0 0 var(--yE),-1.5px 0 0 var(--yE),0 -1.5px 0 var(--yE),1px 1px 0 var(--yE),-1px 1px 0 var(--yE);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  #cutsBox{flex:none;display:flex}
+  #cutsBox:empty{display:none}
+  #cutsBox .cnt{flex:none;display:flex;align-items:center;gap:4px;height:42px;box-sizing:border-box;padding:0 10px 0 7px;border-radius:13px;color:#fff;
+    background:linear-gradient(var(--p1),var(--p2) 60%);border:2px solid var(--p3);box-shadow:0 0 0 2px rgba(255,255,255,.8),0 4px 0 var(--p3),0 7px 10px rgba(30,5,70,.25);transition:background .2s}
+  #cutsBox .cnt svg{width:20px;height:20px}
+  #cutsBox .cnt b{font-size:22px;font-weight:800;line-height:1;min-width:15px;text-align:center;font-variant-numeric:tabular-nums;
+    text-shadow:0 2px 0 var(--pd),1.5px 0 0 var(--pd),-1.5px 0 0 var(--pd),0 -1.5px 0 var(--pd)}
+  #cutsBox .cnt.bump b{animation:cbump .35s ease-out}
+  #cutsBox.low .cnt{background:linear-gradient(var(--r1),var(--r2) 60%);border-color:var(--rE);box-shadow:0 0 0 2px rgba(255,255,255,.8),0 4px 0 var(--rE);animation:cpulse .9s ease-in-out infinite}
+  #cutsBox.low .cnt b{text-shadow:0 2px 0 var(--rE),1.5px 0 0 var(--rE),-1.5px 0 0 var(--rE),0 -1.5px 0 var(--rE)}
+  #cutsBox.out .cnt{background:#b9aad6;border-color:#8c7bb0;box-shadow:0 0 0 2px rgba(255,255,255,.8),0 4px 0 #8c7bb0}
+  @keyframes cbump{0%{transform:scale(1.6)}100%{transform:scale(1)}}
+  @keyframes cpulse{50%{transform:scale(1.07)}}
+
+  #hint{width:fit-content;max-width:min(300px,100%);margin:9px auto 0;text-align:center;font-size:13px;font-weight:800;line-height:1.25;color:#fff;background:rgba(42,13,92,.55);border-radius:999px;padding:5px 14px;display:none}
+
+  .lang{position:fixed;right:calc(env(safe-area-inset-right) + 14px);bottom:calc(env(safe-area-inset-bottom) + 14px);z-index:6}
+  #rotate{position:fixed;inset:0;z-index:20;display:none;align-items:center;justify-content:center;flex-direction:column;gap:16px;background:radial-gradient(circle at 50% 40%,#9b4dff,#3b0c86);color:#fff;font-weight:800;font-size:20px;text-align:center;padding:24px}
+  #rotate .ph{width:54px;height:90px;border:4px solid #fff;border-radius:12px;background:var(--p2);box-shadow:0 4px 0 var(--pd);animation:rot 1.6s ease-in-out infinite}
+  @keyframes rot{0%,20%{transform:rotate(-90deg)}60%,100%{transform:rotate(0)}}
+  @media (orientation:landscape) and (pointer:coarse) and (max-height:540px){#rotate{display:flex}}
+  @media (max-height:640px){h1{font-size:42px}.sub{margin:8px auto 10px;font-size:14px}.btn{min-height:48px;padding:9px 14px 10px;font-size:19px}.btn.big{min-height:54px;font-size:22px}.menuBtns .btn{margin:6px 0}.stage{height:130px}.bigStars svg{width:60px;height:60px}.bigStars svg:nth-child(2){width:78px;height:78px;margin-bottom:16px}.rtitle{font-size:32px}}
+  @media (max-width:340px){.hb{width:38px;height:38px}#lvname{font-size:15px}.grid{gap:8px}.lv{font-size:21px}.banner span{font-size:24px}.card{padding-left:14px;padding-right:14px}}
+  @media (prefers-reduced-motion:reduce){.rays,#cutsBox.low .cnt{animation:none}.layer.on,.card,.bigStars svg{animation:none}}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div id="hud">
+  <div class="hudrow">
+    <button class="hb" id="hBack" aria-label="Back" data-ic="back"></button>
+    <div id="lvname">Level 1</div>
+    <div id="cutsBox"></div>
+    <button class="hb" id="hRetry" aria-label="Restart" data-ic="retry"></button>
+  </div>
+  <div id="hint"></div>
+</div>
+
+<div class="layer on" id="scrMenu">
+  <h1>Thread<em>&amp;</em>Thunder</h1>
+  <div class="sub" data-t="subtitle"></div>
+  <div class="menuBtns">
+    <button class="btn big" id="bPlay" data-t="play"></button>
+    <button class="btn purple" id="bEndless" data-t="endless"></button>
+    <div class="menuRow">
+      <button class="btn yellow" id="bDaily" data-t="daily"></button>
+      <button class="btn cyan" id="bHow" data-t="how"></button>
+    </div>
+  </div>
+</div>
+
+<div class="layer dim" id="scrHow">
+  <div class="card">
+    <div class="banner"><span class="olP" data-t="how"></span></div>
+    <button class="xbtn" data-go="menu" aria-label="Close" data-ic="x"></button>
+    <div class="inset howList" id="howText"></div>
+    <button class="btn" data-go="menu" data-t="gotit" style="margin-bottom:0"></button>
+  </div>
+</div>
+
+<div class="layer dim" id="scrSelect">
+  <div class="card">
+    <div class="banner"><span class="olP" data-t="levels"></span></div>
+    <button class="xbtn" data-go="menu" aria-label="Close" data-ic="x"></button>
+    <div class="inset"><div class="grid" id="grid"></div></div>
+  </div>
+</div>
+
+<div class="layer" id="scrResult">
+  <div class="rtitle" id="rTitle"></div>
+  <div class="rsub" id="rSub"></div>
+  <div class="stage"><div class="rays"></div><div id="rStars"></div></div>
+  <div class="card rcard">
+    <button class="xbtn" id="rClose" aria-label="Menu" data-ic="x"></button>
+    <div class="reason" id="rReason"></div>
+    <div class="inset stat" id="rStat"></div>
+    <div class="row" id="rBtns"></div>
+  </div>
+</div>
+
+<div class="layer dim" id="scrTut">
+  <div class="card">
+    <div class="tutNew" data-t="newMech"></div>
+    <div class="banner"><span class="olP" id="tutTitle"></span></div>
+    <div class="tutIc" id="tutIc"></div>
+    <div class="inset tutText" id="tutText"></div>
+    <button class="btn big" id="tutGo" data-t="letsgo" style="margin-bottom:0"></button>
+  </div>
+</div>
+
+<button class="hb lang" id="bLang">VI</button>
+<div id="rotate"><div class="ph"></div><div data-t="rotate"></div></div>
+
+<script>
+"use strict";
+// ---------- i18n ----------
+const T={
+ en:{subtitle:"Snip the threads to free the puffs.<br>Keep every storm cloud tied down!",play:"Campaign",endless:"Endless Sky",daily:"Daily Sky",how:"How to play",levels:"Levels",back:"Back",retry:"Retry",next:"Next",menu:"Menu",
+  win:"All puffs are free!",loseStorm:"A storm broke loose!",loseCuts:"Out of cuts!",cuts:"Cuts used",left:"Cuts left",streak:"Streak",best:"Best",level:"Level",sky:"Sky",daily2:"Daily",gameover:"Game over",
+  dailyDone:"Today's best",gotit:"Got it!",letsgo:"Let&#39;s go!",newMech:"New!",perfect:"Perfect!",great:"Great!",cleared:"Cleared!",failed:"Level failed",rotate:"Please rotate your phone upright",howText:"<p><i class=\"ic\">{cut}</i><span><b>Swipe</b> across threads to cut them. One swipe can cut several threads.</span></p><p><i class=\"ic\">{puff}</i><span>A <b>puff</b> floats away once nothing ties it to the ground — even through other puffs or rings.</span></p><p><i class=\"ic\">{storm}</i><span>A <b>storm cloud</b> that breaks free zaps the whole flock. Puffs still tied to a loose storm get zapped too.</span></p><p><i class=\"ic\">{chain}</i><span><b>Chains</b> can't be cut.</span></p><p><i class=\"ic\">{keyi}</i><span>A <b>locked</b> thread opens once the puff wearing the matching <b>key</b> badge is free. Each key opens <b>one</b> lock: the one its dotted line points to.</span></p><p><i class=\"ic\">{hidi}</i><span>A <b>? cloud</b> hides a puff or a storm. Cut any thread tied to it and it shows what it is.</span></p><p><i class=\"ic\">{suni}</i><span>Free a <b>sun cloud</b> and it clears the nearest <b>storm</b>. One storm per sun.</span></p><p><i class=\"ic\">{walli}</i><span><b>Walls</b> stop the blade. Lift your finger and swipe again to cut on the other side.</span></p><p><i class=\"ic\">{cutc}</i><span>You have a limited number of <b>cuts</b>. Each swipe that cuts threads uses one — a long swipe through many threads still counts as one!</span></p><p><i class=\"ic\">{star}</i><span>Use fewer cuts for more stars.</span></p>"},
+ vi:{subtitle:"Cắt dây để thả các bé mây.<br>Nhưng đừng để mây giông thoát ra!",play:"Chiến dịch",endless:"Bầu trời vô tận",daily:"Thử thách ngày",how:"Cách chơi",levels:"Màn chơi",back:"Quay lại",retry:"Chơi lại",next:"Tiếp",menu:"Menu",
+  win:"Các bé mây đã bay!",loseStorm:"Mây giông thoát rồi!",loseCuts:"Hết lượt cắt!",cuts:"Đã cắt",left:"Còn lại",streak:"Chuỗi",best:"Kỷ lục",level:"Màn",sky:"Trời",daily2:"Ngày",gameover:"Kết thúc",
+  dailyDone:"Tốt nhất hôm nay",gotit:"Đã hiểu!",letsgo:"Chơi thôi!",newMech:"Mới!",perfect:"Hoàn hảo!",great:"Tuyệt vời!",cleared:"Qua màn!",failed:"Thua rồi",rotate:"Hãy xoay dọc điện thoại",howText:"<p><i class=\"ic\">{cut}</i><span><b>Vuốt</b> qua sợi dây để cắt. Một lần vuốt có thể cắt nhiều dây.</span></p><p><i class=\"ic\">{puff}</i><span><b>Bé mây</b> bay lên khi không còn gì nối nó với mặt đất — kể cả qua bé mây khác hay vòng nút.</span></p><p><i class=\"ic\">{storm}</i><span><b>Mây giông</b> thoát ra sẽ đánh sét cả đàn. Bé mây còn buộc vào mây giông cũng bị sét đánh.</span></p><p><i class=\"ic\">{chain}</i><span><b>Xích</b> không cắt được.</span></p><p><i class=\"ic\">{keyi}</i><span>Dây <b>bị khóa</b> sẽ mở khi bé mây mang huy hiệu <b>chìa khóa</b> cùng biểu tượng được giải cứu. Mỗi chìa chỉ mở <b>một</b> ổ khóa: ổ mà đường chấm của nó chỉ vào.</span></p><p><i class=\"ic\">{hidi}</i><span><b>Mây bí ẩn ?</b> có thể là bé mây hoặc mây giông. Cắt một dây nối với nó thì nó mới lộ diện.</span></p><p><i class=\"ic\">{suni}</i><span>Thả <b>mây mặt trời</b> thì nó đánh tan <b>mây giông</b> gần nhất. Mỗi mặt trời chỉ một mây giông.</span></p><p><i class=\"ic\">{walli}</i><span><b>Vách</b> chặn lưỡi kéo. Nhấc tay rồi vuốt lại để cắt phía bên kia.</span></p><p><i class=\"ic\">{cutc}</i><span>Số <b>lượt cắt</b> có hạn. Mỗi lần vuốt cắt trúng dây tốn một lượt — vuốt một đường dài qua nhiều dây vẫn chỉ tính một!</span></p><p><i class=\"ic\">{star}</i><span>Càng ít lượt cắt càng nhiều sao.</span></p>"}
+};
+const HINTS={
+ 1:["Swipe across the thread!","Vuốt ngang qua sợi dây!"],
+ 2:["Never cut the storm cloud loose.","Đừng bao giờ thả mây giông."],
+ 3:["A puff needs ALL its threads cut.","Bé mây cần cắt HẾT dây mới bay."],
+ 4:["One cut can free a whole chain.","Một nhát có thể thả cả chuỗi."],
+ 5:["Puffs tied to a storm stay tied to it.","Bé mây buộc vào mây giông vẫn bị giữ."],
+ 6:["Rings join threads together.","Vòng nút nối các sợi dây với nhau."],
+ 7:["Chains can't be cut. Chained puffs fly off together.","Xích không cắt được. Bé mây bị xích sẽ bay cùng nhau."],
+ 8:["Careful where the threads cross!","Cẩn thận chỗ dây bắt chéo!"],
+ 31:["Free the key puff first: its key opens the lock.","Giải cứu bé mang chìa khóa trước để mở ổ khóa."],
+ 33:["Untie the key puff from the storm first.","Tách bé chìa khóa khỏi mây giông trước."],
+ 35:["? clouds hide a puff or a storm. Cut one thread to peek.","Mây ? giấu bé mây hoặc mây giông. Cắt một dây để xem."],
+ 36:["Peek safely: cut a thread that still leaves it tied.","Xem an toàn: cắt dây mà mây vẫn còn bị buộc."],
+ 39:["Walls stop the blade. Lift, then swipe the other side.","Vách chặn lưỡi kéo. Nhấc tay rồi vuốt phía bên kia."],
+ 40:["Swipe around the top of the wall.","Vuốt vòng qua đầu vách."],
+ 32:["One key opens one lock. Two locks need two keys.","Một chìa chỉ mở một ổ khóa. Hai ổ cần hai chìa."],
+ 38:["The key opens only the lock its dotted line points to.","Chìa chỉ mở ổ khóa mà đường chấm chỉ vào."],
+ 44:["A sun clears only the NEAREST storm: follow its dotted ray.","Mặt trời chỉ đánh tan mây giông GẦN NHẤT: nhìn tia chấm."],
+ 45:["A storm that flies off with a sun cloud gets cleared.","Mây giông bay cùng mây mặt trời sẽ bị đánh tan."]
+};
+// First-time popup for each new mechanic, keyed by authored level id
+const TUTS={
+ 31:{ic:"keyi",title:["Key & Lock","Chìa khóa"],text:["<p>A thread with a <b>padlock</b> can&#39;t be cut.</p><p>Free the puff wearing the matching <b>key badge</b> and the lock opens. Each key opens <b>only one</b> lock: follow its dotted line.</p>","<p>Dây có <b>ổ khóa</b> không cắt được.</p><p>Giải cứu bé mây mang <b>huy hiệu chìa khóa</b> cùng biểu tượng thì ổ khóa sẽ mở. Mỗi chìa chỉ mở <b>một</b> ổ khóa: theo đường chấm của nó.</p>"]},
+ 35:{ic:"hidi",title:["Mystery cloud","Mây bí ẩn"],text:["<p>A <b>? cloud</b> could be a puff or a storm.</p><p>Cut <b>one</b> thread tied to it to see what it is. If it is still tied by another thread, peeking is safe.</p>","<p><b>Mây ?</b> có thể là bé mây hoặc mây giông.</p><p>Cắt <b>một</b> dây nối với nó để xem. Nếu nó vẫn còn dây khác giữ lại thì xem như vậy là an toàn.</p>"]},
+ 43:{ic:"suni",title:["Sun cloud","Mây mặt trời"],text:["<p>Free a <b>sun cloud</b> and it clears one <b>storm</b>: the nearest one, shown by its dotted ray.</p><p>Each sun clears <b>only one</b> storm. A storm that breaks loose together with a sun cloud is cleared too.</p>","<p>Thả <b>mây mặt trời</b> thì nó đánh tan một <b>mây giông</b>: đám gần nhất, có tia chấm chỉ vào.</p><p>Mỗi mặt trời chỉ đánh tan <b>một</b> mây giông. Mây giông thoát ra cùng lúc với mây mặt trời cũng bị đánh tan.</p>"]},
+ 39:{ic:"walli",title:["Wall","Vách chắn"],text:["<p><b>Walls</b> stop your blade.</p><p>After touching a wall, <b>lift your finger</b> and swipe again on the other side.</p>","<p><b>Vách</b> chặn lưỡi kéo.</p><p>Chạm vách rồi thì <b>nhấc tay lên</b> và vuốt lại ở phía bên kia.</p>"]}
+};
+// Guided swipes: a ghost hand traces each step until its condition holds (steps already done are skipped)
+const GUIDES={
+ 1:[{path:[[110,520],[290,520]],text:HINTS[1],until:g=>g.swipes>0}],
+ 31:[{path:[[40,560],[180,560]],text:["First free the key puff.","Trước tiên, cứu bé mang chìa khóa."],until:g=>g.keysGiven.has("sun")},
+     {path:[[220,560],[370,560]],text:["The lock is open. Cut it!","Ổ khóa đã mở. Cắt đi!"],until:g=>g.state!=="play"}],
+ 35:[{path:[[5,580],[55,580]],text:["Cut ONE thread of the ? to peek.","Cắt MỘT dây của mây ? để xem."],until:g=>!g.nodes[2].hidden},
+     {path:[[90,580],[135,580]],text:["A puff! Cut its other thread.","Là bé mây! Cắt nốt dây kia."],until:g=>g.nodes[2].free},
+     {path:[[140,580],[190,580]],text:["Peek at the next ? with one thread.","Xem mây ? tiếp theo bằng một dây."],until:g=>!g.nodes[5].hidden},
+     {path:[[300,580],[380,580]],text:["A storm! Leave it tied. Free the last puff.","Mây giông! Để yên nó. Cứu bé mây cuối."],until:g=>g.state!=="play"}],
+ 43:[{path:[[295,585],[385,585]],text:["Free the sun cloud!","Thả mây mặt trời!"],until:g=>g.state!=="play"}],
+ 39:[{path:[[40,560],[360,560]],text:["Swipe across both threads.","Vuốt ngang qua cả hai dây."],until:g=>g.wallHits>0||g.nodes[1].free},
+     {path:[[250,560],[370,560]],text:["The wall stopped the blade. Lift and swipe here.","Vách chặn lưỡi kéo. Nhấc tay rồi vuốt ở đây."],until:g=>g.state!=="play"}]
+};
+const TOAST={
+ locked:["Locked! Free the puff with that key first.","Dây đang khóa! Hãy cứu bé mang chìa khóa trước."],
+ chain:["Chains can't be cut.","Xích không cắt được."],
+ wall:["The wall stops the blade. Lift and swipe again.","Vách chặn lưỡi kéo. Nhấc tay rồi vuốt lại."],
+ unlock:["Unlocked!","Đã mở khóa!"],
+ isStorm:["It's a storm! Keep it tied.","Là mây giông! Giữ nó lại."],
+ isPuff:["It's a puff! Set it free.","Là bé mây! Thả nó đi."]
+};
+// ---------- icons (hand-made toy-style SVG, not Figma exports) ----------
+const O='#2a0d5c';
+const IC={
+ back:`<svg viewBox="0 0 24 24"><path d="M15 4 7 12l8 8" fill="none" stroke="${O}" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 4 7 12l8 8" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+ retry:`<svg viewBox="0 0 24 24"><g fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12a7 7 0 1 1-2.1-5" stroke="${O}" stroke-width="7"/><path d="M19 12a7 7 0 1 1-2.1-5" stroke="#fff" stroke-width="3.6"/></g><path d="M20.5 3.2v6.3h-6.3z" fill="#fff" stroke="${O}" stroke-width="2" stroke-linejoin="round"/></svg>`,
+ x:`<svg viewBox="0 0 24 24"><g stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18" stroke="#99102f" stroke-width="7"/><path d="M6 6l12 12M18 6 6 18" stroke="#fff" stroke-width="3.8"/></g></svg>`,
+ cut:`<svg viewBox="0 0 32 32"><g stroke="${O}" stroke-width="2" stroke-linejoin="round"><path d="M12 13 28 5l-1 4-13 7z" fill="#eef0ff"/><path d="M12 19 28 27l-1-4-13-7z" fill="#d6d9f0"/><circle cx="8" cy="10" r="5" fill="#ff6b9a"/><circle cx="8" cy="22" r="5" fill="#ff6b9a"/></g><circle cx="8" cy="10" r="2" fill="#fff" stroke="${O}" stroke-width="1.6"/><circle cx="8" cy="22" r="2" fill="#fff" stroke="${O}" stroke-width="1.6"/><circle cx="14.5" cy="16" r="1.6" fill="${O}"/></svg>`,
+ cutw:`<svg viewBox="0 0 32 32"><g stroke="${O}" stroke-width="2.4" stroke-linejoin="round"><path d="M12 13 28 5l-1 4-13 7z" fill="#fff"/><path d="M12 19 28 27l-1-4-13-7z" fill="#e6e0ff"/><circle cx="8" cy="10" r="5" fill="#fff"/><circle cx="8" cy="22" r="5" fill="#fff"/></g><circle cx="8" cy="10" r="1.8" fill="${O}"/><circle cx="8" cy="22" r="1.8" fill="${O}"/></svg>`,
+ puff:`<svg viewBox="0 0 32 32"><path d="M8 25a6 6 0 0 1-1-11.9A8 8 0 0 1 22 9.5 6.5 6.5 0 0 1 25 25z" fill="#fff" stroke="${O}" stroke-width="2.2" stroke-linejoin="round"/><circle cx="12.5" cy="18" r="1.5" fill="${O}"/><circle cx="19.5" cy="18" r="1.5" fill="${O}"/><path d="M14.5 21q1.5 1.4 3 0" fill="none" stroke="${O}" stroke-width="1.5" stroke-linecap="round"/><circle cx="10" cy="21" r="1.6" fill="#ffadc6"/><circle cx="22" cy="21" r="1.6" fill="#ffadc6"/></svg>`,
+ storm:`<svg viewBox="0 0 32 32"><path d="M8 21a6 6 0 0 1-1-11.9A8 8 0 0 1 22 5.5 6.5 6.5 0 0 1 25 21z" fill="#6c6491" stroke="${O}" stroke-width="2.2" stroke-linejoin="round"/><path d="M17 17l-5 7h4l-2 6 7-9h-4l2-4z" fill="#ffd23f" stroke="${O}" stroke-width="1.8" stroke-linejoin="round"/><path d="M11 13l3 1M21 13l-3 1" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></svg>`,
+ chain:`<svg viewBox="0 0 32 32"><g fill="none" stroke-linecap="round"><rect x="3" y="11" width="15" height="10" rx="5" stroke="${O}" stroke-width="6"/><rect x="14" y="11" width="15" height="10" rx="5" stroke="${O}" stroke-width="6"/><rect x="3" y="11" width="15" height="10" rx="5" stroke="#b9bed6" stroke-width="2.6"/><rect x="14" y="11" width="15" height="10" rx="5" stroke="#dfe3f5" stroke-width="2.6"/></g></svg>`,
+ lock:`<svg viewBox="0 0 24 24"><path d="M7.5 11V8a4.5 4.5 0 0 1 9 0v3" fill="none" stroke="#8c7bb0" stroke-width="3"/><rect x="4.5" y="10.5" width="15" height="11" rx="3" fill="#f3edff" stroke="#8c7bb0" stroke-width="2"/><circle cx="12" cy="15.5" r="1.8" fill="#8c7bb0"/></svg>`,
+};
+function starSvg(on){return on
+ ?`<svg viewBox="0 0 24 24"><path d="M12 2.4l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 17.2l-5.8 3.1 1.1-6.5-4.7-4.6 6.5-.9z" fill="#ffc21f" stroke="#a24f00" stroke-width="1.7" stroke-linejoin="round"/><path d="M12 5.2l2 4.1 4.5.6-1.6 1.6-3.4-.4L12 8z" fill="#fff3a6"/><path d="M12 17.2l-5.8 3.1.4-2.4L12 15z" fill="#e88a00" opacity=".55"/></svg>`
+ :`<svg viewBox="0 0 24 24"><path d="M12 2.4l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 17.2l-5.8 3.1 1.1-6.5-4.7-4.6 6.5-.9z" fill="#cbbde6" stroke="#8c7bb0" stroke-width="1.7" stroke-linejoin="round"/></svg>`;}
+IC.star=starSvg(true);IC.cutc=IC.cut;
+IC.keyi=`<svg viewBox="0 0 32 32"><path d="M10 15v-3.5a6 6 0 0 1 12 0V15" fill="none" stroke="${O}" stroke-width="5"/><path d="M10 15v-3.5a6 6 0 0 1 12 0V15" fill="none" stroke="#ffd36b" stroke-width="2.4"/><rect x="6" y="14" width="20" height="15" rx="4" fill="#fff1c2" stroke="${O}" stroke-width="2.2"/><circle cx="16" cy="21.5" r="3.4" fill="#ffb51f" stroke="${O}" stroke-width="1.4"/><g stroke="#ffb51f" stroke-width="1.6" stroke-linecap="round"><path d="M16 15.8v-.9M16 28.1v-.9M10.3 21.5h.9M21.7 21.5h-.9"/></g></svg>`;
+IC.hidi=`<svg viewBox="0 0 32 32"><path d="M8 25a6 6 0 0 1-1-11.9A8 8 0 0 1 22 9.5 6.5 6.5 0 0 1 25 25z" fill="#c9bfe6" stroke="${O}" stroke-width="2.2" stroke-linejoin="round"/><path d="M13.2 14.5a3 3 0 1 1 4.3 2.7c-1 .5-1.5 1.1-1.5 2.3" fill="none" stroke="${O}" stroke-width="2.4" stroke-linecap="round"/><circle cx="16" cy="22.6" r="1.5" fill="${O}"/></svg>`;
+IC.suni=`<svg viewBox="0 0 32 32"><g transform="translate(21 10)"><g stroke="${O}" stroke-width="4.2" stroke-linecap="round"><path d="M0-9v-2.5M0 9v2.5M-9 0h-2.5M9 0h2.5M-6.4-6.4l-1.8-1.8M6.4 6.4l1.8 1.8M-6.4 6.4l-1.8 1.8M6.4-6.4l1.8-1.8"/></g><g stroke="#ffc21f" stroke-width="2" stroke-linecap="round"><path d="M0-9v-2.5M0 9v2.5M-9 0h-2.5M9 0h2.5M-6.4-6.4l-1.8-1.8M6.4 6.4l1.8 1.8M-6.4 6.4l-1.8 1.8M6.4-6.4l1.8-1.8"/></g><circle r="6.5" fill="#ffd23f" stroke="${O}" stroke-width="2"/></g><path d="M7 28a5.5 5.5 0 0 1-1-10.9A7.5 7.5 0 0 1 20 14a6 6 0 0 1 3 14z" fill="#fff" stroke="${O}" stroke-width="2.2" stroke-linejoin="round"/><circle cx="11.5" cy="22" r="1.4" fill="${O}"/><circle cx="17.5" cy="22" r="1.4" fill="${O}"/></svg>`;
+IC.walli=`<svg viewBox="0 0 32 32"><rect x="11" y="2" width="10" height="28" rx="5" fill="#3b2a78" stroke="${O}" stroke-width="2.2"/><path d="M12 9l8-3M12 15l8-3M12 21l8-3M12 27l8-3" stroke="#fff" stroke-width="1.8" opacity=".85"/><circle cx="16" cy="16" r="6.5" fill="#fff" stroke="${O}" stroke-width="1.8"/><path d="M12.4 12.4l7.2 7.2" stroke="#e3264f" stroke-width="2.4" stroke-linecap="round"/></svg>`;
+function fillIcons(root){(root||document).querySelectorAll("[data-ic]").forEach(e=>{e.innerHTML=IC[e.dataset.ic]||"";});}
+let save={stars:{},lang:"en",best:0,dailyCuts:{},tutSeen:{}};
+try{const s=JSON.parse(localStorage.getItem("tt_save")||"null");if(s)save=Object.assign(save,s);}catch(e){}
+save.tutSeen=save.tutSeen||{};
+function persist(){try{localStorage.setItem("tt_save",JSON.stringify(save));}catch(e){}}
+const tr=k=>(T[save.lang]||T.en)[k]||k;
+function applyLang(){
+  document.querySelectorAll("[data-t]").forEach(e=>e.innerHTML=tr(e.dataset.t));
+  document.getElementById("howText").innerHTML=tr("howText").replace(/\{(\w+)\}/g,(_,k)=>IC[k]||"");fillIcons();
+  document.getElementById("bLang").textContent=save.lang==="en"?"VI":"EN";
+  document.documentElement.lang=save.lang;
+}
+
+// ---------- levels ----------
+// n: [type,x,y]  a=anchor p=puff s=storm k=ring ; r: [a,b,steel]
+const RAW_LEVELS=[
+ {n:[["a",200,650],["p",200,380]],r:[[0,1]]},
+ {n:[["a",110,650],["p",110,360],["a",290,650],["p",290,360],["a",200,650],["s",200,250]],r:[[0,1],[2,3],[4,5]]},
+ {n:[["a",120,650],["a",280,650],["p",200,330],["a",360,650],["s",320,220]],r:[[0,2],[1,2],[3,4]]},
+ {n:[["a",250,650],["p",250,480],["p",250,280],["a",100,650],["s",100,360],["p",100,170]],r:[[0,1],[1,2],[3,4],[4,5]]},
+ {n:[["a",80,650],["p",80,340],["s",200,240],["p",320,340],["a",320,650],["a",200,650]],r:[[0,1],[1,2],[2,3],[3,4],[5,2]]},
+ {n:[["a",170,650],["k",170,480],["p",70,260],["p",190,200],["p",300,260],["s",320,420],["a",350,650]],r:[[0,1],[1,2],[1,3],[1,4],[1,5],[5,6]]},
+ {n:[["a",200,650],["s",200,430],["p",80,240],["p",320,240],["p",200,170]],r:[[0,1],[1,2],[1,3],[1,4],[2,4,1]]},
+ {n:[["a",70,650],["a",330,650],["p",100,290],["s",300,290],["p",200,170]],r:[[1,2],[0,3],[2,4],[4,3]]},
+ {n:[["a",60,650],["a",200,650],["a",340,650],["s",110,420],["s",290,420],["p",200,300],["p",60,220],["p",340,220]],r:[[0,3],[2,4],[5,1],[5,3],[5,4],[6,3],[7,4]]},
+ {n:[["a",200,650],["p",200,510],["s",200,370],["p",200,230],["a",340,650]],r:[[0,1],[1,2],[2,3],[2,4]]},
+ {n:[["a",130,650],["a",270,650],["k",130,480],["k",270,480],["p",70,280],["p",200,250],["p",330,280],["s",200,380]],r:[[0,2],[1,3],[2,3],[4,2],[5,2],[5,3],[6,3],[7,2],[7,3]]},
+ {n:[["a",70,650],["a",150,650],["a",230,650],["a",310,650],["p",70,250],["s",150,330],["p",230,250],["s",310,330],["p",150,170],["p",310,170]],r:[[0,4],[1,5],[2,6],[3,7],[8,5],[8,4],[9,7],[9,6]]},
+ {n:[["a",100,650],["a",300,650],["a",200,650],["s",100,300],["s",300,300],["p",200,200],["p",200,420],["p",200,90]],r:[[0,3],[1,4],[5,3],[5,4],[6,3],[6,4],[6,2],[7,5,1]]},
+ {n:[["a",200,650],["a",40,650],["k",200,520],["s",200,380],["p",80,300],["p",320,300],["p",200,220]],r:[[0,2],[3,2],[4,2],[5,2],[6,3],[3,1]]},
+ {n:[["a",60,650],["a",200,650],["a",340,650],["k",200,520],["s",90,400],["s",310,400],["p",200,380],["p",90,200],["p",310,200],["p",200,130]],
+  r:[[3,1],[4,0],[5,2],[6,3],[6,4],[6,5],[7,4],[7,6],[8,5],[8,6],[9,7,1],[9,8],[5,3]]},
+ // 16 ring hub: one long swipe frees three puffs; the storm hangs on a chain from the hub
+ {n:[["a",200,650],["k",200,500],["s",320,420],["p",70,330],["p",200,240],["p",330,250],["a",360,650]],r:[[0,1],[1,2,1],[2,6],[1,3],[1,4],[1,5],[3,4]]},
+ // 17 twin towers: storms in the middle of each tower
+ {n:[["a",70,650],["a",150,650],["p",150,480],["s",70,380],["p",110,220],["a",330,650],["a",250,650],["p",250,480],["s",330,380],["p",290,220]],r:[[1,2],[0,3],[2,3],[3,4],[6,7],[5,8],[7,8],[8,9],[4,9]]},
+ // 18 chained storm core
+ {n:[["a",200,650],["s",200,450],["p",80,330],["p",320,330],["p",200,200],["a",60,650],["a",340,650]],r:[[0,1],[1,2],[1,3],[2,4,1],[3,4],[5,2],[6,3]]},
+ // 19 the X: crossing threads
+ {n:[["a",60,650],["a",340,650],["p",330,250],["p",70,250],["s",200,140],["a",200,650]],r:[[0,2],[1,3],[2,4],[3,4],[5,4]]},
+ // 20 kite string: a long line of puffs
+ {n:[["a",80,650],["p",120,520],["p",170,410],["p",230,310],["p",290,210],["p",340,110],["a",330,650],["s",330,430]],r:[[0,1],[1,2],[2,3],[3,4],[4,5],[6,7],[7,3]]},
+ // 21 double ring
+ {n:[["a",110,650],["a",290,650],["k",110,520],["k",290,520],["p",60,330],["p",160,300],["p",240,300],["p",340,330],["s",200,420]],r:[[0,2],[1,3],[2,4],[2,5],[3,6],[3,7],[2,8],[3,8],[5,6]]},
+ // 22 umbrella: storm on top, puffs hang from it and from the ground
+ {n:[["a",200,650],["s",200,180],["p",80,300],["p",320,300],["p",140,450],["p",260,450],["a",50,650],["a",350,650]],r:[[0,1],[1,2],[1,3],[2,4],[3,5],[6,4],[7,5],[4,5,1]]},
+ // 23 steel cage
+ {n:[["a",60,650],["a",200,650],["a",340,650],["k",200,500],["p",200,330],["s",80,300],["s",320,300],["p",200,150]],r:[[1,3,1],[0,5],[2,6],[3,4],[5,4],[6,4],[4,7,1],[5,7],[6,7]]},
+ // 24 staircase
+ {n:[["a",60,650],["a",160,650],["a",260,650],["a",360,650],["p",60,520],["p",160,420],["p",260,320],["p",360,220],["s",110,250],["a",110,650]],r:[[0,4],[1,5],[2,6],[3,7],[4,5],[5,6],[6,7,1],[9,8],[8,5]]},
+ // 25 diamond
+ {n:[["a",200,650],["k",200,540],["p",100,420],["p",300,420],["s",200,330],["p",100,220],["p",300,220],["p",200,110],["a",40,650],["a",360,650]],r:[[0,1],[1,2],[1,3],[1,4,1],[2,5],[3,6],[5,7],[6,7],[4,5],[4,6],[8,2],[9,3]]},
+ // 26 two storms share a puff
+ {n:[["a",50,650],["a",350,650],["s",90,350],["s",310,350],["p",200,420],["p",200,230],["p",90,180],["p",310,180],["a",200,650]],r:[[0,2],[1,3],[2,4],[3,4],[4,5],[2,6],[3,7],[6,5],[7,5],[8,4]]},
+ // 27 the net
+ {n:[["a",60,650],["a",200,650],["a",340,650],["p",60,450],["p",130,500],["p",340,450],["p",60,250],["s",200,300],["p",340,250],["p",200,120]],r:[[0,3],[1,4],[2,5],[3,4],[4,5],[3,6],[5,8],[1,7],[6,7],[7,8],[6,9,1],[8,9],[7,9]]},
+ // 28 lantern string
+ {n:[["a",40,650],["a",360,650],["k",120,420],["k",280,420],["p",120,250],["p",280,250],["p",200,500],["s",200,330],["p",200,150]],r:[[0,2],[2,3],[3,1],[2,4],[3,5],[2,6],[3,6],[2,7,1],[3,7],[4,8],[5,8]]},
+ // 29 storm sandwich
+ {n:[["a",80,650],["a",320,650],["s",80,450],["p",200,450],["s",320,450],["p",140,290],["p",260,290],["p",200,150],["p",60,200],["p",340,200],["a",200,650]],r:[[0,2],[1,4],[10,3],[2,3],[3,4],[3,5],[3,6],[5,7],[6,7],[5,8],[6,9],[2,8],[4,9],[5,6]]},
+ // 30 grand finale
+ {n:[["a",40,650],["a",150,650],["a",250,650],["a",360,650],["k",150,520],["k",250,520],["s",60,380],["s",340,380],["p",150,400],["p",250,400],["p",200,280],["p",90,200],["p",310,200],["p",200,110]],r:[[1,4],[2,5],[0,6],[3,7],[4,5,1],[4,8],[5,9],[8,9],[6,8],[7,9],[8,10],[9,10],[6,11],[7,12],[10,11],[10,12],[11,13,1],[12,13],[4,6]]},
+ // ---- mechanic pack (31-42). keys:[[node,sym]] locks:[[rope,sym]] hidden: ["h",x,y,trueType] barriers:[[x1,y1,x2,y2]]
+ // 31 teach key
+ {n:[["a",110,650],["p",110,360],["a",290,650],["p",290,330]],r:[[0,1],[2,3]],
+  keys:[[1,"sun"]],locks:[[1,"sun"]],parSwipes:2},
+ // 32 two keys for two locks (one key opens one lock); the ring group hangs on chains
+ {n:[["a",45,650],["p",45,330],["a",225,650],["a",355,650],["k",290,500],["p",215,270],["p",340,250],["a",125,650],["p",125,290]],r:[[0,1],[2,4],[3,4],[4,5,1],[4,6,1],[7,8]],
+  keys:[[1,"sun"],[8,"sun"]],locks:[[1,"sun"],[2,"sun"]],parSwipes:1},
+ // 33 the key puff is tied to a storm
+ {n:[["a",100,650],["p",100,330],["s",240,240],["a",240,650],["a",340,650],["p",340,400]],r:[[0,1],[1,2],[3,2],[4,5]],
+  keys:[[1,"sun"]],locks:[[3,"sun"]],parSwipes:2},
+ // 34 two keys in a row: sun opens the moon puff, moon opens the last one
+ {n:[["a",60,650],["p",60,260],["a",220,650],["p",220,320],["s",130,450],["a",130,650],["a",340,650],["p",340,250]],r:[[0,1],[2,3],[3,4],[5,4],[6,7]],
+  keys:[[1,"sun"],[3,"moon"]],locks:[[1,"sun"],[4,"moon"]],parSwipes:2},
+ // 35 teach hidden cloud: the ? in the middle is a storm, so a blind straight swipe always hits it; each ? has two threads, so cutting one is a safe peek
+ {n:[["a",25,650],["a",130,650],["h",75,330,"p"],["a",150,650],["a",260,650],["h",205,330,"s"],["a",345,650],["p",345,330]],r:[[0,2],[1,2],[3,5],[4,5],[6,7]],
+  parSwipes:4}, // par matches the 4 guided swipes (peek, free, peek, free)
+ // 36 a ? holds two puffs together; cutting its own thread is a safe peek because the puffs still hold it
+ {n:[["a",80,650],["p",80,250],["a",200,650],["h",200,400,"p"],["a",320,650],["p",320,250]],r:[[0,1],[2,3],[1,3],[5,3],[4,5]],
+  parSwipes:2},
+ // 37 two ? clouds tied to each other share a puff; cut the link to see both
+ {n:[["a",110,650],["h",110,380,"s"],["a",290,650],["h",290,380,"p"],["p",200,200]],r:[[0,1],[2,3],[1,3],[4,1],[4,3]],
+  parSwipes:2},
+ // 38 each ? hangs on one normal and one locked thread: peek before the key, then cut the right one
+ {n:[["a",40,650],["p",40,300],["a",105,650],["a",225,650],["h",165,320,"p"],["a",262,650],["a",382,650],["h",320,320,"s"]],
+  r:[[0,1],[2,4],[3,4],[5,7],[6,7]],
+  keys:[[1,"sun"]],locks:[[1,"sun"],[4,"sun"]],parSwipes:2},
+ // 39 teach wall: two sealed sides
+ {n:[["a",100,650],["p",100,340],["a",300,650],["p",300,340]],r:[[0,1],[2,3]],
+  barriers:[[200,-3000,200,3000]],parSwipes:2},
+ // 40 wall open at the top: swipe around it
+ {n:[["a",90,650],["p",90,420],["p",90,220],["a",310,650],["p",310,420],["p",310,220]],r:[[0,1],[1,2],[3,4],[4,5]],
+  barriers:[[200,280,200,3000]],parSwipes:1},
+ // 41 key on one side, lock on the other
+ {n:[["a",40,650],["s",60,200],["a",110,650],["p",115,390],["a",300,650],["p",300,360],["p",320,180]],r:[[0,1],[2,3],[3,1],[4,5],[5,6]],
+  keys:[[3,"sun"]],locks:[[3,"sun"]],barriers:[[200,-3000,200,3000]],parSwipes:2},
+ // 42 finale: wall splits the sky, the key opens a thread on the right, two ? clouds guard the last puff
+ {n:[["a",95,650],["p",95,360],["p",110,180],["a",250,650],["h",250,380,"s"],["a",360,650],["h",350,340,"p"],["p",300,170]],
+  r:[[0,1],[1,2],[3,4],[5,6],[4,6],[7,4],[7,6]],
+  keys:[[1,"sun"]],locks:[[3,"sun"]],barriers:[[190,-3000,190,3000]],parSwipes:2}
+,
+ // ---- sun clouds. suns:[node] marks puffs that carry a sun
+ // 43 teach sun: free the sun cloud and it clears the storm holding two puffs
+ {n:[["a",200,650],["s",200,380],["p",90,210],["p",310,210],["a",340,650],["p",340,470]],r:[[0,1],[2,1],[3,1],[4,5]],
+  suns:[5],parSwipes:1},
+ // 44 one sun, two storms: it clears the nearest; the chained puff needs it, the far storm must stay tied
+ {n:[["a",60,650],["p",60,430],["a",150,650],["s",150,330],["p",120,160],["a",265,650],["a",390,650],["s",320,360],["p",290,180],["p",370,230]],
+  r:[[0,1],[2,3],[4,3,1],[5,7],[6,7],[8,7],[9,7]],suns:[1],parSwipes:2},
+ // 45 release one storm together with the sun cloud so the sun clears it; the other storm must keep a thread
+ {n:[["a",200,650],["p",200,430],["a",60,650],["s",90,300],["a",340,650],["s",310,300],["p",90,140],["p",310,140],["p",200,220]],
+  r:[[0,1],[2,3],[3,1],[4,5],[5,1],[6,3,1],[7,5],[8,1]],suns:[1],parSwipes:2},
+ // 46 two suns, two chained flocks; the right sun hangs on a moon lock, the key puff is tied to a storm
+ {n:[["a",120,650],["s",120,330],["p",120,160],["a",290,650],["s",290,330],["p",290,160],["a",40,650],["p",40,450],["a",370,650],["p",370,450],["a",205,650],["p",205,470]],
+  r:[[0,1],[1,2,1],[3,4],[4,5,1],[6,7],[8,9],[10,11],[11,1]],suns:[7,9],keys:[[11,"moon"]],locks:[[5,"moon"]],parSwipes:2}
+,
+ // ---- hard pack
+ // 47 sun order: both suns first aim at the left storm; free the left sun first so the right one then turns to the far-right storm
+ {n:[["a",40,650],["p",40,540],["a",110,650],["s",60,330],["p",60,170],["a",140,650],["s",150,220],["a",210,650],["p",210,560],["a",350,650],["s",330,300],["p",330,130],["p",240,150]],
+  r:[[0,1],[2,3],[3,4,1],[5,6],[7,8],[9,10],[10,11,1],[12,6],[12,10],[1,6],[8,6]],suns:[1,8],parSwipes:2},
+ // 48 relay across the wall: left key opens the right, right key opens the left; three sides, three swipes
+ {n:[["a",25,650],["s",50,220],["a",100,650],["p",100,400],["a",170,650],["p",160,220],["a",375,650],["s",340,220],["a",290,650],["p",290,400],["p",245,200]],
+  r:[[0,1],[2,3],[3,1],[4,5],[6,7],[8,9],[9,7],[10,7]],keys:[[3,"sun"],[9,"moon"]],locks:[[3,"moon"],[5,"sun"]],barriers:[[200,-3000,200,3000]],parSwipes:3},
+ // 49 the ? triangle: three ? clouds tied to each other; the bottom one is the storm, so cutting its anchor (safe-looking) is a dead end
+ {n:[["a",90,650],["h",90,380,"p"],["a",200,650],["h",200,470,"s"],["a",310,650],["h",310,380,"p"],["p",200,190]],
+  r:[[0,1],[2,3],[4,5],[1,3],[3,5],[1,5],[6,1],[6,5]],parSwipes:2},
+ // 50 moon key on the left frees the right sun cloud, whose sun reaches over the wall to the left storm
+ {n:[["a",40,650],["p",60,300],["a",130,650],["s",130,400],["p",90,170],["p",160,210],["a",250,650],["p",250,520],["a",360,650],["s",340,250],["p",300,120],["p",290,340]],
+  r:[[0,1],[1,3],[2,3],[3,4,1],[3,5,1],[6,7],[8,9],[10,9],[11,9],[11,7],[1,4]],suns:[7],keys:[[1,"moon"]],locks:[[5,"moon"]],barriers:[[200,-3000,200,3000]],parSwipes:2},
+ // 51 finale: the sun is nearer the hidden storm on the left, so freeing it alone wastes it. Cut the flock storm loose first
+ // (it still hangs on the sun cloud), then free the sun so the storm flies off with it and gets cleared.
+ {n:[["a",30,650],["a",120,650],["h",80,330,"s"],["p",100,160],["a",170,650],["p",165,470],["a",390,650],["s",320,230],["p",260,120],["p",370,130],["a",245,650],["p",245,520],["p",290,400]],
+  r:[[0,2],[1,2],[3,2],[4,5],[5,2],[3,5],[6,7],[7,8,1],[7,9,1],[10,11],[12,7],[12,11]],
+  keys:[[5,"sun"]],locks:[[9,"sun"]],suns:[11],barriers:[[200,-3000,200,3000]],parSwipes:2}
+
+
+,
+ // ---- chaos pack (tools/level-forge.mjs): tangled skies, every level proven solvable by the solver
+ // 52 (campaign 2)
+ {"n":[["a",89,650],["a",211,650],["a",253,650],["s",265,187],["s",300,448],["p",162,202],["p",342,317],["p",54,459],["p",230,282]],"r":[[7,2],[0,4],[6,7],[6,4],[8,6],[5,7],[3,4]],"parSwipes":2},
+ // 53 (campaign 3)
+ {"n":[["a",148,650],["a",259,650],["a",62,650],["s",135,319],["s",224,371],["p",63,195],["p",184,472],["p",341,479],["p",80,512]],"r":[[8,1],[7,2],[6,8],[1,4],[0,3],[5,3],[8,5]],"parSwipes":2},
+ // 54 (campaign 4)
+ {"n":[["a",74,650],["a",288,650],["a",252,650],["s",76,522],["s",191,446],["p",307,117],["p",199,257],["p",66,400],["p",275,529]],"r":[[8,0],[1,3],[2,4],[7,3],[6,3],[5,6]],"parSwipes":2},
+ // 55 (campaign 6) keys
+ {"n":[["a",217,650],["a",268,650],["a",37,650],["s",137,397],["s",207,463],["p",264,138],["p",72,476],["p",261,365],["p",317,181]],"r":[[6,1],[6,2],[2,4],[0,3],[7,1],[7,3],[8,3],[5,8],[7,5]],"keys":[[7,"sun"]],"locks":[[1,"sun"]],"parSwipes":2},
+ // 56 (campaign 7)
+ {"n":[["a",320,650],["a",77,650],["a",224,650],["s",134,418],["s",68,452],["p",330,417],["p",185,259],["p",353,209],["p",277,529],["p",192,358]],"r":[[8,1],[8,0],[8,2],[0,4],[1,3],[5,0],[5,8,1],[9,3],[9,8],[6,5],[6,9],[7,6],[7,5],[7,9],[5,9]],"parSwipes":2},
+ // 57 (campaign 8)
+ {"n":[["a",348,650],["a",251,650],["a",149,650],["s",322,462],["s",142,225],["p",347,295],["p",264,205],["p",327,214],["p",196,532],["p",209,397]],"r":[[8,0],[8,1],[2,3],[9,3],[5,3],[4,3],[7,9],[7,5],[6,5],[7,6]],"parSwipes":3},
+ // 58 (campaign 9) keys
+ {"n":[["a",195,650],["a",150,650],["a",63,650],["s",244,340],["s",184,228],["p",45,224],["p",103,385],["p",343,154],["p",277,503],["p",170,302]],"r":[[8,0],[8,2],[6,1],[6,8,1],[1,3],[9,8],[4,3],[5,6],[7,4],[5,9,1]],"keys":[[6,"sun"]],"locks":[[5,"sun"]],"parSwipes":3},
+ // 59 (campaign 11)
+ {"n":[["a",78,650],["a",344,650],["a",189,650],["a",42,650],["s",131,499],["s",124,115],["s",254,364],["p",320,373],["p",51,501],["p",315,481],["p",212,244],["p",263,113],["k",135,343]],"r":[[8,2],[8,0],[3,4],[9,3],[9,4],[7,4],[7,9],[2,6],[12,6],[10,7],[5,12],[11,5],[11,6]],"parSwipes":3},
+ // 60 (campaign 12) keys
+ {"n":[["a",241,650],["a",125,650],["a",313,650],["a",83,650],["s",319,190],["s",237,347],["s",195,181],["p",152,357],["p",86,166],["p",307,505],["p",244,109],["p",98,484]],"r":[[9,2],[9,1],[11,2],[11,3],[7,0],[1,5],[4,5],[6,5],[8,6],[8,5],[10,8,1],[11,7]],"keys":[[8,"sun"]],"locks":[[1,"sun"]],"parSwipes":3},
+ // 61 (campaign 13) ?
+ {"n":[["a",341,650],["a",244,650],["a",58,650],["a",303,650],["s",116,513],["h",296,362,"s"],["s",94,322],["p",94,234],["p",352,269],["p",119,383],["p",357,506],["p",240,393]],"r":[[1,4],[10,0],[10,1],[10,2],[11,4],[9,3],[9,11],[1,5],[6,5],[8,10],[8,9],[7,6],[9,4],[4,2]],"parSwipes":3},
+ // 62 (campaign 14)
+ {"n":[["a",320,650],["a",255,650],["a",58,650],["a",168,650],["s",163,372],["s",279,408],["s",299,472],["p",120,506],["p",353,288],["p",74,358],["p",43,276],["p",114,289],["k",164,318]],"r":[[7,0],[2,6],[3,5],[3,4],[9,4],[12,9],[11,9],[11,4],[8,4],[10,11],[6,7]],"parSwipes":3},
+ // 63 (campaign 16)
+ {"n":[["a",230,650],["a",81,650],["a",181,650],["a",353,650],["s",185,471],["s",110,324],["s",96,511],["p",310,424],["p",192,380],["p",274,169],["p",354,512],["p",270,339]],"r":[[10,0],[10,1],[2,6],[0,4],[7,0],[8,3],[11,8,1],[11,2],[5,8],[9,8,1],[6,5],[4,7]],"parSwipes":3},
+ // 64 (campaign 17) ?
+ {"n":[["a",80,650],["a",312,650],["a",124,650],["a",167,650],["s",87,282],["s",156,532],["s",279,349],["p",74,371],["h",298,529,"p"],["p",125,220],["p",344,388],["p",302,220],["p",219,524],["k",58,507]],"r":[[2,5],[8,2],[8,1],[12,1],[12,8],[3,13],[10,13],[10,8],[10,12],[7,8],[7,13],[7,5],[6,5],[4,6],[9,6],[9,12],[11,9],[11,6]],"parSwipes":3},
+ // 65 (campaign 18) keys, wall
+ {"n":[["a",86,650],["a",295,650],["a",369,650],["a",246,650],["s",131,520],["s",111,206],["s",66,463],["p",319,114],["p",279,389],["p",142,382],["p",300,183],["p",43,275]],"r":[[0,4],[0,6],[8,1],[9,4],[9,6],[11,9],[5,6],[10,8],[7,10],[4,11]],"keys":[[8,"sun"]],"locks":[[4,"sun"]],"barriers":[[208,-3000,208,3000]],"parSwipes":3},
+ // 66 (campaign 19)
+ {"n":[["a",322,650],["a",199,650],["a",75,650],["a",245,650],["s",78,453],["s",223,353],["s",225,444],["p",61,332],["p",279,509],["p",206,107],["p",68,530],["p",358,143],["p",44,120]],"r":[[10,2],[8,10],[1,4],[3,6],[5,4],[7,5],[11,5],[12,7],[12,5],[9,5],[9,7],[8,2],[10,6]],"parSwipes":3},
+ // 67 (campaign 21) keys, ?
+ {"n":[["a",241,650],["a",164,650],["a",297,650],["a",34,650],["s",182,244],["s",200,382],["h",124,351,"s"],["p",337,528],["p",150,125],["p",284,433],["p",90,501],["p",337,315]],"r":[[7,3],[7,2],[7,0],[10,1],[10,0],[9,3],[9,7],[1,5],[0,6],[11,9],[11,6],[4,11],[8,4],[11,7],[6,4]],"keys":[[10,"sun"]],"locks":[[11,"sun"]],"parSwipes":3},
+ // 68 (campaign 22) suns
+ {"n":[["a",168,650],["a",323,650],["a",54,650],["a",266,650],["s",123,183],["s",303,423],["s",146,290],["p",339,306],["p",220,496],["p",330,234],["p",274,193],["p",161,384],["p",202,221]],"r":[[8,2],[8,1],[3,5],[11,5],[11,2],[7,5],[6,7],[9,7],[9,6],[12,7,1],[10,5],[10,9,1],[4,5],[12,6],[11,9]],"suns":[11],"parSwipes":3},
+ // 69 (campaign 23) wall
+ {"n":[["a",239,650],["a",344,650],["a",42,650],["a",82,650],["s",45,356],["s",48,280],["s",68,123],["p",135,136],["p",108,507],["p",297,194],["p",135,445],["p",258,443],["p",314,376],["k",155,320]],"r":[[8,2],[10,8],[11,0],[11,1],[12,11],[2,4],[13,4],[5,13],[9,12],[7,5],[7,10],[6,13]],"barriers":[[192,-3000,192,3000]],"parSwipes":3},
+ // 70 (campaign 24) keys
+ {"n":[["a",39,650],["a",169,650],["a",222,650],["a",328,650],["s",324,448],["s",258,509],["s",251,150],["p",78,221],["p",59,373],["p",347,327],["p",318,233],["p",152,191],["p",354,510]],"r":[[12,1],[12,3],[0,5],[4,5],[8,4],[8,2],[9,4],[9,8],[10,8],[10,5],[10,9],[7,9],[11,5],[6,4],[10,11]],"keys":[[9,"sun"]],"locks":[[3,"sun"]],"parSwipes":3},
+ // 71 (campaign 25) ?
+ {"n":[["a",157,650],["a",369,650],["a",80,650],["a",296,650],["a",258,650],["s",346,436],["s",160,228],["s",271,389],["p",244,217],["p",46,401],["p",183,343],["p",121,413],["p",113,180],["h",315,525,"p"]],"r":[[13,2],[13,4],[1,5],[11,4],[9,11],[9,0],[0,7],[10,3],[6,7],[8,10,1],[12,9],[11,13],[5,13]],"parSwipes":3},
+ // 72 (campaign 26) suns
+ {"n":[["a",325,650],["a",107,650],["a",223,650],["a",285,650],["a",142,650],["s",168,495],["s",258,283],["s",276,376],["s",72,427],["p",348,208],["p",265,115],["p",191,372],["p",222,185],["p",352,490],["p",87,170],["p",45,526],["k",92,312]],"r":[[15,0],[15,1],[0,5],[13,0],[13,2],[2,8],[4,7],[11,8],[11,5],[16,11],[6,11],[9,13],[9,6],[12,8],[12,6],[14,6],[14,5],[14,12,1],[10,12],[10,6],[15,11]],"suns":[14],"parSwipes":3},
+ // 73 (campaign 27) keys
+ {"n":[["a",48,650],["a",296,650],["a",354,650],["a",209,650],["a",107,650],["s",211,151],["s",104,320],["s",314,523],["s",188,370],["p",324,329],["p",344,266],["p",156,442],["p",234,285],["p",99,239],["p",341,176]],"r":[[4,7],[11,0],[11,2],[1,8],[9,8],[4,6],[12,9],[12,7],[12,8],[10,9],[10,12],[13,8],[14,13],[14,10],[5,6]],"keys":[[13,"sun"],[12,"moon"]],"locks":[[2,"sun"],[9,"moon"]],"parSwipes":3},
+ // 74 (campaign 28) wall
+ {"n":[["a",96,650],["a",135,650],["a",41,650],["a",369,650],["a",329,650],["s",142,206],["s",81,280],["s",140,400],["s",139,529],["p",351,231],["p",117,105],["p",42,537],["p",57,158],["p",280,409],["p",314,121],["p",60,422]],"r":[[11,2],[0,8],[15,8],[15,1],[13,3],[2,7],[6,7],[9,13,1],[5,7],[12,5],[14,9],[10,6],[10,12]],"barriers":[[199,-3000,199,3000]],"parSwipes":3},
+ // 75 (campaign 29) ?
+ {"n":[["a",329,650],["a",176,650],["a",89,650],["a",226,650],["a",270,650],["h",349,534,"s"],["s",237,403],["s",311,119],["s",339,379],["p",152,304],["h",75,494,"p"],["p",152,430],["p",263,224],["p",247,291],["p",123,232],["k",156,378]],"r":[[1,5],[10,1],[10,5],[11,5],[4,6],[3,8],[15,11],[9,15],[9,10],[13,5],[14,9,1],[14,13],[12,8],[12,9],[12,14],[7,8],[13,12],[13,15],[11,2],[11,3]],"parSwipes":3},
+ // 76 (campaign 30) keys, suns
+ {"n":[["a",142,650],["a",312,650],["a",361,650],["a",277,650],["a",74,650],["s",131,424],["s",276,452],["s",345,163],["s",128,303],["p",127,239],["p",352,235],["p",164,500],["p",344,408],["p",313,286],["p",246,372]],"r":[[11,2],[0,6],[4,5],[12,3],[12,6],[14,12,1],[8,5],[13,8],[9,14],[9,13],[10,13],[7,5],[14,8],[13,6],[14,13],[14,5]],"keys":[[11,"sun"]],"locks":[[15,"sun"]],"suns":[9],"parSwipes":3},
+ // 77 (campaign 31)
+ {"n":[["a",136,650],["a",268,650],["a",91,650],["a",346,650],["a",310,650],["s",245,385],["s",273,204],["s",184,374],["s",358,156],["p",90,182],["p",71,295],["p",282,501],["p",192,240],["p",321,360],["p",355,498],["p",131,136]],"r":[[11,4],[11,0],[14,1],[14,11,1],[0,5],[1,7],[13,14,1],[13,11],[10,7],[10,13,1],[12,13],[12,10,1],[6,13],[9,7],[9,12],[9,10,1],[8,5],[15,6],[7,2],[7,6]],"parSwipes":3},
+ // 78 (campaign 32)
+ {"n":[["a",30,650],["a",224,650],["a",270,650],["a",322,650],["a",153,650],["s",167,333],["s",107,386],["s",51,217],["s",217,212],["p",250,386],["p",321,419],["p",354,337],["p",279,222],["p",347,185],["p",42,401],["p",303,505],["k",345,244]],"r":[[15,3],[15,1],[15,0],[10,15],[14,4],[2,6],[9,2],[9,10],[9,4],[11,9],[11,10,1],[1,5],[16,5],[12,9],[12,10,1],[7,5],[8,7],[13,16],[13,12],[16,9],[5,11],[5,8]],"parSwipes":3},
+ // 79 (campaign 33) keys, wall
+ {"n":[["a",89,650],["a",285,650],["a",144,650],["a",364,650],["a",30,650],["s",143,511],["s",106,319],["s",157,358],["s",159,180],["p",347,137],["p",312,222],["p",69,153],["p",47,428],["p",340,347],["p",286,318]],"r":[[0,5],[12,0],[12,5],[4,7],[13,3],[6,5],[14,13],[10,14],[10,13],[8,6],[11,8],[9,10]],"keys":[[14,"sun"],[13,"moon"]],"locks":[[10,"sun"],[5,"moon"]],"barriers":[[216,-3000,216,3000]],"parSwipes":3},
+ // 80 (campaign 34) suns
+ {"n":[["a",133,650],["a",241,650],["a",317,650],["a",42,650],["a",78,650],["s",218,184],["s",75,187],["s",70,388],["s",186,346],["p",217,275],["p",306,361],["p",76,251],["p",278,203],["p",345,191],["p",44,479],["p",291,423]],"r":[[14,0],[14,2],[15,2],[15,14],[15,4],[1,7],[10,15],[4,8],[9,15],[11,8],[11,9,1],[12,10,1],[12,9,1],[13,12],[13,10],[6,9],[5,7],[9,10]],"suns":[14],"parSwipes":3},
+ // 81 (campaign 35)
+ {"n":[["a",163,650],["a",264,650],["a",119,650],["a",47,650],["a",304,650],["s",98,451],["s",80,143],["s",243,519],["s",210,240],["p",300,409],["p",226,314],["p",353,532],["p",356,435],["p",138,197],["p",316,252],["p",56,503],["k",79,370]],"r":[[11,3],[11,4],[2,7],[15,1],[15,7],[0,5],[12,7],[9,5],[16,7],[10,9],[10,5],[14,10],[8,16],[13,8],[6,16],[12,11],[9,14],[7,4]],"parSwipes":3},
+ // 82 (campaign 36) keys, suns
+ {"n":[["a",310,650],["a",198,650],["a",143,650],["a",79,650],["a",238,650],["s",46,111],["s",79,334],["s",276,217],["s",185,506],["p",186,147],["p",339,441],["p",315,288],["p",81,166],["p",157,319],["p",273,401],["p",88,455]],"r":[[4,8],[15,2],[15,8],[10,4],[10,15],[14,0],[14,1],[6,14],[13,8],[13,15],[13,6],[11,10,1],[7,8],[12,11],[9,13],[9,12],[5,9],[8,10]],"keys":[[12,"sun"]],"locks":[[5,"sun"]],"suns":[10,15],"parSwipes":3},
+ // 83 (campaign 37) ?
+ {"n":[["a",244,650],["a",44,650],["a",323,650],["a",93,650],["a",285,650],["h",242,495,"s"],["s",179,250],["s",111,370],["s",303,320],["h",116,510,"p"],["p",333,476],["p",70,251],["p",313,398],["p",279,194],["p",45,539],["p",98,177]],"r":[[14,3],[14,0],[9,14],[9,3],[1,5],[10,2],[10,5],[12,0],[12,9,1],[0,7],[8,7],[11,12,1],[6,8],[13,8],[13,6],[15,13],[6,15],[5,12],[10,12]],"parSwipes":3},
+ // 84 (campaign 38) suns, wall
+ {"n":[["a",340,650],["a",53,650],["a",291,650],["a",117,650],["a",156,650],["s",43,498],["s",315,322],["s",151,530],["s",150,299],["p",148,168],["p",315,501],["p",343,158],["p",289,379],["p",48,185],["p",330,256],["p",117,401],["k",48,306]],"r":[[3,7],[10,2],[4,5],[15,5],[12,10],[6,12],[16,5],[8,16],[14,6],[13,8],[13,15],[9,16],[9,8],[11,14]],"suns":[10],"barriers":[[214,-3000,214,3000]],"parSwipes":3},
+ // 85 (campaign 39) keys
+ {"n":[["a",79,650],["a",213,650],["a",44,650],["a",266,650],["a",160,650],["s",171,357],["s",73,225],["s",71,364],["s",233,357],["p",345,519],["p",197,437],["p",59,451],["p",189,168],["p",323,448],["p",339,210],["p",143,119]],"r":[[9,2],[11,9,1],[11,4],[13,1],[13,0],[10,13],[1,7],[0,5],[3,8],[6,5],[14,6],[14,7],[12,5],[12,13],[15,12],[15,6]],"keys":[[13,"sun"],[10,"moon"]],"locks":[[10,"sun"],[7,"moon"]],"parSwipes":3},
+ // 86 (campaign 40) suns
+ {"n":[["a",201,650],["a",297,650],["a",106,650],["a",366,650],["a",257,650],["a",151,650],["s",228,497],["s",314,285],["s",56,208],["s",123,273],["p",297,113],["p",276,178],["p",105,453],["p",234,273],["p",303,391],["p",120,540],["p",76,387]],"r":[[15,1],[15,5],[15,0],[2,6],[12,4],[12,15],[14,3],[14,6],[14,4],[16,12,1],[7,12],[9,6],[13,15],[13,14,1],[8,9],[11,13,1],[11,9],[10,11],[10,8],[6,13],[14,12],[6,4]],"suns":[12,16],"parSwipes":3}
+];
+
+// Campaign order (numbers are the authored ids above). Tutorials stay hand-made at 1 (swipe), 5 (key), 10 (? cloud), 15 (wall),
+// 20 (sun); every other slot is a tangled chaos-pack level (52+) from tools/level-forge.mjs, rebuilt with tools/apply-forged.mjs.
+// Levels 2-51 other than the tutorials are kept above for reference but are no longer in the campaign.
+const LEVEL_ORDER=[1,52,53,54,31,55,56,57,58,35,59,60,61,62,39,63,64,65,66,43,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86];
+const LEVELS=LEVEL_ORDER.map(id=>({...RAW_LEVELS[id-1],id}));
+
+// ---------- level checks for the mechanic pack ----------
+// Rejects configs the design forbids: hidden clouds without a true type, keys that can only be reached through their own lock.
+const typeOf=v=>v[0]==="h"?v[3]:v[0];
+function maxflow(N,edges,src,snk){
+  const S=N,T=N+1,INF=1e6,cap=[...Array(N+2)].map(()=>new Array(N+2).fill(0));
+  for(const[a,b,c]of edges){cap[a][b]+=c;cap[b][a]+=c;}
+  for(const i of src)cap[S][i]=INF;for(const i of snk)cap[i][T]=INF;
+  let flow=0;
+  for(;;){const prev=new Array(N+2).fill(-1);prev[S]=S;const q=[S];
+    while(q.length&&prev[T]<0){const u=q.shift();for(let v=0;v<N+2;v++)if(prev[v]<0&&cap[u][v]>0){prev[v]=u;q.push(v);}}
+    if(prev[T]<0)break;let f=INF;for(let v=T;v!==S;v=prev[v])f=Math.min(f,cap[prev[v]][v]);
+    for(let v=T;v!==S;v=prev[v]){cap[prev[v]][v]-=f;cap[v][prev[v]]+=f;}flow+=f;if(flow>=INF)break;}
+  return flow;
+}
+function checkLevel(def){
+  const err=[],N=def.n.length,lockOf={};
+  for(const[ri,sym]of def.locks||[]){if(!def.r[ri])err.push(`lock on missing rope ${ri}`);else if(def.r[ri][2])err.push(`rope ${ri} is a chain and locked`);lockOf[ri]=sym;}
+  const keySyms=new Set();
+  for(const[ni,sym]of def.keys||[]){if(!def.n[ni]||typeOf(def.n[ni])!=="p")err.push(`key ${sym} is not on a puff`);keySyms.add(sym);}
+  for(const sym of new Set(Object.values(lockOf)))if(!keySyms.has(sym))err.push(`lock ${sym} has no key`);
+  // one key opens one lock, but a lock may stay shut on purpose (e.g. the storm's lock in level 23), so fewer keys than locks is allowed
+  // a hidden cloud must say what it really is, and nothing may be hidden behind a key badge (keys only sit on puffs anyway)
+  def.n.forEach((v,i)=>{if(v[0]==="h"&&v[3]!=="p"&&v[3]!=="s")err.push(`hidden cloud ${i} has no true type`);
+    if(v[0]==="h"&&(def.keys||[]).some(k=>k[0]===i))err.push(`hidden cloud ${i} wears a key badge`);});
+  // keys must be reachable in some order: free each key puff from anchors and storms without cutting chains or still-locked ropes
+  const have=new Set();let grew=true;
+  for(const ni of def.suns||[]){const v=def.n[ni];if(!v||v[0]!=="p")err.push(`sun ${ni} is not on a plain puff`);}
+  const holders=def.n.map((v,i)=>i).filter(i=>typeOf(def.n[i])==="a"||typeOf(def.n[i])==="s");
+  while(grew){grew=false;
+    for(const[ni,sym]of def.keys||[]){if(have.has(sym))continue;
+      const edges=def.r.map(([a,b,s],ri)=>[a,b,s||(lockOf[ri]&&!have.has(lockOf[ri]))?1e6:1]);
+      if(maxflow(N,edges,holders,[ni])<1e6){have.add(sym);grew=true;}}}
+  for(const sym of keySyms)if(!have.has(sym))err.push(`key ${sym} can't be reached (lock cycle)`);
+  if(def.locks||def.barriers||def.suns||def.n.some(v=>v[0]==="h")){if(!def.parSwipes)err.push("missing parSwipes");}
+  return err;
+}
+LEVELS.forEach((d,i)=>{const e=checkLevel(d);if(e.length)console.warn(`Level ${i+1}:`,e.join("; "));});
+
+// ---------- RNG / generator ----------
+function rng(seed){let a=seed>>>0;return()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296;};}
+function segPointDist(ax,ay,bx,by,px,py){const dx=bx-ax,dy=by-ay,l=dx*dx+dy*dy;let t=l?((px-ax)*dx+(py-ay)*dy)/l:0;t=Math.max(0,Math.min(1,t));return Math.hypot(ax+dx*t-px,ay+dy*t-py);}
+function genLevel(seed,diff){
+  const R=rng(seed);
+  for(let attempt=0;attempt<400;attempt++){
+    const n=[],r=[],has=new Set();
+    const nA=3+(R()<.5?1:0)+(diff>5?1:0);
+    for(let i=0;i<nA;i++)n.push(["a",Math.round(45+(i+.5)*(310/nA)+(R()-.5)*30),650]);
+    const nS=Math.min(1+Math.floor(diff/4),3),nP=Math.min(2+Math.floor(diff/2),7);
+    const knot=diff>=3&&R()<.5;
+    const cre=[];
+    const place=(t,ymin,ymax,minD)=>{for(let k=0;k<80;k++){const x=50+R()*300,y=ymin+R()*(ymax-ymin);if(cre.every(c=>Math.hypot(n[c][1]-x,n[c][2]-y)>minD)){n.push([t,Math.round(x),Math.round(y)]);cre.push(n.length-1);return n.length-1;}}return -1;};
+    let ok=true,K=-1;
+    if(knot){K=place("k",440,540,70);if(K<0)ok=false;}
+    const S=[],P=[];
+    for(let i=0;i<nS&&ok;i++){const s=place("s",170,470,90);if(s<0)ok=false;else S.push(s);}
+    for(let i=0;i<nP&&ok;i++){const p=place("p",110,480,80);if(p<0)ok=false;else P.push(p);}
+    if(!ok)continue;
+    const clear=(a,b)=>cre.every(c=>c===a||c===b||segPointDist(n[a][1],n[a][2],n[b][1],n[b][2],n[c][1],n[c][2])>(n[c][0]==="s"?40:n[c][0]==="k"?16:34));
+    const add=(a,b,steel)=>{const key=Math.min(a,b)+"_"+Math.max(a,b);if(has.has(key)||!clear(a,b))return false;has.add(key);r.push(steel?[a,b,1]:[a,b]);return true;};
+    const anchorsBy=(i)=>n.map((v,j)=>j).filter(j=>n[j][0]==="a").sort((p,q)=>Math.abs(n[p][1]-n[i][1])-Math.abs(n[q][1]-n[i][1]));
+    for(const s of S){if(!anchorsBy(s).some(a=>add(a,s))){ok=false;break;}}
+    if(ok&&K>=0&&!anchorsBy(K).some(a=>add(a,K)))ok=false;
+    if(!ok)continue;
+    P.sort((p,q)=>n[q][2]-n[p][2]);
+    const done=[];
+    for(const p of P){
+      const cand=[...anchorsBy(p).slice(0,2),...S,...done,...(K>=0?[K]:[])].filter(j=>Math.hypot(n[j][1]-n[p][1],n[j][2]-n[p][2])<340&&n[j][2]>=n[p][2]-40);
+      for(let i=cand.length-1;i>0;i--){const j=Math.floor(R()*(i+1));[cand[i],cand[j]]=[cand[j],cand[i]];}
+      let want=1+(R()<.3+diff*.04?1:0)+(diff>8&&R()<.25?1:0),got=0;
+      for(const c of cand){if(got>=want)break;if(add(p,c,diff>4&&n[c][0]==="p"&&R()<.3))got++;}
+      if(!got){ok=false;break;}
+      done.push(p);
+    }
+    if(!ok)continue;
+    // every component anchored; at least one puff touches a storm (diff>=2)
+    const comp=components(n.length,r.map(x=>[x[0],x[1]]));
+    if(!n.every((v,i)=>n.some((w,j)=>w[0]==="a"&&comp[j]===comp[i])))continue;
+    if(diff>=2&&!r.some(([a,b])=>(n[a][0]==="s"&&n[b][0]==="p")||(n[b][0]==="s"&&n[a][0]==="p")))continue;
+    return {n,r};
+  }
+  return LEVELS[Math.min(diff,LEVELS.length-1)];
+}
+// Fewest threads that must be cut: min cut between {anchors, storms} and {puffs}; chains can't be cut.
+function minCuts(def){
+  const N=def.n.length,S=N,T=N+1,INF=1e6,cap=[...Array(N+2)].map(()=>new Array(N+2).fill(0));
+  for(const[a,b,s]of def.r){const c=s?INF:1;cap[a][b]+=c;cap[b][a]+=c;}
+  def.n.forEach((v,i)=>{const t=typeOf(v);if(t==="a"||t==="s")cap[S][i]=INF;else if(t==="p")cap[i][T]=INF;});
+  let flow=0;
+  for(;;){const prev=new Array(N+2).fill(-1);prev[S]=S;const q=[S];
+    while(q.length&&prev[T]<0){const u=q.shift();for(let v=0;v<N+2;v++)if(prev[v]<0&&cap[u][v]>0){prev[v]=u;q.push(v);}}
+    if(prev[T]<0)break;let f=INF;for(let v=T;v!==S;v=prev[v])f=Math.min(f,cap[prev[v]][v]);
+    for(let v=T;v!==S;v=prev[v]){cap[prev[v]][v]-=f;cap[v][prev[v]]+=f;}flow+=f;if(flow>=INF)break;}
+  return Math.max(1,Math.min(flow,def.r.filter(r=>!r[2]).length));
+}
+function components(N,edges){const p=[...Array(N).keys()];const f=x=>p[x]===x?x:(p[x]=f(p[x]));for(const[a,b]of edges)p[f(a)]=f(b);return p.map(f);}
+
+// ---------- audio ----------
+let AC=null;
+function ac(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)();}catch(e){}}if(AC&&AC.state==="suspended")AC.resume();return AC;}
+function noise(dur,f,type,vol){const a=ac();if(!a)return;const b=a.createBuffer(1,a.sampleRate*dur,a.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*(1-i/d.length);const s=a.createBufferSource();s.buffer=b;const fl=a.createBiquadFilter();fl.type=type;fl.frequency.value=f;const g=a.createGain();g.gain.value=vol;s.connect(fl).connect(g).connect(a.destination);s.start();}
+function tone(f1,f2,dur,type,vol,delay=0){const a=ac();if(!a)return;const o=a.createOscillator(),g=a.createGain(),t=a.currentTime+delay;o.type=type;o.frequency.setValueAtTime(f1,t);o.frequency.exponentialRampToValueAtTime(f2,t+dur);g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);o.connect(g).connect(a.destination);o.start(t);o.stop(t+dur);}
+const SFX={
+  snip:()=>{noise(.08,3500,"highpass",.35);tone(1800,900,.05,"square",.04);},
+  clang:()=>{tone(900,880,.25,"triangle",.12);tone(1350,1300,.2,"sine",.06);},
+  pop:(i=0)=>tone(420+i*80,980+i*120,.18,"sine",.18,i*.05),
+  thunder:()=>{noise(1.6,180,"lowpass",.9);noise(.3,1200,"bandpass",.4);},
+  locked:()=>{tone(260,220,.09,"square",.06);tone(520,500,.06,"triangle",.06,.05);},
+  unlock:()=>[880,1175,1568].forEach((f,i)=>tone(f,f*1.02,.18,"triangle",.11,i*.07)),
+  wall:()=>{noise(.05,900,"bandpass",.5);tone(320,180,.08,"square",.07);},
+  revealPuff:()=>{tone(600,1200,.16,"sine",.14);tone(900,1500,.14,"triangle",.07,.06);},
+  revealStorm:()=>{noise(.45,220,"lowpass",.55);tone(140,90,.3,"sawtooth",.06);},
+  dispel:()=>{[784,1047,1319].forEach((f,i)=>tone(f,f*1.04,.22,"sine",.12,i*.05));noise(.35,4000,"highpass",.18);},
+  win:()=>[523,659,784,1047].forEach((f,i)=>tone(f,f,.25,"triangle",.15,i*.1)),
+  fail:()=>[392,330,262].forEach((f,i)=>tone(f,f*.97,.3,"triangle",.14,i*.14))
+};
+
+// ---------- canvas ----------
+const W=400,H=720,GROUND=655;
+const cv=document.getElementById("c"),ctx=cv.getContext("2d");
+let DPR=1,SC=1,OX=0,OY=0,CW=0,CH=0;
+const PLAY_TOP=58; // highest world y used by creatures (minus radius)
+function resize(){
+  const vv=window.visualViewport;
+  CW=Math.round(vv?vv.width:innerWidth);CH=Math.round(vv?vv.height:innerHeight);
+  DPR=Math.min(window.devicePixelRatio||1,3);cv.width=Math.round(CW*DPR);cv.height=Math.round(CH*DPR);
+  // room taken by the HUD (incl. notch + hint), measured from the DOM
+  const hud=document.getElementById("hud");
+  const reserve=hud&&hud.classList.contains("on")?hud.getBoundingClientRect().bottom+6:70;
+  const avail=Math.max(200,CH-reserve);
+  // world y PLAY_TOP..H must fit between the HUD and the bottom of the screen
+  SC=Math.min(CW/W,avail/(H-PLAY_TOP));
+  OX=(CW-W*SC)/2;OY=CH-H*SC;
+}
+addEventListener("resize",resize);
+if(window.visualViewport)visualViewport.addEventListener("resize",resize);
+addEventListener("orientationchange",()=>setTimeout(resize,250));
+resize();
+const toWorld=(x,y)=>({x:(x-OX)/SC,y:(y-OY)/SC});
+
+// ---------- game state ----------
+const PUFFCOL=["#ffd3e6","#cfe9ff","#fff1b8","#d6f5d0","#e6dbff"];
+let G=null; // current level runtime
+let mode="campaign",levelIdx=0,endlessStreak=0,dailyKey="";
+let bgClouds=[...Array(6)].map((_,i)=>({x:Math.random()*W,y:40+Math.random()*300,s:.6+Math.random()*.8,v:4+Math.random()*8}));
+let parts=[],bolts=[],flash=0,trail=[],chips=[],confetti=[],shake=0,tint=0;
+
+function makeStrand(a,b,steel,rope){
+  const N=14,pts=[];
+  for(let i=0;i<N;i++){const t=i/(N-1);const x=a.x+(b.x-a.x)*t,y=a.y+(b.y-a.y)*t;pts.push({x,y,px:x,py:y});}
+  // nearly taut: creatures pull upward, so threads read as tight lines
+  const rest=Math.hypot(b.hx-a.hx,b.hy-a.hy)*.997/(N-1);
+  return {pts,pinA:a,pinB:b,steel,rope,rest,life:1};
+}
+function startLevel(def,label){
+  let order=0;
+  // hidden clouds play by their true type from the start; only the drawing (and size, so it cannot give it away) is masked
+  const nodes=def.n.map((v,i)=>{const hidden=v[0]==="h",t=typeOf(v),x=v[1],y=v[2];return {i,t,hidden,x,y:t==="a"?y:y+26,hx:x,hy:y,vx:0,vy:0,free:false,zap:false,gone:false,ph:Math.random()*6.28,sq:0,
+    appear:t==="a"?1:-(order++)*.05,
+    r:hidden?30:t==="s"?33:t==="p"?27:t==="k"?11:10,col:PUFFCOL[i%PUFFCOL.length],blink:Math.random()*4,key:null,keyFlash:0};});
+  const ropes=def.r.map(([a,b,s])=>({a,b,steel:!!s,cut:false,len:Math.hypot(nodes[a].hx-nodes[b].hx,nodes[a].hy-nodes[b].hy),
+    lock:null,lockShake:0,unlockT:0}));
+  for(const[ni,sym]of def.keys||[])nodes[ni].key=sym;
+  for(const ni of def.suns||[])nodes[ni].sun=true;
+  for(const[ri,sym]of def.locks||[])ropes[ri].lock=sym;
+  const barriers=(def.barriers||[]).map(([x1,y1,x2,y2])=>({x1,y1,x2,y2,r:11}));
+  const strands=ropes.map(r=>{const st=makeStrand(nodes[r.a],nodes[r.b],r.steel,r);r.strand=st;return st;});
+  // one spare swipe beyond the 2-star mark (two on tutorial levels with a guided hand), then doubled so tangled skies leave room to recover
+  const par=def.parSwipes||minCuts(def),budget=(def.budgetSwipes||par+(def.id&&GUIDES[def.id]?2:1))*2;
+  G={def,nodes,ropes,strands,barriers,par,budget,cuts:0,swipes:0,state:"play",endT:0,label,puffs:nodes.filter(n=>n.t==="p").length,freed:0,
+    keysGiven:new Set(),beams:[],marks:[],wallHits:0};
+  bladeBlocked=false;clearTimeout(toastTimer);
+  renderCuts();
+  parts=[];bolts=[];flash=0;trail=[];chips=[];confetti=[];shake=0;tint=0;
+  document.getElementById("lvname").textContent=label;
+  const hint=document.getElementById("hint");
+  const h=mode==="campaign"&&def.id&&HINTS[def.id];
+  hint.style.display=h?"block":"none";if(h)hint.textContent=h[save.lang==="vi"?1:0];
+  baseHint=h?h[save.lang==="vi"?1:0]:null;
+  G.guide=mode==="campaign"&&def.id&&GUIDES[def.id]?{steps:GUIDES[def.id],i:-1}:null;
+  show(null);document.getElementById("hud").classList.add("on");
+  const tu=mode==="campaign"&&def.id&&TUTS[def.id];
+  if(tu&&!save.tutSeen[def.id]){
+    const L=save.lang==="vi"?1:0;
+    document.getElementById("tutTitle").textContent=tu.title[L];document.getElementById("tutIc").innerHTML=IC[tu.ic];
+    document.getElementById("tutText").innerHTML=tu.text[L];
+    document.getElementById("tutGo").onclick=()=>{save.tutSeen[def.id]=1;persist();show(null);};
+    show("tut");
+  }
+  updateGuide();
+  resize();
+}
+
+// ---------- rules ----------
+// One resolution step. Sun clouds: a storm that breaks loose is cleared by a sun cloud freed in the same step (one storm per sun,
+// closest pairs first); a freed sun with nothing to rescue clears the nearest storm still tied down, which can free more clouds,
+// so the board is re-checked until nothing changes. More loose storms than freed suns is a loss.
+function evaluate(){
+  let k=0;const keyPuffs=[];
+  for(let pass=0;pass<30&&G.state==="play";pass++){
+    const live=G.ropes.filter(r=>!r.cut).map(r=>[r.a,r.b]);
+    const comp=components(G.nodes.length,live);
+    const anchored=new Set();G.nodes.forEach(n=>{if(n.t==="a")anchored.add(comp[n.i]);});
+    const groups={};
+    G.nodes.forEach(n=>{if(!anchored.has(comp[n.i])&&!n.free)(groups[comp[n.i]]=groups[comp[n.i]]||[]).push(n);});
+    const gs=Object.values(groups);if(!gs.length)break;
+    const escaping=gs.flatMap(g=>g.filter(n=>n.t==="s")),suns=gs.flatMap(g=>g.filter(n=>n.sun&&!n.sunUsed));
+    if(escaping.length>suns.length){
+      for(const g of gs)if(g.some(n=>n.t==="s"))g.forEach(n=>{reveal(n,false);n.free=true;n.vy=-40;});
+      lose("storm",escaping);return;
+    }
+    // pair loose storms with freed suns, closest pairs first
+    const pairs=[];for(const st of escaping)for(const u of suns)pairs.push([Math.hypot(st.hx-u.hx,st.hy-u.hy),st,u]);
+    pairs.sort((p,q)=>p[0]-q[0]||p[1].i-q[1].i||p[2].i-q[2].i);
+    for(const[,st,u]of pairs)if(!st.dead&&!u.sunUsed)dispel(st,u);
+    for(const g of gs){
+      const m=g.filter(n=>!n.dead);
+      for(const n of m){if(n.key)keyPuffs.push(n);reveal(n,true);}
+      // every thread still tying the freed group together falls away, so each puff flies off on its own
+      const inG=new Set(m.map(n=>n.i));
+      for(const r of G.ropes){if(r.cut||!inG.has(r.a))continue;r.cut=true;const A=G.nodes[r.a],B=G.nodes[r.b];shatterRope(r,{x:(A.x+B.x)/2,y:(A.y+B.y)/2},false);}
+      m.forEach(n=>{n.free=true;n.vy=-90-Math.random()*40;n.vx=(Math.random()-.5)*60;n.sq=1;if(n.t==="p"){G.freed++;SFX.pop(k++);burst(n.x,n.y,12,["#fff","#ffe27a","#ffb3d1"],160);}});
+    }
+    let changed=false;
+    for(const u of suns){if(u.sunUsed)continue;const t=sunTarget(u);if(t){dispel(t,u);changed=true;}}
+    if(!changed)break;
+  }
+  if(G.state!=="play")return;
+  // storms are checked first: a key that escaped this step only counts if no storm broke loose
+  for(const n of keyPuffs)grantKey(n);
+  if(G.freed>=G.puffs&&G.state==="play"){G.state="won";G.endT=1.9;
+    G.stars=G.swipes<=G.par?3:G.swipes<=G.par+1?2:1;for(const n of G.nodes)reveal(n,false);setTimeout(()=>{SFX.win();if(G&&G.state==="won")spawnConfetti();},300);}
+}
+// the storm a sun cloud would clear right now: the nearest one still tied down (by home position, so it is predictable)
+function sunTarget(u){let best=null,bd=Infinity;
+  for(const n of G.nodes){if(n.t!=="s"||n.free||n.dead)continue;const d=Math.hypot(n.hx-u.hx,n.hy-u.hy);if(d<bd-1e-6){bd=d;best=n;}}
+  return best;}
+function dispel(st,u){
+  u.sunUsed=true;st.dead=true;st.free=true;st.dispelT=1;reveal(st,false);
+  for(const r of G.ropes){if(r.cut||(r.a!==st.i&&r.b!==st.i))continue;r.cut=true;shatterRope(r,ropeMid(r),false);}
+  G.beams.push({from:u,to:{x:st.x,y:st.y},sym:"sun",t:.9,wide:true});
+  burst(st.x,st.y,26,["#fff","#ffe27a","#ffc21f","#fff7d6"],260);SFX.dispel();flash=Math.max(flash,.35);
+}
+function updateGuide(){
+  const gd=G&&G.guide;if(!gd)return;
+  let i=Math.max(0,gd.i);while(i<gd.steps.length&&gd.steps[i].until(G))i++;
+  if(i===gd.i)return;gd.i=i;
+  const st=gd.steps[i],el=document.getElementById("hint");
+  baseHint=st?st.text[save.lang==="vi"?1:0]:null;
+  clearTimeout(toastTimer);
+  if(baseHint){el.textContent=baseHint;el.style.display="block";}else if(G.state==="play")el.style.display="none";
+}
+// Each key puff opens exactly ONE lock of its symbol. Unused keys and closed locks are paired closest-first (by home positions),
+// each lock to one key, so the dotted lines never share a lock and show exactly what will open. Two locks need two keys.
+function keyTarget(n){
+  const keys=G.nodes.filter(k=>k.key&&!k.keyUsed),locks=G.ropes.filter(r=>!r.cut&&r.lock),pairs=[];
+  for(const k of keys)for(const r of locks){if(r.lock!==k.key)continue;const A=G.nodes[r.a],B=G.nodes[r.b];
+    pairs.push([Math.hypot((A.hx+B.hx)/2-k.hx,(A.hy+B.hy)/2-k.hy),k,r]);}
+  pairs.sort((p,q)=>p[0]-q[0]||p[1].i-q[1].i||G.ropes.indexOf(p[2])-G.ropes.indexOf(q[2]));
+  const usedK=new Set(),usedL=new Set();
+  for(const[,k,r]of pairs){if(usedK.has(k)||usedL.has(r))continue;usedK.add(k);usedL.add(r);if(k===n)return r;}
+  return null;
+}
+function grantKey(n){
+  if(!n.key||n.keyUsed)return;const r=keyTarget(n);n.keyUsed=true;G.keysGiven.add(n.key);if(!r)return;const sym=n.key;
+  r.lock=null;r.unlockT=1;r.unlockSym=sym;
+  const m=ropeMid(r);G.beams.push({from:n,to:m,sym,t:.7});burst(m.x,m.y,12,[KEYCOL[sym].main,"#fff",KEYCOL[sym].light],170);
+  SFX.unlock();toast("unlock");
+}
+function ropeMid(r){const P=r.strand.pts,i=P.length>>1;return {x:(P[i-1].x+P[i].x)/2,y:(P[i-1].y+P[i].y)/2};}
+function lose(why,storms){
+  if(G.state!=="play")return;
+  G.state="lost";G.why=why;G.endT=2.0;SFX.thunder();flash=1;shake=1;
+  for(const n of G.nodes)reveal(n,false);
+  const src=storms&&storms.length?storms:G.nodes.filter(n=>n.t==="s"&&!n.dead);
+  if(!storms){src.forEach(s=>{s.free=true;s.vy=-30;});}
+  G.nodes.filter(n=>n.t==="p"&&!n.gone).forEach((p,i)=>{
+    const s=src[i%Math.max(1,src.length)];
+    setTimeout(()=>{if(!G||G.state!=="lost")return;p.zap=true;p.free=false;p.vx=0;p.vy=0;p.sq=1;
+      bolts.push({a:s,b:p,t:.45});burst(p.x,p.y,10,["#ffe45c","#fff","#555"],200);flash=Math.max(flash,.5);shake=Math.max(shake,.45);},250+i*120);
+  });
+  if(!src.length)G.nodes.filter(n=>n.t==="p").forEach(p=>p.zap=true);
+}
+
+// ---------- input ----------
+let down=false,last=null,strokeHit=false,strokeSteel=new Set(),bladeBlocked=false;
+const KEYCOL={sun:{main:"#ffb51f",light:"#fff1c2",dark:"#9a5a00"},moon:{main:"#5d8df0",light:"#e2ecff",dark:"#23408f"}};
+let toastTimer=0,baseHint=null;
+function toast(k){
+  const el=document.getElementById("hint"),m=TOAST[k];if(!m)return;
+  el.textContent=m[save.lang==="vi"?1:0];el.style.display="block";
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>{if(baseHint){el.textContent=baseHint;}else el.style.display="none";},1800);
+}
+function segX(p1,p2,p3,p4){const d=(p2.x-p1.x)*(p4.y-p3.y)-(p2.y-p1.y)*(p4.x-p3.x);if(Math.abs(d)<1e-9)return null;
+  const t=((p3.x-p1.x)*(p4.y-p3.y)-(p3.y-p1.y)*(p4.x-p3.x))/d,u=((p3.x-p1.x)*(p2.y-p1.y)-(p3.y-p1.y)*(p2.x-p1.x))/d;
+  return t>=0&&t<=1&&u>=0&&u<=1?{x:p1.x+(p2.x-p1.x)*t,y:p1.y+(p2.y-p1.y)*t,t}:null;}
+// first point (as a fraction of a->b) where the blade touches a wall, or null
+function wallHitT(a,b,w){
+  const n=Math.max(1,Math.ceil(Math.hypot(b.x-a.x,b.y-a.y)/2));
+  for(let i=0;i<=n;i++){const t=i/n;if(segPointDist(w.x1,w.y1,w.x2,w.y2,a.x+(b.x-a.x)*t,a.y+(b.y-a.y)*t)<=w.r)return t;}
+  return null;
+}
+// One piece of a swipe: hits are handled in the order the blade meets them, a wall ends the blade until the finger lifts,
+// ? clouds on a cut thread show what they are, and only then do groups fly, storms get checked and keys open locks (for the next piece).
+function trySlice(a,b){
+  if(!G||G.state!=="play"||bladeBlocked)return;
+  if(!strokeHit&&G.swipes>=G.budget)return; // no cuts left for a new swipe
+  let tw=Infinity;
+  for(const w of G.barriers){const t=wallHitT(a,b,w);if(t!==null&&t<tw)tw=t;}
+  const hits=[];
+  for(const r of G.ropes){
+    if(r.cut)continue;const P=r.strand.pts;let best=null;
+    for(let j=0;j<P.length-1;j++){const h=segX(a,b,P[j],P[j+1]);if(h&&(!best||h.t<best.t))best=h;}
+    if(best&&best.t<tw)hits.push({r,hit:best});
+  }
+  hits.sort((p,q)=>p.hit.t-q.hit.t);
+  const cut=[];
+  for(const{r,hit}of hits){
+    if(r.steel){if(!strokeSteel.has(r)){strokeSteel.add(r);SFX.clang();burst(hit.x,hit.y,8,["#fff7b0","#ffd23d"],220);toast("chain");}continue;}
+    if(r.lock){if(!strokeSteel.has(r)){strokeSteel.add(r);r.lockShake=1;SFX.locked();toast("locked");
+        for(const n of G.nodes)if(n.key===r.lock&&!n.free)n.keyFlash=1;}continue;}
+    cutRope(r,hit);cut.push(r);
+  }
+  if(tw<Infinity){
+    bladeBlocked=true;G.wallHits++;const p={x:a.x+(b.x-a.x)*tw,y:a.y+(b.y-a.y)*tw};
+    SFX.wall();burst(p.x,p.y,9,["#fff","#c9b8ff","#ffd23d"],200);G.marks.push({x:p.x,y:p.y,t:1.2});shake=Math.max(shake,.15);toast("wall");
+  }
+  if(cut.length){
+    const shown=new Set();for(const r of cut)for(const n of[G.nodes[r.a],G.nodes[r.b]])if(n.hidden&&!shown.has(n)){shown.add(n);reveal(n,true);}
+    if(shown.size)toast([...shown].some(n=>n.t==="s")?"isStorm":"isPuff");
+    if(!strokeHit){strokeHit=true;G.swipes++;renderCuts();}
+    evaluate();
+  }
+}
+let lastLeft=null;
+function renderCuts(){
+  const box=document.getElementById("cutsBox");if(!G){box.innerHTML="";lastLeft=null;return;}
+  const left=G.budget-G.swipes;
+  const bump=lastLeft!==null&&left<lastLeft;lastLeft=left;
+  box.className=left<=0?"out":left<=1?"low":"";
+  box.innerHTML=`<div class="cnt${bump?" bump":""}" title="${tr("left")}">${IC.cutw}<b>${left}</b></div>`;
+}
+function endStroke(){
+  // out of cuts and puffs still tied → lose once the swipe ends
+  if(G&&G.state==="play"&&G.swipes>=G.budget)lose("cuts",null);
+}
+function cutRope(r,hit){
+  r.cut=true;G.cuts++;SFX.snip();
+  shatterRope(r,hit,true);
+  shake=Math.max(shake,.22);
+  burst(hit.x,hit.y,6,["#fff","#ffd0dc"],140);
+}
+// a ? cloud shows its true type with a pop; loud=false skips sound and flash (used when the level ends)
+function reveal(n,loud){
+  if(!n.hidden)return;n.hidden=false;n.sq=1;n.revealT=1;
+  burst(n.x,n.y,14,n.t==="s"?["#ffe45c","#6b6f86","#fff"]:["#fff","#ffb3d1","#ffe27a"],180);
+  if(loud){if(n.t==="s"){SFX.revealStorm();flash=Math.max(flash,.25);}else SFX.revealPuff();}
+}
+// a thread falls apart into short pieces; `recoil` kicks its two ends away from the break point
+function shatterRope(r,hit,recoil){
+  const st=r.strand,i=G.strands.indexOf(st);
+  if(i>=0)G.strands.splice(i,1);
+  // the whole thread snaps into short pieces that tumble to the ground
+  const P=st.pts;
+  for(let k=0;k<P.length-1;k++){
+    const a=P[k],b=P[k+1],cx=(a.x+b.x)/2,cy=(a.y+b.y)/2,dx=cx-hit.x,dy=cy-hit.y,dd=Math.hypot(dx,dy)||1;
+    const push=Math.max(0,1-dd/240)*170;
+    chips.push({x:cx,y:cy,ang:Math.atan2(b.y-a.y,b.x-a.x),len:Math.max(6,Math.hypot(b.x-a.x,b.y-a.y)*.82),
+      vx:(cx-(a.px+b.px)/2)*60+dx/dd*push+(Math.random()-.5)*70,vy:(cy-(a.py+b.py)/2)*60+dy/dd*push-50-Math.random()*90,
+      va:(Math.random()-.5)*12,life:1.2+Math.random()*.6});
+  }
+  // tension release: both ends spring away from the cut, and the net re-settles
+  if(recoil)for(const n of [G.nodes[r.a],G.nodes[r.b]]){
+    if(n.t==="a")continue;const dx=n.x-hit.x,dy=n.y-hit.y,d=Math.hypot(dx,dy)||1;
+    n.vx+=dx/d*150;n.vy+=dy/d*150;n.sq=Math.max(n.sq,.7);
+  }
+}
+let pid=null;
+function strokeStart(p){down=true;strokeHit=false;strokeSteel.clear();bladeBlocked=false;last=p;trail=[{...p,t:0}];}
+function strokeMove(p){trySlice(last,p);trail.push({...p,t:0,blocked:bladeBlocked});if(trail.length>24)trail.shift();last=p;}
+function strokeEnd(){if(down&&strokeHit)endStroke();down=false;strokeHit=false;bladeBlocked=false;}
+cv.addEventListener("pointerdown",e=>{if(down)return;pid=e.pointerId;ac();strokeStart(toWorld(e.clientX,e.clientY));try{cv.setPointerCapture(e.pointerId);}catch(_){}});
+cv.addEventListener("pointermove",e=>{if(!down||e.pointerId!==pid)return;strokeMove(toWorld(e.clientX,e.clientY));});
+const up=e=>{if(e.pointerId!==pid)return;strokeEnd();pid=null;};
+cv.addEventListener("pointerup",up);cv.addEventListener("pointercancel",up);
+addEventListener("contextmenu",e=>e.preventDefault());
+document.addEventListener("touchmove",e=>{if(!e.target.closest||!e.target.closest(".layer"))e.preventDefault();},{passive:false});
+document.addEventListener("dblclick",e=>e.preventDefault());
+addEventListener("keydown",e=>{if(e.key==="r"||e.key==="R")retry();if(e.key==="Escape")toMenu();});
+
+// ---------- particles ----------
+function burst(x,y,n,cols,sp){for(let i=0;i<n;i++){const a=Math.random()*6.28,v=sp*(.3+Math.random()*.7);parts.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-40,life:.6+Math.random()*.4,c:cols[i%cols.length],s:2+Math.random()*3});}}
+const CONF=["#ff5c8a","#ffc21f","#5ec71f","#2bb5f2","#b67dff","#ff8a3d"];
+function spawnConfetti(){
+  const ext=OX/SC+10,top=-OY/SC;
+  for(let i=0;i<110;i++)confetti.push({x:-ext+Math.random()*(W+ext*2),y:top+120-Math.random()*260,vx:(Math.random()-.5)*50,vy:110+Math.random()*90,
+    rot:Math.random()*6.28,vr:(Math.random()-.5)*9,ph:Math.random()*6.28,w:6+Math.random()*5,h:4+Math.random()*3,c:CONF[i%CONF.length]});
+}
+const easeBack=t=>{t=Math.max(0,Math.min(1,t));const c=1.9;return 1+(c+1)*Math.pow(t-1,3)+c*Math.pow(t-1,2);};
+
+// ---------- update ----------
+let tNow=0;
+function update(dt){
+  tNow+=dt;
+  for(const c of bgClouds){c.x+=c.v*dt;if(c.x>W+80)c.x=-80;}
+  for(const p of parts){p.vy+=300*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt;}parts=parts.filter(p=>p.life>0);
+  for(const b of bolts)b.t-=dt;bolts=bolts.filter(b=>b.t>0);
+  for(const t of trail)t.t+=dt;trail=trail.filter(t=>t.t<TRAIL_T);
+  flash=Math.max(0,flash-dt*2.5);shake=Math.max(0,shake-dt*2.6);
+  for(const c of chips){c.vy+=900*dt;c.x+=c.vx*dt;c.y+=c.vy*dt;c.ang+=c.va*dt;c.life-=dt;
+    if(c.y>GROUND+6){c.y=GROUND+6;c.vy*=-.25;c.vx*=.55;c.va*=.4;}}
+  chips=chips.filter(c=>c.life>0);
+  for(const c of confetti){c.vy=Math.max(90,c.vy-60*dt);c.x+=(c.vx+Math.sin(tNow*4+c.ph)*40)*dt;c.y+=c.vy*dt;c.rot+=c.vr*dt;}
+  confetti=confetti.filter(c=>c.y<(CH-OY)/SC+20);
+  if(!G){tint=0;return;}
+  tint=G.state==="lost"?Math.min(1,tint+dt*2.5):0;
+  if(G.state!=="play"){G.endT-=dt;if(G.endT<=0&&G.endT>-1){G.endT=-5;showResult();}}
+  updateGuide();
+  for(const r of G.ropes){r.lockShake=Math.max(0,r.lockShake-dt*2.5);r.unlockT=Math.max(0,r.unlockT-dt*1.6);}
+  for(const n of G.nodes)n.keyFlash=Math.max(0,n.keyFlash-dt*1.4);
+  for(const L of[G.beams,G.marks])for(const b of L)b.t-=dt;
+  G.beams=G.beams.filter(b=>b.t>0);G.marks=G.marks.filter(b=>b.t>0);
+  const LIFT={p:10,s:8,k:2},K=34,DAMP=Math.exp(-3.2*dt);
+  const dyn=n=>n.t!=="a"&&!n.free&&!n.gone;
+  for(const n of G.nodes){
+    if(n.t==="a")continue;
+    n.appear+=dt*3.2;n.sq=Math.max(0,n.sq-dt*2.4);
+    n.blink-=dt;if(n.blink<-.12)n.blink=2+Math.random()*4;
+    if(n.gone)continue;
+    if(n.dead){n.dispelT-=dt*1.4;n.y-=dt*30;if(n.dispelT<=0)n.gone=true;continue;}
+    if(n.free){
+      if(n.t==="s"&&G.state==="lost"){const ty=Math.max(90,n.hy-90);n.y+=(ty-n.y)*Math.min(1,dt*3);n.x=n.hx+Math.sin(tNow*30)*2;continue;}
+      n.vy=Math.max(-520,n.vy-420*dt);n.y+=n.vy*dt;n.x+=Math.sin(tNow*2.5+n.ph)*30*dt;
+      if(n.y<-120)n.gone=true;continue;
+    }
+    // tethered: float toward a spot a little above home; threads hold it down so they stay taut
+    n.ox=n.x;n.oy=n.y;
+    let ax,ay;
+    if(n.zap){ax=-n.vx*1.2;ay=760;} // zapped puffs go heavy and droop on their threads
+    else{const bob=n.t==="k"?0:Math.sin(tNow*1.6+n.ph)*4;ax=(n.hx-n.x)*K;ay=(n.hy-LIFT[n.t]+bob-n.y)*K;}
+    n.vx=(n.vx+ax*dt)*DAMP;n.vy=(n.vy+ay*dt)*DAMP;n.x+=n.vx*dt;n.y+=n.vy*dt;
+  }
+  for(let it=0;it<6;it++){
+    for(const r of G.ropes){if(r.cut)continue;const A=G.nodes[r.a],B=G.nodes[r.b],wa=dyn(A)?1:0,wb=dyn(B)?1:0;if(!wa&&!wb)continue;
+      const dx=B.x-A.x,dy=B.y-A.y,d=Math.hypot(dx,dy)||1e-6;if(d<=r.len)continue;
+      const f=(d-r.len)/d/(wa+wb);A.x+=dx*f*wa;A.y+=dy*f*wa;B.x-=dx*f*wb;B.y-=dy*f*wb;}
+    for(let i=0;i<G.nodes.length;i++){const A=G.nodes[i];if(!dyn(A)||A.t==="k")continue;
+      for(let j=i+1;j<G.nodes.length;j++){const B=G.nodes[j];if(!dyn(B)||B.t==="k")continue;
+        const dx=B.x-A.x,dy=B.y-A.y,d=Math.hypot(dx,dy)||1e-6,m=(A.r+B.r)*.85;if(d>=m)continue;
+        const f=(m-d)/d*.5;A.x-=dx*f;A.y-=dy*f;B.x+=dx*f;B.y+=dy*f;}}
+  }
+  for(const n of G.nodes){if(!dyn(n))continue;
+    if(n.y>GROUND-n.r*.6){n.y=GROUND-n.r*.6;}
+    n.vx=(n.x-n.ox)/dt;n.vy=(n.y-n.oy)/dt;}
+  // ropes
+  const g=900*dt*dt;
+  for(const s of G.strands){
+    const P=s.pts,L=P.length;
+    // tied threads always read as tight lines, even while the net jiggles
+    if(s.pinA&&s.pinB)s.rest=Math.hypot(s.pinB.x-s.pinA.x,s.pinB.y-s.pinA.y)*.997/(L-1);
+    const tied=s.pinA&&s.pinB,gs=tied?g*.1:g,dm=tied?.9:.985;
+    for(let i=0;i<L;i++){const p=P[i];const vx=(p.x-p.px)*dm,vy=(p.y-p.py)*dm;p.px=p.x;p.py=p.y;p.x+=vx;p.y+=vy+gs;}
+    for(let it=0;it<14;it++){
+      if(s.pinA){P[0].x=s.pinA.x;P[0].y=s.pinA.y;}
+      if(s.pinB){P[L-1].x=s.pinB.x;P[L-1].y=s.pinB.y;}
+      for(let i=0;i<L-1;i++){const a=P[i],b=P[i+1];const dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy)||1e-6;if(d<=s.rest)continue;
+        const df=(d-s.rest)/d;
+        const wa=(i===0&&s.pinA)?0:(i+1===L-1&&s.pinB)?1:.5,wb=(i+1===L-1&&s.pinB)?0:(i===0&&s.pinA)?1:.5;
+        a.x+=dx*df*wa;a.y+=dy*df*wa;b.x-=dx*df*wb;b.y-=dy*df*wb;}
+    }
+    if(s.pinA){P[0].x=s.pinA.x;P[0].y=s.pinA.y;}
+    if(s.pinB){P[L-1].x=s.pinB.x;P[L-1].y=s.pinB.y;}
+    for(const p of P)if(p.y>GROUND+10){p.y=GROUND+10;p.px=p.x-(p.x-p.px)*.5;}
+  }
+}
+
+// ---------- drawing ----------
+function blob(x,y,r,parts){ctx.beginPath();for(const[ox,oy,rr]of parts){ctx.moveTo(x+ox*r+rr*r,y+oy*r);ctx.arc(x+ox*r,y+oy*r,rr*r,0,6.283);}}
+const PUFF=[[-.52,.18,.6],[.52,.18,.6],[0,-.22,.78],[-.25,.38,.55],[.25,.38,.55]];
+const STORM=[[-.6,.1,.55],[.6,.1,.55],[-.22,-.25,.62],[.3,-.3,.58],[0,.3,.6],[-.45,.38,.42],[.45,.38,.42]];
+function cloud(x,y,r,shape,fill,ink){
+  ctx.lineWidth=5;ctx.strokeStyle=ink;ctx.lineJoin="round";blob(x,y,r,shape);ctx.stroke();
+  ctx.fillStyle=fill;blob(x,y,r,shape);ctx.fill();
+  ctx.fillStyle="rgba(255,255,255,.55)";ctx.beginPath();ctx.ellipse(x-r*.25,y-r*.45,r*.28,r*.14,-.4,0,6.283);ctx.fill();
+}
+function drawPuff(n){
+  const {x,y,r}=n;const sc=(n.free?1+Math.sin(tNow*10)*.03:1)*(1+n.sq*.16*Math.cos(n.sq*9)),ap=easeBack(n.appear);
+  if(ap<=0)return;
+  ctx.save();ctx.translate(x,y);ctx.scale(sc*ap,ap/sc);
+  if(n.zap){cloud(0,0,r,PUFF,"#59576a","#1f1e29");
+    ctx.strokeStyle="#fff";ctx.lineWidth=2.5;for(const ex of[-.3,.3]){ctx.beginPath();ctx.moveTo(ex*r-5,-5);ctx.lineTo(ex*r+5,5);ctx.moveTo(ex*r+5,-5);ctx.lineTo(ex*r-5,5);ctx.stroke();}
+    ctx.restore();return;}
+  if(n.sun){const used=n.sunUsed,sr=r*.62;ctx.save();ctx.translate(r*.5,-r*.62);ctx.rotate(tNow*(used?.2:.9));
+    ctx.strokeStyle="#2b2a3a";ctx.lineWidth=7;ctx.lineCap="round";ctx.beginPath();for(let i=0;i<10;i++){const a=i*Math.PI/5;ctx.moveTo(Math.cos(a)*sr*1.05,Math.sin(a)*sr*1.05);ctx.lineTo(Math.cos(a)*sr*1.6,Math.sin(a)*sr*1.6);}ctx.stroke();
+    ctx.strokeStyle=used?"#e6d9a8":"#ffc21f";ctx.lineWidth=3.5;ctx.stroke();
+    ctx.beginPath();ctx.arc(0,0,sr,0,6.283);ctx.fillStyle=used?"#f3e9c2":"#ffd23f";ctx.fill();ctx.lineWidth=3.5;ctx.strokeStyle="#2b2a3a";ctx.stroke();
+    ctx.restore();}
+  cloud(0,0,r,PUFF,n.col,"#2b2a3a");
+  ctx.fillStyle="#ff9fb8";ctx.globalAlpha=.6;ctx.beginPath();ctx.ellipse(-r*.5,r*.18,6,4,0,0,6.283);ctx.ellipse(r*.5,r*.18,6,4,0,0,6.283);ctx.fill();ctx.globalAlpha=1;
+  ctx.strokeStyle="#2b2a3a";ctx.fillStyle="#2b2a3a";ctx.lineWidth=2.5;ctx.lineCap="round";
+  if(n.free){for(const ex of[-.3,.3]){ctx.beginPath();ctx.arc(ex*r,0,4.5,Math.PI*1.1,Math.PI*1.9);ctx.stroke();}
+    ctx.beginPath();ctx.arc(0,r*.18,6,0,Math.PI);ctx.fill();}
+  else{
+    const worried=G&&G.state==="lost";
+    for(const ex of[-.3,.3]){if(n.blink<0){ctx.beginPath();ctx.moveTo(ex*r-4,0);ctx.lineTo(ex*r+4,0);ctx.stroke();}else{ctx.beginPath();ctx.ellipse(ex*r,-1,3.2,4.2,0,0,6.283);ctx.fill();ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(ex*r+1,-2.5,1.2,0,6.283);ctx.fill();ctx.fillStyle="#2b2a3a";}}
+    ctx.beginPath();if(worried)ctx.arc(0,r*.32,4,Math.PI,0);else ctx.arc(0,r*.14,4.5,.15*Math.PI,.85*Math.PI);ctx.stroke();
+  }
+  if(n.key){const f=n.keyFlash,s=1+Math.sin(f*18)*.25*f+Math.sin(tNow*3)*.04,K=KEYCOL[n.key];
+    ctx.save();ctx.translate(r*.78,-r*.72);ctx.scale(s,s);
+    if(f>0){ctx.fillStyle=`rgba(255,240,150,${f*.8})`;ctx.beginPath();ctx.arc(0,0,24,0,6.283);ctx.fill();}
+    // round tag: white rim, key colour inside, a big key on top
+    ctx.beginPath();ctx.arc(0,0,16,0,6.283);ctx.fillStyle="#fff";ctx.fill();ctx.lineWidth=3;ctx.strokeStyle="#2b2a3a";ctx.stroke();
+    ctx.beginPath();ctx.arc(0,0,12.5,0,6.283);ctx.fillStyle=K.light;ctx.fill();
+    drawKey(n.key,0,0,1);ctx.restore();}
+  ctx.restore();
+}
+// key symbols: shape + colour so they read without colour vision
+function drawSym(sym,x,y,s,bg){
+  ctx.save();ctx.translate(x,y);const K=KEYCOL[sym];
+  if(sym==="moon"){ctx.fillStyle=K.main;ctx.beginPath();ctx.arc(0,0,s*1.15,0,6.283);ctx.fill();ctx.fillStyle=bg;ctx.beginPath();ctx.arc(s*.55,-s*.35,s*.95,0,6.283);ctx.fill();}
+  else{ctx.strokeStyle=K.main;ctx.lineWidth=Math.max(1.4,s*.38);ctx.lineCap="round";ctx.beginPath();
+    for(let i=0;i<8;i++){const a=i*Math.PI/4;ctx.moveTo(Math.cos(a)*s*1.05,Math.sin(a)*s*1.05);ctx.lineTo(Math.cos(a)*s*1.55,Math.sin(a)*s*1.55);}ctx.stroke();
+    ctx.fillStyle=K.main;ctx.beginPath();ctx.arc(0,0,s*.75,0,6.283);ctx.fill();}
+  ctx.restore();
+}
+// a key icon: round bow with the symbol, shaft and two teeth, tilted
+function drawKey(sym,x,y,k){
+  const K=KEYCOL[sym];ctx.save();ctx.translate(x,y);ctx.rotate(-Math.PI/4);ctx.scale(k,k);
+  ctx.lineCap="round";ctx.lineJoin="round";
+  // shaft + teeth
+  ctx.beginPath();ctx.moveTo(-2,0);ctx.lineTo(11,0);ctx.moveTo(11,0);ctx.lineTo(11,5);ctx.moveTo(6.5,0);ctx.lineTo(6.5,4);
+  ctx.strokeStyle="#2b2a3a";ctx.lineWidth=6.5;ctx.stroke();ctx.strokeStyle=K.main;ctx.lineWidth=3.2;ctx.stroke();
+  // bow
+  ctx.beginPath();ctx.arc(-6,0,6.5,0,6.283);ctx.fillStyle=K.main;ctx.fill();ctx.lineWidth=2.4;ctx.strokeStyle="#2b2a3a";ctx.stroke();
+  ctx.beginPath();ctx.arc(-6,0,3.9,0,6.283);ctx.fillStyle="#fff";ctx.fill();
+  ctx.rotate(Math.PI/4);const c={x:-6*Math.cos(-Math.PI/4),y:-6*Math.sin(-Math.PI/4)};drawSym(sym,c.x,c.y,2.2,"#fff");
+  ctx.restore();
+}
+function drawLock(x,y,sym,shakeAmt,open){
+  const K=KEYCOL[sym],dx=Math.sin(tNow*60)*4*shakeAmt;
+  ctx.save();ctx.translate(x+dx,y);if(open){ctx.globalAlpha=Math.min(1,open*1.5);ctx.scale(1+(1-open)*.6,1+(1-open)*.6);}
+  ctx.lineCap="round";ctx.lineJoin="round";
+  // soft white halo so the lock pops off the rope and the sky
+  ctx.fillStyle="rgba(255,255,255,.75)";ctx.beginPath();ctx.arc(0,1,21,0,6.283);ctx.fill();
+  // shackle (lifts and swings open when unlocking)
+  ctx.save();if(open){ctx.translate(9,-6);ctx.rotate(-(1-open)*.9);ctx.translate(-9,6);ctx.translate(0,-5*(1-open));}
+  ctx.beginPath();ctx.moveTo(-9,-2);ctx.lineTo(-9,-9);ctx.arc(0,-9,9,Math.PI,0);ctx.lineTo(9,-2);
+  ctx.strokeStyle="#2b2a3a";ctx.lineWidth=8;ctx.stroke();ctx.strokeStyle="#c9c3da";ctx.lineWidth=4;ctx.stroke();
+  ctx.restore();
+  // body
+  const rr=(x0,y0,w,h,r0)=>{ctx.beginPath();ctx.roundRect?ctx.roundRect(x0,y0,w,h,r0):ctx.rect(x0,y0,w,h);};
+  rr(-14,-4,28,22,6);ctx.fillStyle=K.main;ctx.fill();ctx.lineWidth=3;ctx.strokeStyle="#2b2a3a";ctx.stroke();
+  rr(-11,-1.5,22,6,3);ctx.fillStyle="rgba(255,255,255,.45)";ctx.fill();
+  // symbol plate in the middle tells which key opens it
+  ctx.beginPath();ctx.arc(0,8,7,0,6.283);ctx.fillStyle="#fff";ctx.fill();ctx.lineWidth=2;ctx.strokeStyle=K.dark;ctx.stroke();
+  drawSym(sym,0,8,3.4,"#fff");
+  ctx.restore();
+}
+// marks on threads: the lock
+function drawRopeMarks(r){
+  if(r.cut)return;const P=r.strand.pts,L=P.length;
+  const at=f=>{const x=f*(L-1),i=Math.min(L-2,Math.floor(x)),u=x-i;return {x:P[i].x+(P[i+1].x-P[i].x)*u,y:P[i].y+(P[i+1].y-P[i].y)*u};};
+  const lockF=.5;
+  if(r.lock){const m=at(lockF);drawLock(m.x,m.y,r.lock,r.lockShake,0);}
+  else if(r.unlockT>0&&r.unlockSym){const m=at(lockF);drawLock(m.x,m.y-(1-r.unlockT)*14,r.unlockSym,0,r.unlockT);}
+}
+// clip a wall to what is on screen so very long walls draw from the screen edge
+function wallVisible(w){
+  const x0=-OX/SC-30,x1=(CW-OX)/SC+30,y0=-OY/SC-30,y1=(CH-OY)/SC+30;
+  let t0=0,t1=1;const dx=w.x2-w.x1,dy=w.y2-w.y1;
+  for(const[p,q]of[[-dx,w.x1-x0],[dx,x1-w.x1],[-dy,w.y1-y0],[dy,y1-w.y1]]){
+    if(p===0){if(q<0)return null;continue;}const t=q/p;if(p<0)t0=Math.max(t0,t);else t1=Math.min(t1,t);}
+  if(t0>t1)return null;return {ax:w.x1+dx*t0,ay:w.y1+dy*t0,bx:w.x1+dx*t1,by:w.y1+dy*t1};
+}
+function drawBarrier(w){
+  const v=wallVisible(w);if(!v)return;
+  const line=()=>{ctx.beginPath();ctx.moveTo(v.ax,v.ay);ctx.lineTo(v.bx,v.by);};
+  ctx.save();ctx.lineCap="round";
+  line();ctx.strokeStyle="#1b1038";ctx.lineWidth=w.r*2+5;ctx.stroke();
+  line();ctx.strokeStyle="#3b2a78";ctx.lineWidth=w.r*2;ctx.stroke();
+  line();ctx.setLineDash([5,11]);ctx.lineDashOffset=0;ctx.strokeStyle="rgba(255,255,255,.75)";ctx.lineWidth=w.r*2-7;ctx.lineCap="butt";ctx.stroke();ctx.setLineDash([]);
+  // icon: blade blocked, kept inside the play area
+  const top=Math.max(PLAY_TOP+30,Math.min(v.ay,v.by)),bot=Math.min(GROUND-40,Math.max(v.ay,v.by));
+  let cy=(top+bot)/2;if(top>bot)cy=(v.ay+v.by)/2;
+  const len=Math.hypot(v.bx-v.ax,v.by-v.ay)||1,tt=Math.abs(v.by-v.ay)>1?(cy-v.ay)/(v.by-v.ay):.5,cx=v.ax+(v.bx-v.ax)*tt;
+  ctx.translate(cx,cy);ctx.beginPath();ctx.arc(0,0,13,0,6.283);ctx.fillStyle="#fff";ctx.fill();ctx.lineWidth=3;ctx.strokeStyle="#1b1038";ctx.stroke();
+  ctx.lineCap="round";ctx.strokeStyle="#2b2a3a";ctx.lineWidth=2;ctx.beginPath();ctx.arc(-4,-3,2.6,0,6.283);ctx.arc(-4,3,2.6,0,6.283);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(-2,-2);ctx.lineTo(6,3);ctx.moveTo(-2,2);ctx.lineTo(6,-3);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(-8,-8);ctx.lineTo(8,8);ctx.strokeStyle="#e3264f";ctx.lineWidth=3;ctx.stroke();
+  ctx.restore();
+}
+function drawGuide(){
+  const gd=G.guide;if(!gd||G.state!=="play"||down)return;const st=gd.steps[gd.i];if(!st)return;
+  const P=st.path.map(([x,y])=>({x,y}));let len=0;const seg=[];for(let i=1;i<P.length;i++){const l=Math.hypot(P[i].x-P[i-1].x,P[i].y-P[i-1].y);seg.push(l);len+=l;}
+  const cyc=2,ph=(tNow%cyc)/cyc,u=Math.min(1,Math.max(0,(ph-.12)/.6)),fade=ph<.12?ph/.12:ph>.85?(1-ph)/.15:1;
+  ctx.save();ctx.lineCap="round";ctx.lineJoin="round";
+  ctx.beginPath();ctx.moveTo(P[0].x,P[0].y);for(const p of P)ctx.lineTo(p.x,p.y);
+  ctx.setLineDash([2,12]);ctx.lineDashOffset=-tNow*40;ctx.strokeStyle="rgba(255,255,255,.95)";ctx.lineWidth=6;ctx.stroke();ctx.setLineDash([]);
+  // arrow head at the end
+  const a=P[P.length-2],b=P[P.length-1],ang=Math.atan2(b.y-a.y,b.x-a.x);
+  ctx.translate(b.x,b.y);ctx.rotate(ang);ctx.beginPath();ctx.moveTo(-12,-9);ctx.lineTo(2,0);ctx.lineTo(-12,9);ctx.strokeStyle="#fff";ctx.lineWidth=5;ctx.stroke();
+  ctx.restore();
+  // the hand: a fingertip that presses, travels the path, then lifts
+  let d=u*len,i=0;while(i<seg.length-1&&d>seg[i]){d-=seg[i];i++;}const t=seg[i]?d/seg[i]:0;
+  const hx=P[i].x+(P[i+1].x-P[i].x)*t,hy=P[i].y+(P[i+1].y-P[i].y)*t;
+  ctx.save();ctx.globalAlpha=fade;
+  if(ph<.2){ctx.strokeStyle="rgba(255,255,255,.8)";ctx.lineWidth=3;ctx.beginPath();ctx.arc(P[0].x,P[0].y,8+ph*90,0,6.283);ctx.stroke();}
+  ctx.translate(hx+6,hy+10);ctx.rotate(-.35);
+  ctx.fillStyle="#fff";ctx.strokeStyle="#2b2a3a";ctx.lineWidth=3;
+  ctx.beginPath();ctx.roundRect?ctx.roundRect(-7,-12,14,30,7):ctx.rect(-7,-12,14,30);ctx.fill();ctx.stroke();
+  ctx.beginPath();ctx.roundRect?ctx.roundRect(-14,6,28,26,10):ctx.rect(-14,6,28,26);ctx.fill();ctx.stroke();
+  ctx.fillStyle="#ffd3e6";ctx.beginPath();ctx.ellipse(0,-6,4,3,0,0,6.283);ctx.fill();
+  ctx.restore();
+}
+// each unused sun cloud points a dotted ray at the storm it would clear now (hidden storms are not pointed at)
+function drawSunRays(){
+  if(G.state!=="play")return;
+  for(const u of G.nodes){if(!u.sun||u.sunUsed||u.free||u.hidden||easeBack(u.appear)<.9)continue;const t=sunTarget(u);if(!t||t.hidden)continue;
+    const a=.45+Math.sin(tNow*3)*.15;ctx.save();ctx.globalAlpha=a;ctx.strokeStyle="#ffc21f";ctx.lineWidth=4;ctx.lineCap="round";
+    ctx.setLineDash([1,11]);ctx.lineDashOffset=-tNow*30;ctx.beginPath();ctx.moveTo(u.x+u.r*.5,u.y-u.r*.62);ctx.lineTo(t.x,t.y);ctx.stroke();
+    ctx.setLineDash([]);ctx.globalAlpha=a*.9;ctx.beginPath();ctx.arc(t.x,t.y,t.r+9+Math.sin(tNow*3)*2,0,6.283);ctx.setLineDash([4,7]);ctx.stroke();ctx.restore();}
+}
+function drawKeyLinks(){
+  if(G.state!=="play")return;
+  for(const n of G.nodes){if(!n.key||n.keyUsed||n.free||n.hidden||easeBack(n.appear)<.9)continue;const r=keyTarget(n);if(!r)continue;
+    const m=ropeMid(r),K=KEYCOL[n.key];ctx.save();ctx.globalAlpha=.6+Math.sin(tNow*3+n.ph)*.15;ctx.strokeStyle=K.main;ctx.lineWidth=4;ctx.lineCap="round";
+    ctx.setLineDash([1,9]);ctx.lineDashOffset=-tNow*24;ctx.beginPath();ctx.moveTo(n.x+n.r*.62,n.y-n.r*.6);ctx.lineTo(m.x,m.y);ctx.stroke();ctx.restore();}
+}
+function drawFX(){
+  for(const b of G.beams){const a=Math.min(1,b.t*2.2);ctx.save();ctx.globalAlpha=a;ctx.strokeStyle=KEYCOL[b.sym].main;ctx.shadowColor="#fff2a8";ctx.shadowBlur=12;ctx.lineWidth=b.wide?10:5;ctx.lineCap="round";
+    ctx.setLineDash(b.wide?[]:[2,9]);ctx.lineDashOffset=-tNow*80;ctx.beginPath();ctx.moveTo(b.from.x,b.from.y);ctx.lineTo(b.to.x,b.to.y);ctx.stroke();ctx.restore();}
+  for(const m of G.marks){ctx.save();ctx.globalAlpha=Math.min(.7,m.t);ctx.translate(m.x,m.y);ctx.strokeStyle="#fff";ctx.lineWidth=3;ctx.lineCap="round";
+    ctx.beginPath();ctx.moveTo(-7,-7);ctx.lineTo(7,7);ctx.moveTo(7,-7);ctx.lineTo(-7,7);ctx.stroke();ctx.restore();}
+}
+// ? cloud: same size and calm face for both types so nothing gives it away
+const MYST=[[-.56,.14,.57],[.56,.14,.57],[-.1,-.24,.7],[.3,-.18,.55],[0,.32,.6]];
+function drawHidden(n){
+  const {x,y,r}=n,ap=easeBack(n.appear);if(ap<=0)return;const sc=1+n.sq*.14*Math.cos(n.sq*9),wob=Math.sin(tNow*2+n.ph)*.04;
+  ctx.save();ctx.translate(x,y);ctx.rotate(wob);ctx.scale(sc*ap,ap/sc);
+  cloud(0,0,r,MYST,"#c9bfe6","#2b2a3a");
+  ctx.fillStyle="rgba(255,255,255,.35)";for(let i=0;i<3;i++){const a=tNow*1.3+i*2.1+n.ph;ctx.beginPath();ctx.arc(Math.cos(a)*r*.62,Math.sin(a)*r*.32,2.4,0,6.283);ctx.fill();}
+  ctx.font="800 30px \"Baloo 2\",\"Trebuchet MS\",sans-serif";ctx.textAlign="center";ctx.textBaseline="middle";
+  ctx.lineWidth=5;ctx.strokeStyle="#2b2a3a";ctx.strokeText("?",0,2);ctx.fillStyle="#fff";ctx.fillText("?",0,2);
+  ctx.restore();
+}
+function drawStorm(n){
+  const {x,y,r}=n;const angry=n.free&&!n.dead;
+  if(n.dead){ctx.save();ctx.globalAlpha=Math.max(0,n.dispelT);ctx.translate(x,y);ctx.scale(1+(1-n.dispelT)*.6,1+(1-n.dispelT)*.6);
+    cloud(0,0,r,STORM,"#f4f1ff","#b9aad6");ctx.restore();return;}const sh=angry?Math.sin(tNow*40)*1.5:0;
+  const sc=1+n.sq*.14*Math.cos(n.sq*9),ap=easeBack(n.appear);if(ap<=0)return;
+  ctx.save();ctx.translate(x+sh,y);ctx.scale(sc*ap,ap/sc);
+  // bolt under
+  const fl=(Math.sin(tNow*7+n.ph)>.6)||angry;
+  if(fl){ctx.fillStyle="#ffe14d";ctx.strokeStyle="#2b2a3a";ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(-4,r*.6);ctx.lineTo(8,r*.6);ctx.lineTo(2,r*.95);ctx.lineTo(10,r*.95);ctx.lineTo(-6,r*1.45);ctx.lineTo(-1,r*1.05);ctx.lineTo(-9,r*1.05);ctx.closePath();ctx.fill();ctx.stroke();}
+  cloud(0,0,r,STORM,angry?"#4a4560":"#6b6f86","#1d1c28");
+  ctx.fillStyle="rgba(0,0,0,.18)";ctx.beginPath();ctx.ellipse(0,r*.42,r*.7,r*.18,0,0,6.283);ctx.fill();
+  // brows & eyes
+  ctx.strokeStyle="#1d1c28";ctx.lineWidth=3.5;ctx.lineCap="round";
+  ctx.beginPath();ctx.moveTo(-r*.5,-r*.2);ctx.lineTo(-r*.12,-r*.05);ctx.moveTo(r*.5,-r*.2);ctx.lineTo(r*.12,-r*.05);ctx.stroke();
+  ctx.fillStyle=angry?"#ff5050":"#ffe14d";for(const ex of[-.28,.28]){ctx.beginPath();ctx.arc(ex*r,r*.06,4.2,0,6.283);ctx.fill();}
+  ctx.beginPath();ctx.strokeStyle="#1d1c28";ctx.lineWidth=3;if(angry){ctx.moveTo(-8,r*.3);for(let i=1;i<=4;i++)ctx.lineTo(-8+i*4,r*.3+(i%2?-3:3));}else ctx.arc(0,r*.38,6,1.15*Math.PI,1.85*Math.PI);ctx.stroke();
+  ctx.restore();
+}
+function drawAnchor(n){
+  const {x,y}=n;ctx.save();
+  ctx.fillStyle="#9b6b3c";ctx.strokeStyle="#2b2a3a";ctx.lineWidth=3;
+  ctx.beginPath();ctx.moveTo(x-7,y+2);ctx.lineTo(x+7,y+2);ctx.lineTo(x+6,y+34);ctx.lineTo(x,y+42);ctx.lineTo(x-6,y+34);ctx.closePath();ctx.fill();ctx.stroke();
+  ctx.fillStyle="#c08a52";ctx.fillRect(x-4,y+6,3,22);
+  ctx.beginPath();ctx.arc(x,y,6,0,6.283);ctx.fillStyle="#d9b06b";ctx.fill();ctx.stroke();
+  ctx.restore();
+}
+function drawChip(c){
+  const hx=Math.cos(c.ang)*c.len/2,hy=Math.sin(c.ang)*c.len/2;ctx.globalAlpha=Math.min(1,c.life*2.2);ctx.lineCap="round";
+  ctx.beginPath();ctx.moveTo(c.x-hx,c.y-hy);ctx.lineTo(c.x+hx,c.y+hy);ctx.strokeStyle="#2b2a3a";ctx.lineWidth=6;ctx.stroke();ctx.strokeStyle="#b07b45";ctx.lineWidth=3;ctx.stroke();
+  ctx.globalAlpha=1;
+}
+function drawConfetti(c){
+  ctx.save();ctx.translate(c.x,c.y);ctx.rotate(c.rot);ctx.scale(1,Math.cos(tNow*7+c.ph));ctx.fillStyle=c.c;ctx.fillRect(-c.w/2,-c.h/2,c.w,c.h);ctx.restore();
+}
+function drawKnot(n){const ap=easeBack(n.appear);if(ap<=0)return;ctx.save();ctx.lineWidth=7;ctx.strokeStyle="#2b2a3a";ctx.beginPath();ctx.arc(n.x,n.y,n.r*ap,0,6.283);ctx.stroke();ctx.lineWidth=4;ctx.strokeStyle="#e5b84a";ctx.stroke();ctx.restore();}
+function drawStrand(s){
+  const P=s.pts;if(P.length<2)return;
+  const path=()=>{ctx.beginPath();ctx.moveTo(P[0].x,P[0].y);for(let i=1;i<P.length-1;i++){const mx=(P[i].x+P[i+1].x)/2,my=(P[i].y+P[i+1].y)/2;ctx.quadraticCurveTo(P[i].x,P[i].y,mx,my);}ctx.lineTo(P[P.length-1].x,P[P.length-1].y);};
+  ctx.lineCap="round";ctx.lineJoin="round";
+  if(s.steel){path();ctx.strokeStyle="#2b2a3a";ctx.lineWidth=9;ctx.stroke();path();ctx.strokeStyle="#8d97a5";ctx.lineWidth=5;ctx.stroke();
+    path();ctx.setLineDash([6,5]);ctx.strokeStyle="#dfe6ee";ctx.lineWidth=2.5;ctx.stroke();ctx.setLineDash([]);return;}
+  path();ctx.strokeStyle="#2b2a3a";ctx.lineWidth=6.5;ctx.stroke();
+  path();ctx.strokeStyle="#b07b45";ctx.lineWidth=3.5;ctx.stroke();
+  const lk=s.rope&&s.rope.lock;
+  if(lk){path();ctx.setLineDash([7,5]);ctx.strokeStyle=KEYCOL[lk].main;ctx.lineWidth=3.5;ctx.stroke();ctx.setLineDash([]);return;}
+  path();ctx.setLineDash([3,6]);ctx.strokeStyle="#e2bb84";ctx.lineWidth=1.6;ctx.stroke();ctx.setLineDash([]);
+}
+function drawBolt(b){
+  ctx.save();ctx.strokeStyle="#fff7a8";ctx.shadowColor="#ffe14d";ctx.shadowBlur=14;ctx.lineWidth=4;ctx.lineJoin="miter";
+  ctx.beginPath();ctx.moveTo(b.a.x,b.a.y+20);const n=7;for(let i=1;i<n;i++){const t=i/n;ctx.lineTo(b.a.x+(b.b.x-b.a.x)*t+(Math.random()-.5)*26,b.a.y+20+(b.b.y-b.a.y-20)*t);}ctx.lineTo(b.b.x,b.b.y);ctx.stroke();ctx.restore();
+}
+function drawBG(){
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  const gr=ctx.createLinearGradient(0,0,0,CH);gr.addColorStop(0,"#86cdfb");gr.addColorStop(.65,"#cfeefd");gr.addColorStop(1,"#ffe9c7");
+  ctx.fillStyle=gr;ctx.fillRect(0,0,CW,CH);
+  ctx.setTransform(DPR*SC,0,0,DPR*SC,DPR*(OX+SHX),DPR*(OY+SHY));
+  // sun
+  ctx.fillStyle="rgba(255,236,150,.55)";ctx.beginPath();ctx.arc(330,110,62,0,6.283);ctx.fill();ctx.fillStyle="#ffe58a";ctx.beginPath();ctx.arc(330,110,40,0,6.283);ctx.fill();
+  ctx.fillStyle="rgba(255,255,255,.6)";for(const c of bgClouds){blob(c.x,c.y,26*c.s,PUFF);ctx.fill();}
+  // hills
+  const ext=(OX/SC)+2,bottom=(CH-OY)/SC+2;
+  ctx.fillStyle="#a7dca0";ctx.beginPath();ctx.moveTo(-ext,GROUND);for(let x=-ext;x<=W+ext;x+=20)ctx.lineTo(x,GROUND-40-Math.sin(x*.018)*22-Math.sin(x*.05)*6);ctx.lineTo(W+ext,GROUND);ctx.fill();
+  ctx.fillStyle="#7cc77a";ctx.fillRect(-ext,GROUND,W+ext*2,bottom-GROUND);
+  ctx.strokeStyle="#2b2a3a";ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(-ext,GROUND);ctx.lineTo(W+ext,GROUND);ctx.stroke();
+  ctx.fillStyle="#6ab468";for(let x=-ext+8;x<W+ext;x+=26){ctx.beginPath();ctx.moveTo(x,GROUND+14);ctx.lineTo(x+4,GROUND+4);ctx.lineTo(x+8,GROUND+14);ctx.fill();}
+}
+const TRAIL_T=.24;let SHX=0,SHY=0;
+const RM=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
+function draw(){
+  const amp=RM?0:shake*shake*9;SHX=(Math.random()-.5)*2*amp;SHY=(Math.random()-.5)*2*amp;
+  drawBG();
+  if(G){
+    for(const n of G.nodes)if(n.t==="a")drawAnchor(n);
+    for(const s of G.strands)drawStrand(s);
+    for(const w of G.barriers)drawBarrier(w);
+    for(const c of chips)drawChip(c);
+    for(const n of G.nodes)if(n.t==="k")drawKnot(n);
+    for(const r of G.ropes)drawRopeMarks(r);
+    drawSunRays();
+    drawKeyLinks();
+    for(const n of G.nodes){if(n.gone)continue;if(n.hidden)drawHidden(n);else if(n.t==="p")drawPuff(n);else if(n.t==="s")drawStorm(n);}
+    for(const b of bolts)drawBolt(b);
+    drawFX();
+    drawGuide();
+  }
+  for(const p of parts){ctx.globalAlpha=Math.min(1,p.life*2);ctx.fillStyle=p.c;ctx.beginPath();ctx.arc(p.x,p.y,p.s,0,6.283);ctx.fill();}ctx.globalAlpha=1;
+  // blade slash: thin red core with a white rim, tapering toward the tail
+  if(trail.length>1){ctx.lineCap="round";ctx.lineJoin="round";
+    for(const pass of[0,1])for(let i=1;i<trail.length;i++){const a=Math.max(0,1-trail[i].t/TRAIL_T),w=(1.5+i/trail.length*4.5)*a;
+      ctx.strokeStyle=pass?(trail[i].blocked?`rgba(120,105,160,${a*.6})`:`rgba(236,32,78,${a})`):`rgba(255,255,255,${a*(trail[i].blocked?.4:.9)})`;ctx.lineWidth=pass?w:w+4;
+      ctx.beginPath();ctx.moveTo(trail[i-1].x,trail[i-1].y);ctx.lineTo(trail[i].x,trail[i].y);ctx.stroke();}}
+  for(const c of confetti)drawConfetti(c);
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  if(tint>0){ctx.fillStyle=`rgba(120,20,70,${tint*.2})`;ctx.fillRect(0,0,CW,CH);}
+  if(flash>0){ctx.fillStyle=`rgba(255,250,210,${flash*.7})`;ctx.fillRect(0,0,CW,CH);}
+}
+let lastT=performance.now(),acc=0;
+function loop(t){const d=Math.min(.05,(t-lastT)/1000);lastT=t;acc+=d;while(acc>=1/60){update(1/60);acc-=1/60;}draw();requestAnimationFrame(loop);}
+requestAnimationFrame(loop);
+
+// ---------- screens ----------
+const scr={menu:"scrMenu",how:"scrHow",select:"scrSelect",result:"scrResult",tut:"scrTut"};
+function show(name){for(const k in scr)document.getElementById(scr[k]).classList.toggle("on",k===name);document.getElementById("bLang").style.display=(name==="menu"||name==="how")?"flex":"none";}
+function toMenu(){G=null;document.getElementById("hud").classList.remove("on");show("menu");}
+function buildGrid(){
+  const g=document.getElementById("grid");g.innerHTML="";
+  // prototype: every level is open so the mechanic pack (31-42) can be tested directly
+  LEVELS.forEach((_,i)=>{const st=save.stars[i]||0,unlocked=true;
+    const b=document.createElement("button");b.className="lv"+(unlocked?(st?" done":" cur"):" locked");
+    b.setAttribute("aria-label",`${tr("level")} ${i+1}`);b.disabled=!unlocked;
+    b.innerHTML=unlocked?`${i+1}<span class="ss">${st?[0,1,2].map(k=>starSvg(k<st)).join(""):""}</span>`:IC.lock;
+    if(unlocked)b.onclick=()=>{ac();mode="campaign";levelIdx=i;playCurrent();};g.appendChild(b);});
+}
+function today(){const d=new Date();return d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate();}
+function playCurrent(){
+  if(mode==="campaign")startLevel(LEVELS[levelIdx],`${tr("level")} ${levelIdx+1}`);
+  else if(mode==="endless")startLevel(genLevel(Date.now()&0xffffff,endlessStreak+3),`${tr("sky")} ${endlessStreak+1}`);
+  else {dailyKey=String(today());startLevel(genLevel(today()*7919,9),`${tr("daily2")} ${dailyKey.slice(6)}/${dailyKey.slice(4,6)}`);}
+}
+function retry(){if(!G)return;if(mode==="endless"&&G.state==="lost"){endlessStreak=0;playCurrent();return;}startLevel(G.def,G.label);}
+function btn(txt,cls,fn){const b=document.createElement("button");b.className="btn "+cls;b.textContent=txt;b.onclick=fn;return b;}
+function resultToMenu(){if(mode==="campaign"){G=null;document.getElementById("hud").classList.remove("on");buildGrid();show("select");}else toMenu();}
+function showResult(){
+  const won=G.state==="won",L=document.getElementById("scrResult");
+  L.classList.toggle("win",won);L.classList.toggle("lose",!won);
+  const s=won?G.stars:0;
+  document.getElementById("rTitle").textContent=won?tr(s===3?"perfect":s===2?"great":"cleared"):tr("failed");
+  document.getElementById("rSub").textContent=G.label;
+  document.getElementById("rReason").textContent=won?tr("win"):(G.why==="cuts"?tr("loseCuts"):tr("loseStorm"));
+  document.getElementById("rStars").innerHTML=won?`<div class="bigStars">${[0,1,2].map(i=>starSvg(i<s)).join("")}</div>`
+    :`<div class="loseIcon">${G.why==="cuts"?IC.cut:IC.storm}</div>`;
+  const stat=document.getElementById("rStat");const B=document.getElementById("rBtns");B.innerHTML="";
+  let extra="";
+  if(won){
+    if(mode==="campaign"){save.stars[levelIdx]=Math.max(save.stars[levelIdx]||0,s);}
+    if(mode==="endless"){endlessStreak++;save.best=Math.max(save.best,endlessStreak);extra=`<div><b>${endlessStreak}</b>${tr("streak")}</div>`;}
+    if(mode==="daily"){const prev=save.dailyCuts[dailyKey];if(!prev||G.swipes<prev)save.dailyCuts[dailyKey]=G.swipes;extra=`<div><b>${save.dailyCuts[dailyKey]}${IC.cut}</b>${tr("dailyDone")}</div>`;}
+    persist();
+  }else{SFX.fail();if(mode==="endless"){extra=`<div><b>${endlessStreak}</b>${tr("streak")}</div><div><b>${save.best}</b>${tr("best")}</div>`;}}
+  stat.innerHTML=`<div><b>${G.swipes}/${G.budget}</b>${tr("cuts")}</div><div><b>${G.budget-G.swipes}</b>${tr("left")}</div>${extra}`;
+  document.getElementById("rClose").onclick=resultToMenu;
+  const hasNext=won&&((mode==="campaign"&&levelIdx<LEVELS.length-1)||mode==="endless");
+  if(mode==="endless"&&!won)B.appendChild(btn(tr("retry"),"",()=>{endlessStreak=0;playCurrent();}));
+  else B.appendChild(btn(tr("retry"),hasNext?"yellow":(won?"yellow":""),()=>startLevel(G.def,G.label)));
+  if(hasNext)B.appendChild(btn(tr("next"),"",()=>{if(mode==="campaign")levelIdx++;playCurrent();}));
+  else if(won)B.appendChild(btn(tr("menu"),"",resultToMenu));
+  show("result");
+  setTimeout(()=>{const f=B.lastChild;if(f)try{f.focus({preventScroll:true});}catch(e){}},50);
+}
+document.getElementById("bPlay").onclick=()=>{ac();buildGrid();show("select");};
+document.getElementById("bEndless").onclick=()=>{ac();mode="endless";endlessStreak=0;playCurrent();};
+document.getElementById("bDaily").onclick=()=>{ac();mode="daily";playCurrent();};
+document.getElementById("bHow").onclick=()=>show("how");
+document.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>show(b.dataset.go));
+document.getElementById("hBack").onclick=()=>{if(mode==="campaign"){G=null;document.getElementById("hud").classList.remove("on");buildGrid();show("select");}else toMenu();};
+document.getElementById("hRetry").onclick=()=>{if(G&&mode==="endless"&&G.state!=="won"){startLevel(G.def,G.label);return;}retry();};
+fillIcons();
+document.getElementById("bLang").onclick=()=>{save.lang=save.lang==="en"?"vi":"en";persist();applyLang();};
+applyLang();show("menu");
+// debug hook for automated tests
+window.__tt={get G(){return G;},LEVELS,genLevel,minCuts,startLevel:(i)=>{mode="campaign";levelIdx=i;playCurrent();},trySlice,evaluate,
+  swipe:(a,b)=>{strokeHit=false;strokeSteel.clear();bladeBlocked=false;trySlice(a,b);if(strokeHit)endStroke();strokeHit=false;bladeBlocked=false;},
+  // a whole finger stroke along a polyline of world points, split into short moves like real pointer events
+  stroke:(pts,step=6)=>{strokeStart(pts[0]);for(let i=1;i<pts.length;i++){const a=pts[i-1],b=pts[i],n=Math.max(1,Math.ceil(Math.hypot(b.x-a.x,b.y-a.y)/step));
+    for(let k=1;k<=n;k++)strokeMove({x:a.x+(b.x-a.x)*k/n,y:a.y+(b.y-a.y)*k/n});}strokeEnd();},
+  checkLevel,guideStep:()=>G&&G.guide?G.guide.i:null,
+  state:()=>G&&{state:G.state,swipes:G.swipes,freed:G.freed,puffs:G.puffs,cut:G.ropes.map(r=>r.cut),locks:G.ropes.map(r=>r.lock),hidden:G.nodes.map(n=>n.hidden),dead:G.nodes.map(n=>!!n.dead),budget:G.budget,par:G.par}};
+</script>
+</body>
+</html>
