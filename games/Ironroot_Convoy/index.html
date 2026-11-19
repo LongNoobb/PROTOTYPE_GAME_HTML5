@@ -69,6 +69,22 @@ h1 em{font-style:normal;letter-spacing:.025em;font-size:.9em;color:#c8dd99;text-
 .chapter-badge strong{display:block;font-family:var(--font-body);font-size:17px;color:var(--cream);letter-spacing:.02em;line-height:1.5}
 .chapter-badge .chapter-index{margin-left:auto;white-space:nowrap;font-size:10px;color:var(--gold)}
 .home-progress{padding:0 0 12px;color:var(--muted);font-size:11px;line-height:1.5}
+/* Home leader picker: current captain + one row of tappable portraits. */
+.leader-pick{margin:0 0 12px;padding:8px;background:#0c2624;border:1px solid var(--line-soft)}
+.leader-head{display:flex;align-items:center;gap:8px;margin-bottom:8px;min-width:0}
+.leader-tag{font-family:var(--font-label);font-size:9px;font-weight:700;letter-spacing:.08em;color:var(--gold);white-space:nowrap}
+.leader-info{flex:1;min-width:0;line-height:1.3}
+.leader-info strong{display:block;font-size:14px;color:var(--cream)}
+.leader-info small{display:block;font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.leader-detail{min-height:32px;padding:4px 8px;background:var(--panel-raised);border:1px solid var(--line);font-family:var(--font-label);font-size:9px;font-weight:700;color:var(--cream);white-space:nowrap}
+.leader-detail:hover{border-color:var(--gold);background:var(--panel-hover)}
+.leader-strip{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:4px}
+.leader-chip{position:relative;display:grid;place-items:center;min-height:44px;padding:0;background:#193b32;border:1px solid var(--line-soft);overflow:hidden}
+.leader-chip img{width:100%;max-width:44px;aspect-ratio:1;object-fit:contain;image-rendering:pixelated;opacity:.62;transform:scale(1.55);transition:opacity .14s}
+.leader-chip:hover{background:var(--panel-hover)}.leader-chip:hover img{opacity:1}
+.leader-chip.chosen{background:#304833;border-color:var(--gold);box-shadow:inset 0 -3px var(--brass)}
+.leader-chip.chosen img{opacity:1}
+.leader-chip.chosen::after{content:'';position:absolute;top:2px;right:2px;width:6px;height:6px;background:var(--mint);box-shadow:0 0 0 1px var(--on-mint)}
 .workshop-entry{display:flex;justify-content:start;gap:10px;text-align:left;margin-top:12px;min-height:60px;background:#1a3c35;border-color:var(--line-soft)}
 .workshop-entry>[data-icon]{color:var(--gold)}
 .workshop-entry>span:not([data-icon]){font-size:11px;font-weight:800}
@@ -183,7 +199,7 @@ h1 em{font-style:normal;letter-spacing:.025em;font-size:.9em;color:#c8dd99;text-
 @container(max-width:360px){
   .screen{padding-left:5%;padding-right:5%}.edition{font-size:8px;gap:5px}.edition .ui-icon{width:16px}.home-actions{gap:5px}.roster-button{font-size:9px;gap:5px;padding:8px}.roster-button .ui-icon{width:16px}
   .home-bottom{padding:12px 12px 0}.chapter-badge{gap:8px}.chapter-badge strong{font-size:14px}.chapter-badge>span,.chapter-badge .chapter-index{font-size:9px}.home-progress{font-size:10px}
-  .workshop-entry{gap:7px;padding:10px}.workshop-entry>span:not([data-icon]){font-size:10px}.workshop-entry>b{font-size:10px}.workshop-entry small{font-size:9px}
+  .leader-pick{padding:6px}.leader-head{gap:6px}.leader-info strong{font-size:13px}.leader-strip{gap:3px}.leader-chip{min-height:40px}.workshop-entry{gap:7px;padding:10px}.workshop-entry>span:not([data-icon]){font-size:10px}.workshop-entry>b{font-size:10px}.workshop-entry small{font-size:9px}
   .hud-top{gap:7px;padding:8px}.chapter strong{font-size:13px}.chapter small{font-size:8px}.purse{font-size:14px}.purse .ui-icon{width:15px}
   .route-panel{padding:0 10px 10px}.route-label{font-size:9px}.route-node{width:14px;height:16px}.route-node .ui-icon{width:9px;height:9px}
   .vitals-row{padding:7px 8px;gap:8px;grid-template-columns:1fr}.experience>b{font-size:9px}.experience{gap:5px}
@@ -192,14 +208,14 @@ h1 em{font-style:normal;letter-spacing:.025em;font-size:.9em;color:#c8dd99;text-
 }
 @container(max-height:700px){
   .logo{margin-top:4cqh}.logo h1{font-size:11.7cqw;margin:12px 0}.logo p{font-size:8px}.logo-rule{gap:8px}
-  .home-bottom{padding-top:12px}.chapter-badge{padding-bottom:7px}.home-progress{font-size:10px;padding-bottom:9px}.home-bottom .primary{min-height:50px}.workshop-entry{min-height:50px;margin-top:10px}.home-hint{margin:8px 0;font-size:9px}
+  .home-bottom{padding-top:12px}.chapter-badge{padding-bottom:7px}.home-progress{font-size:10px;padding-bottom:9px}.home-bottom .primary{min-height:50px}.workshop-entry{min-height:50px;margin-top:10px}.home-hint{margin:8px 0;font-size:9px}.leader-pick{margin-bottom:9px;padding:6px}.leader-head{margin-bottom:6px}.leader-chip{min-height:40px}
   .battle-top{top:max(8px,env(safe-area-inset-top));gap:5px}.hud-top{padding:6px 8px}.hud-top .square{height:36px;min-height:36px;width:38px}.chapter strong{font-size:13px}.route-panel{padding:0 10px 9px}.route-label{margin-bottom:11px;font-size:9px}.route-node{height:14px;width:14px}.vitals-row{padding:6px 8px}.route{margin-bottom:3px}
   #controls{padding-top:6px}.skills{gap:6px}.skill{min-height:78px;padding-top:7px;padding-bottom:17px;gap:1px}.skill>i{margin-bottom:2px}.skill>i .ui-icon{width:23px;height:23px}.skill small{display:none}.card-cost{font-size:8px}.skill b{font-size:10px}
   .crew-summary{min-height:20px}.crew-summary img{width:20px;height:20px}#card-hint{margin:3px 0 6px;font-size:9px}.bottom-strip{min-height:36px;margin-top:2px}.bottom-strip button{min-height:36px}
   .modal-emblem{width:36px;height:36px;margin-bottom:9px}.modal-emblem .ui-icon{width:22px;height:22px}.panel h2{margin:6px 0 8px}.panel .description{margin-bottom:12px}.panel::before{margin-bottom:12px}
 }
 @container(max-height:580px){
-  .screen{padding-top:10px;padding-bottom:8px}.logo{margin-top:3cqh}.logo p,.logo-rule{display:none}.logo .eyebrow{font-size:8px}.logo h1{margin:10px 0}.home-progress{font-size:9px;padding-bottom:7px}.home-hint{font-size:8px;margin:7px 0}.chapter-badge>i{height:34px;width:30px}.chapter-badge strong{font-size:13px}.workshop-entry small{display:none}.workshop-entry{min-height:44px}.home-bottom .primary{min-height:48px}
+  .screen{padding-top:10px;padding-bottom:8px}.logo{margin-top:3cqh}.logo p,.logo-rule{display:none}.logo .eyebrow{font-size:8px}.logo h1{margin:10px 0}.home-progress{font-size:9px;padding-bottom:7px}.home-hint{font-size:8px;margin:7px 0}.chapter-badge>i{height:34px;width:30px}.chapter-badge strong{font-size:13px}.workshop-entry small{display:none}.leader-info small{display:none}.leader-chip{min-height:38px}.workshop-entry{min-height:44px}.home-bottom .primary{min-height:48px}
   .modal-emblem{display:none}.panel .eyebrow{font-size:8px}.panel h2{font-size:19px}.panel .description{font-size:11px}
 }
 @media(max-height:480px) and (orientation:landscape){
@@ -405,6 +421,10 @@ h1 em{font-style:normal;letter-spacing:.025em;font-size:.9em;color:#c8dd99;text-
       <div class="home-bottom">
         <div class="chapter-badge"><i data-icon="flag"></i><span id="home-route">HÀNH TRÌNH 01<strong>RỪNG TÀN TRO</strong></span><span class="chapter-index" id="home-checkpoint">10 TRẠM</span></div>
         <div class="home-progress" id="home-progress"></div>
+        <div class="leader-pick" role="group" aria-labelledby="leader-pick-label">
+          <div class="leader-head"><span class="leader-tag" id="leader-pick-label">ĐỘI TRƯỞNG</span><span class="leader-info"><strong id="leader-name"></strong><small id="leader-role"></small></span><button id="leader-detail" class="leader-detail" aria-label="Xem chi tiết đội trưởng">CHI TIẾT</button></div>
+          <div class="leader-strip" id="leader-strip" role="radiogroup" aria-label="Chạm để đổi đội trưởng, hoặc dùng phím mũi tên trái phải"></div>
+        </div>
         <button id="start" class="primary"><span data-icon="compass"></span><span>KHỞI HÀNH</span><span data-icon="arrow-right"></span></button>
         <button id="workshop" class="secondary workshop-entry"><span data-icon="anvil"></span><span>XƯỞNG ĐOÀN XE<small>Nâng cấp cho mọi hành trình</small></span><b id="wallet">0 VÀNG</b></button>
         <p class="save-status" id="save-status" role="status"></p><p class="home-hint"><span data-icon="shield"></span>Vàng & nâng cấp được giữ sau mỗi lượt.</p>
@@ -2596,6 +2616,16 @@ ConvoyUI.mount();
     if(p)return `<div class="rage-rule"><b>NỘI TẠI · ${p.name}</b><span>${p.detail}</span><small>Không có nộ. Có đội cận chiến thì đứng trên tháp bắn cung, không có (hoặc toa bị phá) thì nhảy xuống đánh kiếm.</small></div>`;
     return '';};
   const rageTag=id=>{const r=Roster.RAGE[id],p=Roster.PASSIVE[id];return r?'NỘ: '+r.name:p?'NỘI TẠI: '+p.name:'';};
+  // Home leader picker: one tap on a portrait swaps the starting captain and the live convoy behind the menu.
+  function setLeader(id){if(selectedLeader===id||!Roster.ALLIES.some(a=>a.id===id))return;selectedLeader=id;record.leader=id;persist();if(home)game=newGame(record.activeStage);syncLeaderPick();}
+  function cycleLeader(step){const ids=Roster.ALLIES.map(a=>a.id),i=ids.indexOf(selectedLeader);setLeader(ids[(i+step+ids.length)%ids.length]);}
+  function syncLeaderPick(){const strip=$('leader-strip');
+    if(!strip.children.length){strip.innerHTML=Roster.ALLIES.map(a=>`<button class="leader-chip" role="radio" data-leader="${a.id}" aria-label="${a.name}" title="${a.name}"><img src="${convoyAsset('assets/characters/'+a.id+'_portrait.png')}" alt=""></button>`).join('');
+      strip.querySelectorAll('[data-leader]').forEach(b=>b.onclick=()=>setLeader(b.dataset.leader));
+      strip.onkeydown=e=>{if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();e.stopPropagation();cycleLeader(e.key==='ArrowLeft'?-1:1);strip.querySelector('.chosen')?.focus();}};}
+    const ally=Roster.ALLIES.find(a=>a.id===selectedLeader),tag=rageTag(selectedLeader);
+    $('leader-name').textContent=ally.name;$('leader-role').textContent=ally.role+(tag?' · '+tag:'');
+    strip.querySelectorAll('[data-leader]').forEach(b=>{const on=b.dataset.leader===selectedLeader;b.classList.toggle('chosen',on);b.setAttribute('aria-checked',on);b.tabIndex=on?0:-1;});}
   function showRoster(group='allies',preview=selectedLeader){rosterPreview={name:preview,anim:'Idle'};const list=group==='allies'?Roster.ALLIES.map(a=>a.id):Roster.ENEMIES;openModal(heading('TINY RPG · 41 NHÂN VẬT','ĐỘI QUÂN HỘ TỐNG','Chọn đồng minh làm đội trưởng. Quái xuất hiện theo từng hành trình.')+`<div class="roster-tabs"><button id="tab-allies" class="${group==='allies'?'selected':''}">ĐỒNG MINH · ${Roster.ALLIES.length}</button><button id="tab-enemies" class="${group==='enemies'?'selected':''}">QUÁI & BOSS · 33</button></div><canvas id="roster-preview" width="320" height="140" aria-label="Animation nhân vật"></canvas><strong id="preview-name">${characterName(preview)}</strong>${group==='allies'?`<div id="rage-info">${rageBlock(preview)}</div>`:''}<div class="animation-tabs">${[['Idle','ĐỨNG'],['Walk','ĐI / BAY'],['Attack01','ĐÁNH'],['Hurt','TRÚNG ĐÒN'],['Death','GỤC']].map(([anim,label])=>`<button data-anim="${anim}" class="${anim==='Idle'?'selected':''}">${label}</button>`).join('')}</div><div class="roster-grid">${list.map(id=>`<button class="roster-card ${selectedLeader===id?'chosen':''}" data-character="${id}"><img src="${convoyAsset('assets/characters/'+id+'_portrait.png')}" alt=""><strong>${characterName(id)}</strong><small>${group==='allies'?Roster.ALLIES.find(a=>a.id===id).role:Roster.BOSSES.some(b=>b.id===id)?'BOSS':Roster.FLYING.includes(id)?'QUÁI BAY':'QUÁI MẶT ĐẤT'}</small></button>`).join('')}</div><p class="leader-label" id="leader-label">ĐỘI TRƯỞNG: ${characterName(selectedLeader).toUpperCase()}</p><button class="primary" id="roster-close">TRỞ VỀ</button>`);
     $('tab-allies').onclick=()=>showRoster('allies',selectedLeader);$('tab-enemies').onclick=()=>showRoster('enemies',Roster.ENEMIES[0]);
     $('dialog').querySelectorAll('[data-character]').forEach(b=>b.onclick=()=>{rosterPreview={name:b.dataset.character,anim:'Idle'};$('preview-name').textContent=characterName(b.dataset.character);if(group==='allies'){selectedLeader=b.dataset.character;$('rage-info').innerHTML=rageBlock(selectedLeader);game=newGame(record.activeStage);$('leader-label').textContent='ĐỘI TRƯỞNG: '+characterName(selectedLeader).toUpperCase();$('dialog').querySelectorAll('[data-character]').forEach(c=>c.classList.toggle('chosen',c.dataset.character===selectedLeader));}$('dialog').querySelectorAll('[data-anim]').forEach(c=>c.classList.toggle('selected',c.dataset.anim==='Idle'));});
@@ -2661,7 +2691,7 @@ ConvoyUI.mount();
     const stage=record.activeStage,stops=Sim.STAGES[stage].route.length;
     $('wallet').textContent=fmt(record.wallet)+' VÀNG';$('home-route').innerHTML='HÀNH TRÌNH 0'+(stage+1)+'<strong>'+Sim.STAGES[stage].name+'</strong>';
     $('home-checkpoint').textContent=stops+' TRẠM';
-    $('home-progress').textContent=record.runs?'Kỷ lục trạm '+record.bestStops[stage]+'/'+stops+' · ATK '+record.levels.atk+' · HP '+record.levels.hp+' · DEF '+record.levels.def:'Trạm đầu tiên: chọn vũ khí · Xưởng đã mở';frameHome();
+    $('home-progress').textContent=record.runs?'Kỷ lục trạm '+record.bestStops[stage]+'/'+stops+' · ATK '+record.levels.atk+' · HP '+record.levels.hp+' · DEF '+record.levels.def:'Trạm đầu tiên: chọn vũ khí · Xưởng đã mở';syncLeaderPick();frameHome();
   }
   function workshop(from='home',message=''){
     const sample=newGame(record.activeStage);
@@ -2738,10 +2768,10 @@ ConvoyUI.mount();
       let label=b.querySelector('.cooldown-label');if(cd>0&&!locked){if(!label){label=document.createElement('span');label.className='cooldown-label';b.appendChild(label);}label.textContent=Math.ceil(cd)+'s';}else label?.remove();}
     const boss=game.enemies.find(e=>e.boss&&e.hp>0);$('boss-hud').hidden=!boss;if(boss){$('boss-fill').style.width=boss.hp/boss.maxHp*100+'%';$('boss-name').textContent=Roster.BOSSES[game.stageIndex].name+' · ĐIỂM YẾU '+boss.weakPoints.length;}}
   function frame(now){const elapsed=Math.min((now-last)/1000,1);last=now;if(loaded){if(!home&&game.state==='playing'){bankTimer+=elapsed;if(bankTimer>=3){bankTimer=0;bank();}accumulator+=elapsed*speed;while(accumulator>=1/60&&game.state==='playing'){game.update(1/60);accumulator-=1/60;}if(game.state!=='playing')accumulator=0;}if(gameEl.classList.contains('recruiting'))renderer.recruitView=($('dialog').getBoundingClientRect().top-gameEl.getBoundingClientRect().top)*480/gameEl.clientWidth;renderer.draw(game,elapsed,home);drawRosterPreview(now);hudTimer-=elapsed;if(hudTimer<=0){syncHUD();hudTimer=.1;}if(announceTimer>0){announceTimer-=elapsed;if(announceTimer<=0)$('announcement').classList.remove('show');}}requestAnimationFrame(frame);}
-  $('start').onclick=()=>{if(loaded)begin(record.activeStage);};$('workshop').onclick=()=>workshop();$('help').onclick=()=>showHelp('home');$('roster').onclick=()=>showRoster();$('pause').onclick=pause;
+  $('start').onclick=()=>{if(loaded)begin(record.activeStage);};$('workshop').onclick=()=>workshop();$('help').onclick=()=>showHelp('home');$('roster').onclick=()=>showRoster();$('leader-detail').onclick=()=>showRoster('allies',selectedLeader);$('pause').onclick=pause;
   for(const name of ['heal','frost','volley','cavalry'])$(name).onclick=()=>{game.useSkill(name);syncHUD();};
   $('speed').onclick=()=>{speed=speed===1?2:1;$('speed').querySelector('b').textContent=speed+'×';};$('sound').onclick=()=>{soundOn=!soundOn;$('sound').innerHTML=UI.icon(soundOn?'sound-on':'sound-off')+'<span class="sound-label">'+(soundOn?'BẬT':'TẮT')+'</span>';$('sound').setAttribute('aria-pressed',String(soundOn));$('sound').setAttribute('aria-label',soundOn?'Tắt âm thanh':'Bật âm thanh');beep(500,.1);};
-  document.addEventListener('keydown',e=>{if(e.repeat)return;if(!$('overlay').hidden){if(e.key==='Tab'){const buttons=[...$('dialog').querySelectorAll('button')].filter(b=>!b.disabled);if(e.shiftKey&&document.activeElement===buttons[0]){e.preventDefault();buttons.at(-1)?.focus();}else if(!e.shiftKey&&document.activeElement===buttons.at(-1)){e.preventDefault();buttons[0]?.focus();}}if(e.key==='Escape'){const close=$('help-close')||$('roster-close')||$('workshop-close')||$('resume');if(close){e.preventDefault();close.click();}}return;}if(home)return;if(['Escape','p','P'].includes(e.key)){e.preventDefault();pause();}const key=e.key.toLowerCase();if(key==='q')game.useSkill('heal');if(key==='w')game.useSkill('frost');if(key==='e')game.useSkill('volley');if(key==='r')game.useSkill('cavalry');});
+  document.addEventListener('keydown',e=>{if(e.repeat)return;if(!$('overlay').hidden){if(e.key==='Tab'){const buttons=[...$('dialog').querySelectorAll('button')].filter(b=>!b.disabled);if(e.shiftKey&&document.activeElement===buttons[0]){e.preventDefault();buttons.at(-1)?.focus();}else if(!e.shiftKey&&document.activeElement===buttons.at(-1)){e.preventDefault();buttons[0]?.focus();}}if(e.key==='Escape'){const close=$('help-close')||$('roster-close')||$('workshop-close')||$('resume');if(close){e.preventDefault();close.click();}}return;}if(home){if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();cycleLeader(e.key==='ArrowLeft'?-1:1);}return;}if(['Escape','p','P'].includes(e.key)){e.preventDefault();pause();}const key=e.key.toLowerCase();if(key==='q')game.useSkill('heal');if(key==='w')game.useSkill('frost');if(key==='e')game.useSkill('volley');if(key==='r')game.useSkill('cavalry');});
   document.addEventListener('visibilitychange',()=>{if(document.hidden&&!home&&game.state==='playing')pause();});
   new ResizeObserver(entries=>{const r=entries[0].contentRect;renderer.resize(r.width,r.height);if(home)frameHome();syncHUD();}).observe(gameEl);
   window.addEventListener('pagehide',()=>{if(!home)bank();});
