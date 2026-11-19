@@ -33,5 +33,11 @@
     "description": "Ride a pixel war-wagon from station to station. Pick weapons, carriages and heroes, then hold the line against waves and bosses.",
     "art": "ironroot-convoy.svg",
     "demo": "ironroot-convoy.webm"
+  },
+  "Fantasy_Puzzle": {
+    "title": "Fantasy Puzzle",
+    "category": "Tactics · Puzzle",
+    "description": "Place six pixel heroes, pick their skills and attack order, then clear every monster in one turn across 60 levels.",
+    "art": "fantasy-puzzle.svg"
   }
 }

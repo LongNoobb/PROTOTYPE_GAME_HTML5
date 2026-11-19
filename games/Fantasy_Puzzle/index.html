@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0d1714">
+<title>Fantasy Puzzle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Be+Vietnam+Pro:wght@500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%22-1.5 -1.5 27 27%22%3E%3Cpath d=%22M21 3l-.9 4.4-9.6 9.7-3.6-3.6L16.6 3.9z M3.6 13.4l1.6-1.6 7 7-1.6 1.6z M6.3 16.6l1.1 1.1-3.4 3.4-1.1-1.1z M2.6 19.4a1.7 1.7 0 1 1 2.4 2.4 1.7 1.7 0 0 1-2.4-2.4z%22 fill=%22%23ffdd85%22 stroke=%22%23140f0a%22 stroke-width=%222.4%22 paint-order=%22stroke%22 stroke-linejoin=%22round%22/%3E%3C/svg%3E">
+</head>
+<body>
+<div id="app">
+
+  <!-- LOADING -->
+  <section id="scr-loading" class="screen active">
+    <div class="load-box">
+      <h1 class="logo">FANTASY<br>PUZZLE</h1>
+      <div class="bar"><i id="load-bar"></i></div>
+      <p id="load-txt">Đang tải sprite…</p>
+    </div>
+  </section>
+
+  <!-- HOME -->
+  <section id="scr-home" class="screen">
+    <div class="home-bg"></div>
+    <div class="home-inner">
+      <h1 class="logo">FANTASY<br>PUZZLE</h1>
+      <p class="tagline">Hạ toàn bộ quái trong <b>một lượt</b></p>
+      <canvas id="home-parade" width="320" height="90"></canvas>
+      <div class="menu">
+        <button class="btn big green" data-act="continue" data-ic="play">Chơi tiếp</button>
+        <button class="btn big" data-act="levels" data-ic="map">Chọn màn</button>
+        <button class="btn big" data-act="collection" data-ic="book">Bộ sưu tập</button>
+        <button class="btn big" data-act="settings" data-ic="gear">Cài đặt</button>
+      </div>
+      <p class="home-stars" id="home-stars"></p>
+    </div>
+  </section>
+
+  <!-- LEVEL SELECT -->
+  <section id="scr-levels" class="screen">
+    <header class="topbar"><button class="icon-btn" data-act="home" aria-label="Về trang chủ" data-ic="back"></button><h2>Chọn màn</h2><span class="pill" id="lv-stars">0</span></header>
+    <div class="chap-tabs" id="chap-tabs"></div>
+    <div class="chap-head" id="chap-head"></div>
+    <div class="lv-grid" id="lv-grid"></div>
+  </section>
+
+  <!-- COLLECTION -->
+  <section id="scr-collection" class="screen">
+    <header class="topbar"><button class="icon-btn" data-act="home" aria-label="Về trang chủ" data-ic="back"></button><h2>Bộ sưu tập</h2><span></span></header>
+    <div class="tabs" id="col-tabs">
+      <button class="tab active" data-tab="heroes" data-ic="helm">Nhân vật</button>
+      <button class="tab" data-tab="enemies" data-ic="skull">Quái vật</button>
+      <button class="tab" data-tab="art" data-ic="image">Concept</button>
+    </div>
+    <div class="col-body" id="col-body"></div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="scr-settings" class="screen">
+    <header class="topbar"><button class="icon-btn" data-act="back-settings" aria-label="Quay lại" data-ic="back"></button><h2>Cài đặt</h2><span></span></header>
+    <div class="settings">
+      <label class="row"><span class="lab" data-ic="music">Âm nhạc</span> <input type="range" min="0" max="100" id="set-music"></label>
+      <label class="row"><span class="lab" data-ic="sound">Hiệu ứng âm thanh</span> <input type="range" min="0" max="100" id="set-sfx"></label>
+      <label class="row"><span class="lab" data-ic="vibe">Rung</span> <input type="checkbox" id="set-vibe" class="sw"></label>
+      <label class="row"><span class="lab" data-ic="bolt">Tốc độ mặc định</span>
+        <select id="set-speed"><option value="1">×1</option><option value="2">×2</option></select></label>
+      <label class="row"><span class="lab" data-ic="sparkle">Giảm hiệu ứng / rung màn hình</span> <input type="checkbox" id="set-reduce" class="sw"></label>
+      <label class="row"><span class="lab" data-ic="eye">Xem trước kết quả cuối</span> <input type="checkbox" id="set-final" class="sw"></label>
+      <label class="row"><span class="lab" data-ic="chat">Ngôn ngữ</span> <select id="set-lang"><option value="vi">Tiếng Việt</option></select></label>
+      <div class="row col">
+        <button class="btn" data-act="replay-tutorial" data-ic="scroll">Xem lại hướng dẫn</button>
+        <button class="btn" data-act="unlock-all" id="btn-unlock-all" data-ic="unlock">Mở khoá tất cả màn</button>
+        <button class="btn danger" data-act="reset-save" data-ic="trash">Xoá dữ liệu lưu</button>
+      </div>
+      <p class="credit">Sprite: Tiny RPG Character Asset Pack 01 &amp; 02. Âm thanh tổng hợp bằng WebAudio. Luật mô phỏng: js/sim.js (dùng chung cho xem trước, thực thi và bộ giải).</p>
+      <p class="credit" id="save-ver"></p>
+    </div>
+  </section>
+
+  <!-- GAME -->
+  <section id="scr-game" class="screen">
+    <header class="g-head">
+      <button class="icon-btn" data-act="pause" aria-label="Tạm dừng" data-ic="pause"></button>
+      <div class="g-title">
+        <div class="g-name" id="g-name">MÀN 01</div>
+        <div class="g-goal" id="g-goal">Hạ hết quái trong 1 lượt</div>
+      </div>
+      <button class="icon-btn hint" data-act="hint" aria-label="Gợi ý" data-ic="hint"></button>
+    </header>
+    <div class="side-titles"><span class="t-ally">ĐỘI CỦA BẠN</span><span class="t-enemy">QUÁI VẬT</span></div>
+    <div class="board-wrap" id="board-wrap">
+      <canvas id="board"></canvas>
+      <div id="tip" class="tip hidden"></div>
+      <div id="float-msg" class="float-msg hidden"></div>
+    </div>
+    <div class="rage-info"><span id="f-rage">Nộ 0/0</span></div>
+
+    <div id="tut" class="tut hidden"><p id="tut-txt"></p><button class="btn tiny" id="tut-next">Tiếp</button></div>
+    <div class="g-scroll" id="g-scroll">
+      <!-- planning UI -->
+      <div id="plan-ui">
+        <div class="helper" id="helper">Kéo thả hoặc chạm nhân vật rồi chạm ô để đổi vị trí</div>
+        <div class="cards" id="cards"></div>
+
+        <div class="panel hidden" id="order-panel">
+          <div class="panel-h">THỨ TỰ HÀNH ĐỘNG <small>kéo để đổi</small></div>
+          <div class="order" id="order"></div>
+        </div>
+
+        <div class="panel skill-panel">
+          <div class="panel-h" id="skill-h">KỸ NĂNG</div>
+          <div class="skill-row">
+          <div class="skills" id="skills">
+            <button class="skill" data-cat="normal"><i data-ic="sword"></i><span>Đánh thường</span></button>
+            <button class="skill" data-cat="push"><i data-ic="push"></i><span>Đẩy</span></button>
+            <button class="skill" data-cat="rage"><i data-ic="rage"></i><span>Chiêu nộ</span></button>
+          </div>
+          <div class="skill-side">
+            <div class="skill-info" id="skill-info"></div>
+            <div class="push-panel hidden" id="push-panel">
+              <div class="dirpad" id="dirpad"></div>
+              <div class="push-txt" id="push-txt"></div>
+            </div>
+          </div>
+          </div>
+        </div>
+
+        <div class="panel hidden" id="preview-panel">
+          <div class="panel-h">XEM TRƯỚC <small id="pv-note">từng bước, không đổi bàn thật</small></div>
+          <div class="pv-steps" id="pv-steps"></div>
+          <div class="pv-log" id="pv-log"></div>
+        </div>
+      </div>
+
+      <!-- execution UI -->
+      <div id="exec-ui" class="hidden">
+        <div class="exec-log" id="exec-log"></div>
+      </div>
+    </div>
+
+    <footer class="g-foot">
+      <div class="foot-row" id="foot-plan">
+        <button class="btn attack" data-act="attack"><i data-ic="swords"></i>TẤN CÔNG</button>
+      </div>
+      <div class="foot-row hidden" id="foot-exec">
+        <button class="btn" data-act="exec-pause" id="b-exec-pause" data-ic="pause">Dừng</button>
+        <button class="btn" data-act="exec-speed" id="b-exec-speed" data-ic="bolt">×1</button>
+        <button class="btn" data-act="exec-skip" data-ic="skip">Bỏ qua</button>
+      </div>
+    </footer>
+  </section>
+
+  <!-- MODALS -->
+  <div id="modal" class="modal hidden"><div class="modal-box" id="modal-box"></div></div>
+  <div id="toast" class="toast hidden"></div>
+</div>
+
+<script src="js/icons.js"></script>
+<script src="js/assets-meta.js"></script>
+<script src="js/sim.js"></script>
+<script src="js/levels.js"></script>
+<script src="js/data.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>
