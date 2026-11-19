@@ -719,8 +719,8 @@ function startLevel(def,label){
   for(const[ri,sym]of def.locks||[])ropes[ri].lock=sym;
   const barriers=(def.barriers||[]).map(([x1,y1,x2,y2])=>({x1,y1,x2,y2,r:11}));
   const strands=ropes.map(r=>{const st=makeStrand(nodes[r.a],nodes[r.b],r.steel,r);r.strand=st;return st;});
-  // one spare swipe beyond the 2-star mark (two on tutorial levels with a guided hand), then doubled so tangled skies leave room to recover
-  const par=def.parSwipes||minCuts(def),budget=(def.budgetSwipes||par+(def.id&&GUIDES[def.id]?2:1))*2;
+  // every level gives 15 cuts; stars still come from par
+  const par=def.parSwipes||minCuts(def),budget=15;
   G={def,nodes,ropes,strands,barriers,par,budget,cuts:0,swipes:0,state:"play",endT:0,label,puffs:nodes.filter(n=>n.t==="p").length,freed:0,
     keysGiven:new Set(),beams:[],marks:[],wallHits:0};
   bladeBlocked=false;clearTimeout(toastTimer);
