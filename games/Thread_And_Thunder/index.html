@@ -565,10 +565,11 @@ const RAW_LEVELS=[
   r:[[0,1],[2,3],[3,4],[3,5],[5,7],[6,7],[4,1]],heavy:[[3,2]],keys:[[1,"sun"]],locks:[[1,"sun"]],parSwipes:2}
 ];
 
+// Campaign order (numbers are the authored ids above). Heavy clouds come right after the first level (87-89, teach at 2) and 90 follows the key tutorial.
 // Campaign order (numbers are the authored ids above). Tutorials stay hand-made at 1 (swipe), 5 (key), 10 (? cloud), 15 (wall),
 // 20 (sun); every other slot is a tangled chaos-pack level (52+) from tools/level-forge.mjs, rebuilt with tools/apply-forged.mjs.
 // Levels 2-51 other than the tutorials are kept above for reference but are no longer in the campaign.
-const LEVEL_ORDER=[1,52,53,54,31,55,56,57,58,35,59,60,61,62,39,63,64,65,66,43,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90];
+const LEVEL_ORDER=[1,87,88,89,52,53,54,31,90,55,56,57,58,35,59,60,61,62,39,63,64,65,66,43,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86];
 const LEVELS=LEVEL_ORDER.map(id=>({...RAW_LEVELS[id-1],id}));
 
 // ---------- level checks for the mechanic pack ----------
