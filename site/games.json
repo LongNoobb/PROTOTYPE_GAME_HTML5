@@ -38,6 +38,7 @@
     "title": "Fantasy Puzzle",
     "category": "Tactics · Puzzle",
     "description": "Place six pixel heroes, pick their skills and attack order, then clear every monster in one turn across 60 levels.",
-    "art": "fantasy-puzzle.svg"
+    "art": "fantasy-puzzle.svg",
+    "demo": "fantasy-puzzle.webm"
   }
 }
