@@ -47,5 +47,11 @@
     "description": "Swipe through a tangle of threads to set the cloud puffs free, but keep every storm cloud tied down across 44 levels, now with heavy rain clouds the puffs must carry up.",
     "art": "thread-thunder.svg",
     "demo": "thread-thunder.webm"
+  },
+  "Cable_Grid_Sort": {
+    "title": "Cable Grid Sort",
+    "category": "Sorting · Puzzle",
+    "description": "Untangle a messy server rack. Unplug and replug each cable into its matching ports without crossings, working around broken sockets across 12 levels.",
+    "art": "cable-grid-sort.svg"
   }
 }

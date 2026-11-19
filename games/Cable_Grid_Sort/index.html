@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#cfe2ff">
+<title>Cable Grid Sort</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="bg" aria-hidden="true">
+  <i class="lamp l1"></i><i class="lamp l2"></i><i class="lamp l3"></i>
+  <i class="rack r1"></i><i class="rack r2"></i><i class="rack r3"></i><i class="rack r4"></i>
+  <i class="floor"></i>
+</div>
+<div id="app">
+  <header id="top">
+    <div class="left-btns"><button id="btn-menu" class="round-btn" aria-label="Chọn level">☰</button><button id="btn-rules" class="round-btn amber" aria-label="Luật chơi">?</button></div>
+    <div id="lv-pill"><span id="lv-num">LEVEL 1</span></div>
+    <div id="moves-pill" title="Số nước đã đi (không giới hạn)"><i>⇄</i><span id="moves">0</span></div>
+  </header>
+
+  <div id="prog">
+    <i id="prog-bar"></i>
+    <span id="prog-val">0/0</span>
+  </div>
+  <div id="prog-cap">Đang hoàn thành</div>
+
+  <div id="locks"></div>
+
+  <div id="tip"><b id="lv-name">—</b> · <span id="tip-lesson"></span> — <span id="tip-text"></span></div>
+
+  <main id="board-wrap">
+    <svg id="board" viewBox="0 0 404 476" aria-label="Tủ server 5×6"></svg>
+    <div id="toast" role="status"></div>
+    <div id="stuck" hidden>
+      <b>Không còn nước đi hợp lệ.</b>
+      <span>Hãy dùng <u>Hoàn tác</u> hoặc <u>Chơi lại</u>.</span>
+    </div>
+  </main>
+
+  <footer id="bottom">
+    <button id="btn-undo" class="candy purple" aria-label="Hoàn tác">
+      <svg viewBox="0 0 48 48"><path d="M17 13 L8 21 L17 29" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 21 H28 A10 10 0 0 1 28 41 H20" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"/></svg>
+      <span>Hoàn tác</span>
+    </button>
+    <button id="btn-hint" class="candy blue" aria-label="Gợi ý">
+      <svg viewBox="0 0 48 48"><rect x="5" y="9" width="32" height="25" rx="5" fill="#fff"/><rect x="10" y="14" width="22" height="14" rx="2" fill="#1d4ed8"/><path d="M14 24 v3 M17 24 v3 M20 24 v3 M23 24 v3 M26 24 v3 M29 24 v3" stroke="#facc15" stroke-width="1.6"/><circle cx="35" cy="34" r="10" fill="#1d4ed8" stroke="#fff" stroke-width="3"/><path d="M35 28.5 v11 M29.5 34 h11" stroke="#fff" stroke-width="3.4" stroke-linecap="round"/></svg>
+      <span>Gợi ý</span>
+    </button>
+    <button id="btn-restart" class="candy orange" aria-label="Chơi lại">
+      <svg viewBox="0 0 48 48"><path d="M37 17 A15 15 0 1 0 39 29" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"/><path d="M39 7 V19 H27" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Chơi lại</span>
+    </button>
+  </footer>
+</div>
+
+<div id="win" class="overlay" hidden>
+  <div class="card">
+    <div class="win-leds"><i></i><i></i><i></i><i></i><i></i></div>
+    <h2>Tủ đã gọn gàng!</h2>
+    <p id="win-stats"></p>
+    <div class="row">
+      <button id="win-replay" class="btn ghost">Chơi lại</button>
+      <button id="win-next" class="btn primary">Level tiếp ›</button>
+    </div>
+  </div>
+</div>
+
+<div id="intro" class="overlay" hidden>
+  <div class="card intro-card">
+    <div class="intro-tag" id="intro-title">Cơ chế mới</div>
+    <div id="intro-body"></div>
+    <button id="intro-ok" class="btn primary">Hiểu rồi!</button>
+  </div>
+</div>
+
+<div id="menu" class="overlay" hidden>
+  <div class="card wide">
+    <div class="menu-head"><h2>Chọn level</h2><button id="menu-close" class="round-btn" aria-label="Đóng">✕</button></div>
+    <div id="menu-grid"></div>
+    <label class="opt"><input type="checkbox" id="opt-sound" checked> Âm thanh</label>
+  </div>
+</div>
+
+<script src="js/engine.js"></script>
+<script src="js/levels.js"></script>
+<script src="js/solutions.js"></script>
+<script src="js/mechanics.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>
