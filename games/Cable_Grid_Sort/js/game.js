@@ -324,7 +324,7 @@
       let g = '';
       if (crossing) g += `<path d="${path}" fill="none" stroke="#ff9a1f" stroke-width="20" stroke-linecap="round" opacity=".5" filter="url(#glow)"/>`;
       if (sel) g += `<path d="${path}" fill="none" stroke="#7dd3fc" stroke-width="20" stroke-linecap="round" opacity=".55" filter="url(#glow)"/>`;
-      g += cableStrokes(path, col, sel, act, d > c.len + 1e-6);
+      g += cableStrokes(path, col, sel, act, !E.UNLIMITED && d > c.len + 1e-6);
       if (c.hidden && !(G.st.rec & (1 << i))) {
         // translucent sleeve hides the middle of the body
         g += `<path d="${path}" pathLength="100" fill="none" stroke="#8b93a3" stroke-opacity=".94" stroke-width="18" stroke-dasharray="0 17 66 17" stroke-linecap="round"/>`;
@@ -358,7 +358,7 @@
     const sel = G.sel === k, partner = G.sel >= 0 && (G.sel ^ 1) === k;
     const other = G.st.pos[k ^ 1];
     const ratio = Math.hypot(x - cxOf(other), y - cyOf(other)) / CELL / c.len;
-    const taut = act && ratio > 0.92;
+    const taut = !E.UNLIMITED && act && ratio > 0.92;
     const shake = G.fx.find(f => f.type === 'shake' && f.k === k);
     let dx = 0; if (shake) { const t = (now - shake.t0) / shake.dur; dx = Math.sin(t * Math.PI * 6) * 3 * (1 - t); }
     let s = '';
@@ -384,8 +384,8 @@
     // status badge: ✓ = complete, ! = right pair but still crossing
     if (act && G.a.complete[i]) s += `<g transform="translate(-16,-19)"><circle r="8" fill="#22b14c" stroke="#fff" stroke-width="1.8"/><text y="3.8" font-size="10.5" text-anchor="middle" fill="#fff" font-weight="900">✓</text></g>`;
     else if (act && G.a.correct[i]) s += `<g transform="translate(-16,-19)"><circle r="8" fill="#f97316" stroke="#fff" stroke-width="1.8"/><text y="4" font-size="11" text-anchor="middle" fill="#fff" font-weight="900">!</text></g>`;
-    // length tag — always visible
-    s += `<g transform="translate(16,-19)"><rect x="-9" y="-7.5" width="18" height="15" rx="7.5" fill="${taut ? '#ff8a00' : '#1f3a8a'}" stroke="#fff" stroke-width="1.6"/>
+    // length tag (hidden when length is unlimited)
+    if (!E.UNLIMITED) s += `<g transform="translate(16,-19)"><rect x="-9" y="-7.5" width="18" height="15" rx="7.5" fill="${taut ? '#ff8a00' : '#1f3a8a'}" stroke="#fff" stroke-width="1.6"/>
       <text y="4" font-size="10.5" text-anchor="middle" fill="#fff" font-weight="900">${c.len}</text></g>`;
     const pr = !act && c.lock ? E.condProgress(G.lv, c.lock, G.st.rec) : [];
     if (pr.length === 1) s += `<g transform="translate(-14,-19)"><rect x="-14" y="-7.5" width="28" height="15" rx="7.5" fill="#fff" stroke="#f5b400" stroke-width="1.6"/><text y="4" font-size="9.5" text-anchor="middle" fill="#6b4a00" font-weight="900">${pr[0].v}/${pr[0].n}</text></g>`;
@@ -404,7 +404,7 @@
     const k = G.sel, c = cableOf(k), other = G.st.pos[k ^ 1], from = G.st.pos[k];
     const col = colorHex(c);
     const ox = cxOf(other), oy = cyOf(other), R = c.len * CELL;
-    let s = `<g clip-path="url(#gridclip)" pointer-events="none">
+    let s = E.UNLIMITED ? '' : `<g clip-path="url(#gridclip)" pointer-events="none">
       <circle cx="${ox}" cy="${oy}" r="${R}" fill="${col}" fill-opacity=".07"/>
       <circle cx="${ox}" cy="${oy}" r="${R}" fill="none" stroke="${shade(col, -0.25)}" stroke-width="4" stroke-opacity=".9"/>
       <circle cx="${ox}" cy="${oy}" r="${R}" fill="none" stroke="#fff" stroke-width="2" stroke-dasharray="8 7" class="spin-dash"/></g>`;
@@ -413,7 +413,7 @@
       const lx = ox + Math.cos(a) * R, ly = oy + Math.sin(a) * R;
       return lx > OX + 30 && lx < OX + CELL * 5 - 30 && ly > OY + 12 && ly < OY + CELL * 6 - 12;
     });
-    if (ang != null) {
+    if (ang != null && !E.UNLIMITED) {
       const lx = ox + Math.cos(ang) * R, ly = oy + Math.sin(ang) * R;
       s += `<g pointer-events="none"><rect x="${lx - 38}" y="${ly - 11}" width="76" height="22" rx="11" fill="${shade(col, -0.25)}" stroke="#fff" stroke-width="2"/>
         <text x="${lx}" y="${ly + 4.5}" font-size="11.5" text-anchor="middle" fill="#fff" font-weight="900">Tầm với ${c.len}</text></g>`;
@@ -450,8 +450,9 @@
     } else {
       dist = Math.hypot(G.drag.x - cxOf(other), G.drag.y - cyOf(other)) / CELL;
     }
-    const over = dist > c.len + 1e-9;
-    const txt = `${dist.toFixed(1)} / ${c.len}` + (ok === false && why && !over ? ` · ${why}` : '');
+    const over = !E.UNLIMITED && dist > c.len + 1e-9;
+    const txt = E.UNLIMITED ? (ok === false && why ? why : '') : `${dist.toFixed(1)} / ${c.len}` + (ok === false && why && !over ? ` · ${why}` : '');
+    if (!txt) return s;
     const w = Math.max(70, txt.length * 6.4 + 18);
     const lx = Math.min(OX + CELL * 5 - w / 2, Math.max(OX + w / 2, G.drag.x)), ly = Math.max(OY + 6, G.drag.y - 46);
     s += `<g pointer-events="none"><rect x="${lx - w / 2}" y="${ly - 12}" width="${w}" height="24" rx="12" fill="${over ? '#ef4444' : '#1f3a8a'}" stroke="#fff" stroke-width="2"/>
@@ -589,7 +590,7 @@
     AU.place();
     // tension warning
     const c = cableOf(k), d2 = E.dist2(G.st.pos[k], G.st.pos[k ^ 1]);
-    if (d2 > (c.len * 0.92) ** 2 * 0.999 && d2 <= c.len2) { setTimeout(() => AU.tense(), 90); toast('Dây đang căng', 'info'); }
+    if (!E.UNLIMITED && d2 > (c.len * 0.92) ** 2 * 0.999 && d2 <= c.len2) { setTimeout(() => AU.tense(), 90); toast('Dây đang căng', 'info'); }
     G.a = E.analyze(G.lv, G.st);
     presentEvents(out.events);
     G.sel = k; // keep the moved plug selected for chains of steps

@@ -10,6 +10,8 @@
   else root.CableEngine = factory();
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
+  // Cable length no longer restricts moves: a plug may go to any free port.
+  const UNLIMITED = true;
 
   const COLS = 5, ROWS = 6, CELLS = COLS * ROWS;
   const col = i => i % COLS;
@@ -81,7 +83,7 @@
   function compile(def) {
     const P = ([c, r]) => cell(c, r);
     const cables = def.cables.map((c, i) => ({
-      i, id: c.id, color: c.color, sym: c.sym, len: c.len, len2: c.len * c.len,
+      i, id: c.id, color: c.color, sym: c.sym, len: c.len, len2: UNLIMITED ? Infinity : c.len * c.len,
       start: [P(c.ends[0]), P(c.ends[1])],
       targets: [P(c.targets[0]), P(c.targets[1])],
       hidden: !!c.hidden,              // body under a translucent cover until recorded
@@ -323,7 +325,7 @@
   }
 
   return {
-    COLS, ROWS, CELLS, COLORS, NEIGHBORS, col, row, cell, dist2, manh,
+    UNLIMITED, COLS, ROWS, CELLS, COLORS, NEIGHBORS, col, row, cell, dist2, manh,
     compile, analyze, settle, legalMoves, applyMove, moveError, lockedCellSet,
     condMet, condProgress, condText, activeMask, openRegions, stateKey, solve, heuristic, occupant,
   };

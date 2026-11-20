@@ -94,19 +94,11 @@
   const INTROS = {
     1: { id: 'move', title: 'Rút ra – cắm vào', art: 'move', lines: [
       'Chạm một <b>đầu dây</b>, rồi chạm cổng muốn cắm — hoặc kéo thả.',
-      'Cắm <b>hai đầu</b> vào hai cổng cùng <b>màu và ký hiệu</b> với dây.',
-      'Số trên đầu cắm là <b>chiều dài tối đa</b> của dây.'] },
-    2: { id: 'length', title: 'Giới hạn chiều dài', art: 'length', lines: [
-      'Chỉ cắm được vào cổng nằm trong <b>vòng tầm với</b> quanh đầu còn lại.',
-      'Ngoài vòng: <b>“Dây không đủ dài”</b> — nước đi không được tính.',
-      'Muốn đi xa: <b>dời luân phiên</b> hai đầu.'] },
+      'Cắm <b>hai đầu</b> vào hai cổng cùng <b>màu và ký hiệu</b> với dây.',] },
     3: { id: 'transit', title: 'Mỗi cổng một đầu dây', art: 'transit', lines: [
       'Cổng đã có đầu dây thì không cắm thêm được.',
       'Cổng đích bị chiếm? <b>Dời đầu dây kia</b> sang cổng trống trước.',
       'Cổng đích của dây khác vẫn dùng làm chỗ <b>đứng tạm</b> được.'] },
-    4: { id: 'taut', title: 'Dây căng', art: 'length', lines: [
-      'Khi dây gần hết chiều dài, nhãn số chuyển <b style="color:#ea7c0c">màu cam</b>.',
-      'Dây dài hơn cho tầm với rộng hơn — dây ngắn cần nhiều bước hơn.'] },
     5: { id: 'crossing', title: 'Không được giao nhau', art: 'crossing', lines: [
       'Dây chỉ <b>hoàn thành</b> khi đúng cặp cổng <b>và</b> không cắt dây nào.',
       'Dấu <b style="color:#ea580c">✕ cam</b> là chỗ giao. Đi xuyên qua đầu cắm khác cũng tính.',
